@@ -52,6 +52,16 @@
 			left:10%;
 			right:10%;
 		}
+		
+		.FileInput
+		{
+			margin-left:auto;
+			margin-right:auto;
+			width:30%;
+			visibility: none;	/*	all off by default*/
+			border: dashed 3px #fff;
+			padding:10px;
+		}
 
 			#oldie a { color:#da0 }
 		</style>
@@ -60,15 +70,48 @@
 	<body id="xxxcontainer">
 		<div id="info">
 			panopo.ly
+			
+			<div id="uploader" class="FileInput">
+				Upload new sphereical image<br />
+				<input type="file" id="files" name="files" />
+			</div>
+		
 		</div>
 
 		<script src="js/three.min.js"></script>
 
 		<script src="js/effects/StereoEffect.js"></script>
+		
 		<div id="container"></div>
 
 
 		<script>
+			
+			
+			var container;
+			
+			var camera, scene, renderer, effect;
+			
+			var mesh, lightMesh, geometry;
+			var spheres = [];
+			
+			var directionalLight, pointLight;
+			
+			
+			var isUserInteracting = false;
+			var onMouseDownMouseX = 0;
+			var onMouseDownMouseY = 0;
+			var lon = 0;
+			var onMouseDownLon = 0;
+			var lat = 0;
+			var onMouseDownLat = 0;
+			var phi = 0;
+			var theta = 0;
+			
+			
+
+
+
 			function IsDevice(Name)
 			{
 				return ( navigator.userAgent.indexOf(Name) != -1 );
@@ -128,29 +171,57 @@
 			{
 				return "panos/Apartment11_256.jpg";
 			}
-
-			var container;
-
-			var camera, scene, renderer, effect;
-
-			var mesh, lightMesh, geometry;
-			var spheres = [];
-
-			var directionalLight, pointLight;
-
-
-			var isUserInteracting = false;
-			var onMouseDownMouseX = 0;
-			var onMouseDownMouseY = 0;
-			var lon = 0;
-			var onMouseDownLon = 0;
-			var lat = 0;
-			var onMouseDownLat = 0;
-			var phi = 0;
-			var theta = 0;
-			
-			
-
+			function EnableFileUploader()
+			{
+				if ( !IsSupported() )
+					return false;
+					
+				//	does browser support input?
+				if ( !window.File || !window.FileReader )
+					return false;
+					
+				return true;
+			}
+		
+			function handleFileUpload($Event)
+			{
+				var files = $Event.target.files; // FileList object
+				
+				var File = files[0];
+				if ( !File )
+					return;
+				
+				var reader = new FileReader();
+				reader.onload = SetTexture;
+				reader.readAsDataURL(File);
+			}
+		
+			function SetTexture($Event)
+			{
+				var ImageData = $Event.target.result;
+				
+				console.log("ImageData");
+				console.log( ImageData );
+				
+				var Material = mesh.material;
+				console.log("mesh.material");
+				console.log(mesh.material);
+				if ( !Material )
+					return;
+					
+				var image = document.createElement( 'img' );
+				image.src = ImageData;
+				Material.map = new THREE.Texture( image );
+				Material.map.needsUpdate = true;
+				Material.needsUpdate = true;
+			}
+		
+		
+		
+		
+		
+		
+		
 function ReplaceFilename(Filename,Number,NextNumber)
 {
 	var NewFilename = Filename.replace( Number.toString(), NextNumber.toString() );
@@ -391,18 +462,32 @@ camera.lookAt( camera.target );
 		var Info = document.getElementById("info");
 		if ( Info )
 		{
+			/*
 			Info.innerText += " | " + navigator.userAgent;
 			if ( HasWebGl() )
 				Info.innerText += " | has webgl";
 			else
 				Info.innerText += " | no webgl";
+			 */
 		}
 		
 		//	treat ipad as a device we can use with cardboard
 		if ( IsDevice("iPad") )
 		{
 			var Container = document.getElementById("container");
-			Container.className = "ipad_smallviewport";
+			if ( Container )
+				Container.className = "ipad_smallviewport";
+		}
+		
+		//	enable uploader for ipad
+		if ( EnableFileUploader() )
+		{
+			var Uploader = document.getElementById("uploader");
+			if ( Uploader )
+			{
+				//Uploader.visibility = show;
+				Uploader.addEventListener('change', handleFileUpload, false);
+			}
 		}
 
 
