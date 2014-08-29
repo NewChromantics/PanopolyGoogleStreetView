@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		<title>panopo.ly</title>
-		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+<head>
+	<title>panopo.ly</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 		<style>
 			body {
 				background:#3CF;
@@ -82,6 +81,8 @@
 
 		<script src="js/effects/StereoEffect.js"></script>
 		
+		<script src="js/controls/DeviceOrientationControls.js"></script>
+	
 		<div id="container"></div>
 
 
@@ -109,7 +110,21 @@
 			var theta = 0;
 			
 			
+function GetForward()
+{
+	/*
+	
+	lat = Math.max( - 85, Math.min( 85, lat ) );
+	phi = THREE.Math.degToRad( 90 - lat );
+	theta = THREE.Math.degToRad( lon );
+	
+	 camera.target.x = 500 * Math.sin( phi ) * Math.cos( theta );
+	 camera.target.y = 500 * Math.cos( phi );
+	 camera.target.z = 500 * Math.sin( phi ) * Math.sin( theta );
+	 */
 
+	return new THREE.Vector3( 0, 0, 1 );
+}
 
 
 			function IsDevice(Name)
@@ -371,15 +386,9 @@ if ( isUserInteracting === false ) {
 	
 }
 
-lat = Math.max( - 85, Math.min( 85, lat ) );
-phi = THREE.Math.degToRad( 90 - lat );
-theta = THREE.Math.degToRad( lon );
-
-camera.target.x = 500 * Math.sin( phi ) * Math.cos( theta );
-camera.target.y = 500 * Math.cos( phi );
-camera.target.z = 500 * Math.sin( phi ) * Math.sin( theta );
-
+camera.target = GetForward().add( camera.position );
 camera.lookAt( camera.target );
+
 /*
 				camera.position.x += ( mouseX - camera.position.x ) * .05;
 				camera.position.y += ( - mouseY - camera.position.y ) * .05;
