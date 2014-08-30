@@ -276,9 +276,20 @@ function GetCameraQuaternion()
 					return true;
 				return false;
 			}
+		
+			function GetPanoName()
+			{
+				//	extract from url;
+				//	panopo.ly/#name
+				var Name = window.location.hash;
+				if ( !Name )
+					Name = "Apartment11";
+				return Name;
+			}
 			function GetPanoFilename()
 			{
-				return "panos/Apartment11_256.jpg";
+				var panoname = GetPanoName();
+				return "http://image.panopo.ly/" + panoname + ".256.jpg";
 			}
 			function IsShrinkSupported()
 			{
