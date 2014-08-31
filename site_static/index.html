@@ -176,7 +176,10 @@
 		
 		function GetUploadUrl()
 		{
-			return "http://localhost:8888/upload.php";
+			//	locally testing
+			if ( window.location.origin == "file://" )
+				return "http://localhost:8888/upload.php";
+			return "http://upload.panopo.ly/upload.php";
 		}
 		
 		function ShowElement($ElementName,Visible)
@@ -656,7 +659,9 @@ function GetNextResFilename(Filename)
 			Container.style.padding = "20%";
 			Container.innerText = "Not currently supported with webgl. Get the AppStore app.";
 		}
-		</script>
+
+
+			</script>
 
 	</body>
 </html>
