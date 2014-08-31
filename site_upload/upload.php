@@ -15,14 +15,8 @@
 	}
 
 	//	returns TRUE or error string
-	function UploadFile($localfilename,$remotefilename)
+	function UploadFile($localfilename,$remotefilename,$ContentType)
 	{
-		$ext = pathinfo( $remotefilename, PATHINFO_EXTENSION );
-		if ( $ext == "jpg" )
-			$ContentType = "image/jpeg";
-		else
-			$ContentType = "image/$ext";
-		
 		try
 		{
 			echo "<p>putting $localfilename (" . filesize($localfilename) . ") into $remotefilename</p>";
@@ -66,14 +60,19 @@
 			return false;
 		}
 		
+		$ContentType = "";
+		
 		//	add extension
 		if ( $imagetype == IMAGETYPE_JPEG )
 		{
-			$Filename = "$Panoname.jpg";
+			$Filename = "$Panoname.256.jpg";
+			$ContentType = "image/jpeg";
 		}
 		else if ( $imagetype == IMAGETYPE_PNG )
 		{
-			$Filename = "$Panoname.png";
+			//	gr: atm, client only reads ".jpg" so we're gonna fake it and hope it works...
+			$Filename = "$Panoname.256.jpg";
+			$ContentType = "image/png";
 		}
 		else
 		{
@@ -82,7 +81,7 @@
 		}
 		
 		//	upload file (todo; spawn resizing processes etc)
-		$result = UploadFile( $tmpfilename, $Filename );
+		$result = UploadFile( $tmpfilename, $Filename, $ContentType );
 		if ( $result !== true )
 		{
 			OnError("upload erorr: " . $result );
