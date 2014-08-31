@@ -3,6 +3,7 @@ THREE.MouseOrientationControls = function ( object, Container ) {
 
 	var scope = this;
 
+	this.Container = Container;
 	this.object = object;
 
 	this.object.rotation.reorder( "YXZ" );
@@ -82,9 +83,9 @@ THREE.MouseOrientationControls = function ( object, Container ) {
 
 	this.connect = function() {
 
-		document.addEventListener( 'mousedown', onDocumentMouseDown, false );
-		document.addEventListener( 'mousemove', onDocumentMouseMove, false );
-		document.addEventListener( 'mouseup', onDocumentMouseUp, false );
+		scope.Container.addEventListener( 'mousedown', onDocumentMouseDown, false );
+		scope.Container.addEventListener( 'mousemove', onDocumentMouseMove, false );
+		scope.Container.addEventListener( 'mouseup', onDocumentMouseUp, false );
 		
 		scope.freeze = false;
 
@@ -94,9 +95,9 @@ THREE.MouseOrientationControls = function ( object, Container ) {
 
 		scope.freeze = true;
 
-		window.removeEventListener( 'mousedown', onDocumentMouseDown, false );
-		window.removeEventListener( 'mousemove', onDocumentMouseMove, false );
-		window.removeEventListener( 'mouseup', onDocumentMouseUp, false );
+		scope.Container.removeEventListener( 'mousedown', onDocumentMouseDown, false );
+		scope.Container.removeEventListener( 'mousemove', onDocumentMouseMove, false );
+		scope.Container.removeEventListener( 'mouseup', onDocumentMouseUp, false );
 
 	};
 
