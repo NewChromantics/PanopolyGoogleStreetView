@@ -291,14 +291,19 @@ function GetCameraQuaternion()
 				var Name = window.location.hash;
 				if ( !Name )
 					Name = "Apartment11";
+				
+				//	assume this might not be the case on all browsers, but chrome's .hash starts with an octothorpe
+				if ( Name[0] == '#' )
+					Name = Name.substr(1);
+				
 				return Name;
 			}
-			function GetPanoFilename()
+
+			function GetDefaultPanoFilename()
 			{
 				return "equirectangular.png";
-				var panoname = GetPanoName();
-				return "http://image.panopo.ly/" + panoname + ".256.jpg";
 			}
+		
 			function IsShrinkSupported()
 			{
 				return true;
@@ -349,17 +354,12 @@ function GetCameraQuaternion()
 		
 			function SetTextureFromData($Data)
 			{
-				console.log("ImageData");
-				console.log( ImageData );
-				
 				var Material = mesh.material;
-				console.log("mesh.material");
-				console.log(mesh.material);
 				if ( !Material )
-				return;
+					return;
 				
 				var image = document.createElement( 'img' );
-				image.src = ImageData;
+				image.src = $Data;
 				Material.map = new THREE.Texture( image );
 				Material.map.needsUpdate = true;
 				Material.needsUpdate = true;
@@ -376,14 +376,31 @@ function GetCameraQuaternion()
 			}
 		
 		
+function LoadPano()
+{
+	var PanoName = GetPanoName();
+	if ( PanoName == false )
+		return false;
+
+	var Material = mesh.material;
+	if ( !Material )
+		return false;
 		
-		
+	//	0 is our magic "not loaded" res
+	var Url = "http://image.panopo.ly/" + PanoName + ".0.jpg";
+	//	do initial load
+	Material.map.sourceFile = Url;
+	console.log("loading" + PanoName);
+	
+	//	replace
+	return LoadHigher( Material );
+}
 		
 		
 		
 function ReplaceFilename(Filename,Number,NextNumber)
 {
-	var NewFilename = Filename.replace( Number.toString(), NextNumber.toString() );
+	var NewFilename = Filename.replace( "."+Number.toString(), "."+NextNumber.toString() );
 	//console.log( NewFilename + " = " + Filename + " .replace( " + Number.toString() + " , " + NextNumber.toString() + ")" );
 	if ( NewFilename == Filename )
 		return null;
@@ -392,10 +409,15 @@ function ReplaceFilename(Filename,Number,NextNumber)
 
 function GetNextResFilename(Filename)
 {
+	//	0 is our special "not loaded" resolution
+	var NewFilename = ReplaceFilename( Filename, 0, 256 );
+	if ( NewFilename )
+		return NewFilename;
+	
 	var NewFilename = ReplaceFilename( Filename, 256, 1024 );
 	if ( NewFilename )
 		return NewFilename;
-
+	
 	if ( IsMobile() )
 		return null;
 	NewFilename = ReplaceFilename( Filename, 1024, 4096 );
@@ -407,17 +429,19 @@ function GetNextResFilename(Filename)
 		function LoadHigher(Material)
 		{
 			if ( !Material.map )
-				return;
+				return false;
 			//console.log("LoadHigher - " + Material.map.sourceFile );
 			var NewFilename = GetNextResFilename( Material.map.sourceFile );
 			if ( NewFilename == null )
 			{
 				//console.log("no higher res");
-				return;
+				return false;
 			}
 			console.log("loading higher res:" + NewFilename );
 			
-			var loader = new THREE.ImageLoader();
+			//	enable cross-site loading
+			THREE.ImageUtils.crossOrigin = "";
+			
 			var HiTexture = THREE.ImageUtils.loadTexture( NewFilename,
 														 new THREE.UVMapping(),
 														 function(NewHiTexture)
@@ -428,7 +452,8 @@ function GetNextResFilename(Filename)
 														 },
 														 function ()
 														 {
-															LoadHigher( Material );
+															//	error: maybe 404, just try next res up
+															//LoadHigher( Material );
 														 }
 														 );
 		}
@@ -454,8 +479,8 @@ function GetNextResFilename(Filename)
 				//var geometry = new THREE.BoxGeometry( Size, Size, Size );
 				geometry.applyMatrix( new THREE.Matrix4().makeScale( -1, 1, 1 ) );
 
-				var Texture = THREE.ImageUtils.loadTexture( GetPanoFilename(), new THREE.UVMapping() );
-				
+				//	load default texture
+				var Texture = THREE.ImageUtils.loadTexture( GetDefaultPanoFilename(), new THREE.UVMapping() );
 				var material = new THREE.MeshBasicMaterial( {
 														   map: Texture,
 														   color: "white",
@@ -567,6 +592,13 @@ function GetNextResFilename(Filename)
 		if ( IsSupported() )
 		{
 			init( Container );
+			
+			if ( !CreateGyroControl() )
+				if ( !CreateMouseControl(Container) )
+					CreateDemoControl();
+
+			//	load user's required pano
+			LoadPano();
 		}
 		else
 		{
@@ -574,11 +606,6 @@ function GetNextResFilename(Filename)
 			Container.style.padding = "20%";
 			Container.innerText = "Not currently supported with webgl. Get the AppStore app.";
 		}
-		
-		if ( !CreateGyroControl() )
-			if ( !CreateMouseControl(Container) )
-				CreateDemoControl();
-		
 		</script>
 
 	</body>
