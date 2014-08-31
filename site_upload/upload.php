@@ -80,6 +80,12 @@
 			return false;
 		}
 		
+		//	send response before upload
+		//	todo: spawn process for s3 upload
+		echo "<p>uploading [$Panoname] to s3...</p>";
+		ob_flush();
+		flush();
+		
 		//	upload file (todo; spawn resizing processes etc)
 		$result = UploadFile( $tmpfilename, $Filename, $ContentType );
 		if ( $result !== true )
@@ -96,6 +102,8 @@
 	//	check for upload
 	if ( !array_key_exists(UPLOAD_NAME, $_FILES) )
 	{
+		echo "upload_max_file_size: [" + ini_get('upload_max_filesize') + "]";
+		var_dump($_FILES);
 		OnError("No file provided");
 		return;
 	}
