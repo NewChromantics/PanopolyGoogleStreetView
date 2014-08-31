@@ -61,17 +61,12 @@
 			margin-right:auto;
 			margin-bottom: 10px;
 			xxwidth:30%;
-			visibility: hidden;	/*	all off by default*/
+			display: none;	/*	all off by default*/
 			border: dashed 3px #fff;
 			padding:10px;
 		}
-		
-		#uploader_submit
-		{
-			visibility: hidden;
-		}
-
-			#oldie a { color:#da0 }
+	
+		#oldie a { color:#da0 }
 		</style>
 	</head>
 
@@ -79,15 +74,20 @@
 		<div id="info">
 			panopo.ly
 			
-			<div id="uploader" class="FileInput">
-				Upload new sphereical image<br />
+			<div id="ImageSelector" class="FileInput">
+				Select Image
 				<form id="uploaderform" enctype="multipart/form-data" method="POST">
-					<!-- MAX_FILE_SIZE must precede the file input field -->
-					<input type="hidden" name="xxxxMAX_FILE_SIZE" value="30000" />
-					<!-- Name of input element determines name in $_FILES array -->
 					<input id="image_selector" name="image" type="file" />
-					<input id="uploader_submit" type="submit" value="Upload File" />
 				</form>
+			</div>
+			
+			<div id="ImageUploader" class="FileInput">
+				Upload Image<br />
+				<input type="text" id="ImageUploader_CustomName" name="CustomName" class="cleardefault" value="custom url" />
+				<input type="button" value="Upload File"  onclick="UploadImage()"/>
+				<progress id="progressBar" value="0" max="100" style="width:300px;"></progress>
+				<h3 id="status"></h3>
+				<p id="loaded_n_total"></p>
 			</div>
 			
 			<div id="ShrinkButton" class="Button" onClick="OnClickedShrink()">
@@ -106,6 +106,7 @@
 		<script src="js/DeviceOrientationControls.js"></script>
 		<script src="js/MouseControls.js"></script>
 		<script src="js/GoogleAnalytics.js"></script>
+		<script src="js/ClearDefaultText.js"></script>
 	
 		<div id="container"></div>
 
@@ -127,6 +128,50 @@
 			var UpdateList = [];	//	anything here gets .update() called
 			var Gyro = null;
 			var InputController = null;
+
+		function EnableUploadForm()
+		{
+			//	image binary loaded okay, enable upload
+			ShowElement("ImageUploader", true );
+		}
+		
+		function UploadImage()
+		{
+			GetElement("progressBar").value = 0;
+			GetElement("status").innerHTML = "";
+
+			var formdata = new FormData();
+			var file = GetElement("image_selector").files[0];
+			//alert(file.name+" | "+file.size+" | "+file.type);
+			formdata.append("image", file);
+			var defaultcustomname = GetElement("ImageUploader_CustomName").defaultText;
+			var customname = GetElement("ImageUploader_CustomName").value;
+			if ( customname != defaultcustomname )
+				formdata.append("customname", customname );
+			var ajax = new XMLHttpRequest();
+			ajax.upload.addEventListener("progress", OnUploadProgress, false);
+			ajax.addEventListener("load", OnUploadComplete, false);
+			ajax.addEventListener("error", OnUploadError, false);
+			ajax.addEventListener("abort", OnUploadAbort, false);
+			ajax.open("POST", GetUploadUrl() );
+			//ajax.setRequestHeader('Content-Type', 'multipart/form-data;');
+			ajax.send(formdata);
+		}
+		function OnUploadProgress(event){
+			GetElement("loaded_n_total").innerHTML = "Uploaded "+event.loaded+" bytes of "+event.total;
+			var percent = (event.loaded / event.total) * 100;
+			GetElement("progressBar").value = Math.round(percent);
+			GetElement("status").innerHTML = Math.round(percent)+"% uploaded... please wait";
+		}
+		function OnUploadComplete(event){
+			GetElement("status").innerHTML = event.target.responseText;
+		}
+		function OnUploadError(event){
+			GetElement("status").innerHTML = "Upload Failed";
+		}
+		function OnUploadAbort(event){
+			GetElement("status").innerHTML = "Upload Aborted";
+		}
 		
 		function GetUploadUrl()
 		{
@@ -140,7 +185,7 @@
 			var Element = document.getElementById($ElementName);
 			if ( !Element )
 				return;
-				Element.style.visibility = Visible ? "visible" : "hidden";
+				Element.style.display = Visible ? "block" : "none";
 		}
 		
 		function OnClickedShrink()
@@ -340,40 +385,40 @@ function GetCameraQuaternion()
 			}
 
 		
-			function handleFileSelect($Event)
+			function OnFileSelect($Event)
 			{
 				var files = $Event.target.files; // FileList object
 				
 				var File = files[0];
 				if ( !File )
 					return;
-				
-				var reader = new FileReader();
-				reader.onload = SetTexture;
-				reader.readAsDataURL(File);
+
+				//	get image as datauri for texture
+				var DataUriReader = new FileReader();
+				DataUriReader.onload = SetTexture;
+				DataUriReader.readAsDataURL(File);
 			}
 		
 			function SetTextureFromData($Data)
 			{
 				var Material = mesh.material;
 				if ( !Material )
-					return;
+					return false;
 				
 				var image = document.createElement( 'img' );
 				image.src = $Data;
 				Material.map = new THREE.Texture( image );
 				Material.map.needsUpdate = true;
 				Material.needsUpdate = true;
+				return true;
 			}
 		
 			function SetTexture($Event)
 			{
 				var ImageData = $Event.target.result;
 				
-				SetTextureFromData( ImageData );
-				
-				//	image changed okay, enable upload
-				ShowElement("uploader_submit", true );
+				if ( SetTextureFromData( ImageData ) )
+					EnableUploadForm();
 			}
 		
 		
@@ -575,21 +620,24 @@ function GetNextResFilename(Filename)
 			ShowElement("SplitButton");
 		}
 		
+		function GetElement($Name)
+		{
+			return document.getElementById($Name);
+		}
+		
 		//	enable uploader for ipad
 		if ( IsFileUploadSupported() )
 		{
-			var Uploader = document.getElementById("image_selector");
-			var UploaderForm = document.getElementById("uploaderform");
-			if ( Uploader && UploaderForm )
+			var Uploader = GetElement("image_selector");
+			if ( Uploader )
 			{
-				ShowElement("uploader",true);
-				Uploader.addEventListener('change', handleFileSelect, false);
-				UploaderForm.action = GetUploadUrl();
+				ShowElement("ImageSelector",true);
+				Uploader.addEventListener('change', OnFileSelect, false);
 			}
 		}
 
 
-		var Container = document.getElementById("container");
+		var Container = GetElement("container");
 		if ( IsSupported() )
 		{
 			init( Container );
