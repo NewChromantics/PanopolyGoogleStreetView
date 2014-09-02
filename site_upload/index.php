@@ -1,1 +1,1 @@
-<a href=http://panopo.ly>No way, not today, disco lady.</a>
+<a href=http://panopo.ly>Back way, not today, disco lady.</a>
