@@ -18,7 +18,7 @@ do
 	cp -Rf $CLONE_DIR/site_upload/* $WWW_DIR
 
 	echo "renaming htaccess.txt to .htaccess"
-	mv $CLONE_DIR/htaccess.txt $CLONE_DIR/.htaccess
+	mv $WWW_DIR/htaccess.txt $WWW_DIR/.htaccess
     
     echo 'Changes pushed to Amazon EC2 PROD.'
   fi
