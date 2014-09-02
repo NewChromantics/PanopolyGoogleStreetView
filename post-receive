@@ -1,0 +1,26 @@
+#!/bin/bash
+
+CLONE_DIR=~/clone
+WWW_DIR=/var/www/html
+
+while read oldrev newrev ref
+do
+  branch=`echo $ref | cut -d/ -f3`
+  if [ "master" == "$branch" ]; then
+
+	echo "checking out to $CLONE_DIR..."
+    git --work-tree=$CLONE_DIR checkout -f $branch
+
+	echo "cleaning $WWW_DIR"
+	rm -rf $WWW_DIR/*
+
+	echo "copying to $WWW_DIR"
+	cp -Rf $CLONE_DIR/site_upload/* $WWW_DIR
+
+	echo "renaming htaccess.txt to .htaccess"
+	mv $CLONE_DIR/htaccess.txt $CLONE_DIR/.htaccess
+    
+    echo 'Changes pushed to Amazon EC2 PROD.'
+  fi
+
+done
