@@ -1,3 +1,9 @@
+function removeFromArray(array, item)
+{
+    while((index = array.indexOf(item)) > -1)
+        array.splice(index,1);
+}
+
 function ShowElement($ElementName,Visible)
 {
 	if ( Visible == undefined )

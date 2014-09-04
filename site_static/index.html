@@ -174,7 +174,7 @@ function DeleteControl()
 	Gyro = null;
 	if ( InputController && InputController.disconnect != undefined )
 		InputController.disconnect();
-	UpdateList.remove( InputController );
+	removeFromArray( UpdateList, InputController );
 	InputController = null;
 }
 		
