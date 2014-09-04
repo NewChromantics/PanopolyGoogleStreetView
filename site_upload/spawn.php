@@ -11,6 +11,10 @@
 	S3::setExceptions(true);
 	S3::setAuth( AWS_ACCESS, AWS_SECRET );
 
+	var_dump($argv);
+	$debug = $argv[0] . " + " . $argv[1];
+	OnError($debug);
+	
 	if ( !isset($argv) )
 		$argv = array();
 	
@@ -31,8 +35,9 @@
 	if ( $ImageData === false )
 		return OnError("Failed to read temp file $TempFilename");
 
-	//	delete temp file
-	//unlink( $TempFilename );
+	//	delete temp file if called properly
+	if ( !array_key_exists('arg',$_GET) )
+		unlink( $TempFilename );
 
 	class TImage
 	{
