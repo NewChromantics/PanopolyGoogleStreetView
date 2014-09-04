@@ -11,7 +11,8 @@
 		$size = $File['size'];
 		$tmpfilename = $File['tmp_name'];
 		$error = $File['error'];
-		$imagetype = exif_imagetype($tmpfilename);
+		if ( file_exists($tmpfilename) )
+			$imagetype = exif_imagetype($tmpfilename);
 
 		var_dump($desiredname);
 		var_dump($size);
