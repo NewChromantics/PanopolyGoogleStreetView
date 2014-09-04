@@ -25,20 +25,17 @@ function HasWebGl()
 	var gl = null;
 	var experimental = false;
 	try			{	gl = canvas.getContext("webgl");	}
-	catch ( e )	{	gl = null;	}
+	catch (e)	{	gl = null;	}
+	if ( gl )
+		return true;
 	
-	//	do we have experimental?
-	/*
-	 if ( !gl )
-	 {
-	 try { gl = canvas.getContext("experimental-webgl"); experimental = true; }
-	 catch (x) { gl = null; }
-	 }
-	 */
-	
-	if (!gl)
-		return false;
-	return true;
+	//	do we have experimental? (safari 7 osx enabled from developer menu)
+	try			{	gl = canvas.getContext("experimental-webgl"); experimental = true;	}
+	catch (e)	{	gl = null;	}
+	if (gl)
+		return true;
+
+	return false;
 }
 
 function IsMobile()
@@ -65,7 +62,6 @@ function GetDefaultPanoFilename()
 
 function IsShrinkSupported()
 {
-	return true;
 	if ( IsDevice('iPad') )
 		return true;
 	return false;
