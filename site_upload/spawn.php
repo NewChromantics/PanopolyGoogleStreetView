@@ -11,10 +11,6 @@
 	S3::setExceptions(true);
 	S3::setAuth( AWS_ACCESS, AWS_SECRET );
 
-	var_dump($argv);
-	$debug = $argv[0] . " + " . $argv[1];
-	OnError($debug);
-	
 	if ( !isset($argv) )
 		$argv = array();
 	
