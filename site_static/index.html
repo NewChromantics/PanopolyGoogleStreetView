@@ -100,14 +100,14 @@
 		
 		</div>
 
-		<script src="js/three.min.js"></script>
+		<script src="three.js/three.min.js"></script>
 
-		<script src="js/effects/StereoEffect.js"></script>
+		<script src="three.js/effects/StereoEffect.js"></script>
 		
-		<script src="js/DeviceOrientationControls.js"></script>
-		<script src="js/MouseControls.js"></script>
-		<script src="js/GoogleAnalytics.js"></script>
-		<script src="js/ClearDefaultText.js"></script>
+		<script src="three.js/DeviceOrientationControls.js"></script>
+		<script src="three.js/MouseControls.js"></script>
+		<script src="three.js/GoogleAnalytics.js"></script>
+		<script src="three.js/ClearDefaultText.js"></script>
 	
 		<div id="container"></div>
 
@@ -468,9 +468,13 @@ function GetNextResFilename(Filename)
 	if ( NewFilename )
 		return NewFilename;
 	
+	var NewFilename = ReplaceFilename( Filename, 1024, 2048 );
+	if ( NewFilename )
+		return NewFilename;
+	
 	if ( IsMobile() )
 		return null;
-	NewFilename = ReplaceFilename( Filename, 1024, 4096 );
+	NewFilename = ReplaceFilename( Filename, 2048, 4096 );
 	if ( NewFilename )
 		return NewFilename;
 	return null;
