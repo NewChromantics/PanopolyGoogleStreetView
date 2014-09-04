@@ -42,7 +42,7 @@
 		echo "move( $tmpfilename, $SpawnTempFilename )";
 
 		//	spawn
-		$blocking = true;
+		$blocking = false;
 		if ( !ExecPhp("spawn.php", $Panoname, "spawn.log", $blocking ) )
 			return OnError("Failed to spawn");
 		
@@ -52,7 +52,6 @@
 	//	check for upload
 	if ( !array_key_exists(UPLOADFILE_VAR, $_FILES) )
 	{
-		//echo "upload_max_file_size: [" + ini_get('upload_max_filesize') + "]";
 		var_dump($_FILES);
 		OnError("No file provided");
 		return;
