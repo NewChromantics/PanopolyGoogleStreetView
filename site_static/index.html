@@ -136,7 +136,8 @@ var UpdateList = [];	//	anything here gets .update() called
 				OnUploadError($Event);
 				return;
 			}
-			GetElement("status").innerHTML = "Your new url is " + $Json.panoname;
+			var $Url = window.location + "#" + $Json.panoname;
+			GetElement("status").innerHTML = 'Your new url is <a href="' + $Url + '">' + $Url + '</a>';
 		}
 
 		function OnClickedShrink()
