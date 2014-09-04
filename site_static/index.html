@@ -384,16 +384,6 @@ function LoadPano()
 			 */
 		}
 		
-		if ( IsShrinkSupported() )
-		{
-			ShowElement("ShrinkButton");
-		}
-		
-		if ( IsSplitSupported() )
-		{
-			ShowElement("SplitButton");
-		}
-		
 		
 		//	enable uploader for ipad
 		if ( IsFileUploadSupported() )
@@ -410,6 +400,16 @@ function LoadPano()
 		var Container = GetElement("container");
 		if ( IsSupported() )
 		{
+			if ( IsShrinkSupported() )
+			{
+				ShowElement("ShrinkButton");
+			}
+			
+			if ( IsSplitSupported() )
+			{
+				ShowElement("SplitButton");
+			}
+			
 			init( Container );
 			
 			if ( !CreateGyroControl() )
@@ -423,7 +423,8 @@ function LoadPano()
 		{
 			var Container = document.getElementById("container");
 			Container.style.padding = "20%";
-			Container.innerText = "Not currently supported with webgl. Get the AppStore app.";
+			Container.innerText = "Not currently supported without webgl.";
+			
 		}
 
 
