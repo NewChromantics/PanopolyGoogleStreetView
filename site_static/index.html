@@ -50,23 +50,19 @@
 		<div id="container"></div>
 
 
-		<script>
-			
-			
-			var container;
-			
-			var camera, scene, renderer, effect;
-			
-			var mesh, lightMesh, geometry;
-			var spheres = [];
-			
-			var directionalLight, pointLight;
-			
-			
-			
-			var UpdateList = [];	//	anything here gets .update() called
-			var Gyro = null;
-			var InputController = null;
+<script>
+
+
+//	scene
+var camera, scene, renderer, effect;
+var mesh, lightMesh, geometry;
+var spheres = [];
+var directionalLight, pointLight;
+
+
+var Gyro = null;
+var InputController = null;
+var UpdateList = [];	//	anything here gets .update() called
 
 		function EnableUploadForm()
 		{
@@ -96,22 +92,53 @@
 			//ajax.setRequestHeader('Content-Type', 'multipart/form-data;');
 			ajax.send(formdata);
 		}
-		function OnUploadProgress(event){
+
+		function OnUploadProgress(event)
+		{
 			GetElement("loaded_n_total").innerHTML = "Uploaded "+event.loaded+" bytes of "+event.total;
 			var percent = (event.loaded / event.total) * 100;
 			GetElement("progressBar").value = Math.round(percent);
 			GetElement("status").innerHTML = Math.round(percent)+"% uploaded... please wait";
 		}
-		function OnUploadComplete(event){
-			GetElement("status").innerHTML = event.target.responseText;
+
+		function OnUploadError($Event)
+		{
+			var $Error = "Unknown error";
+			if ( $Event.error != undefined )
+				$Error = $Event.error;
+			GetElement("status").innerHTML = "Upload Failed: " + $Error;
 		}
-		function OnUploadError(event){
-			GetElement("status").innerHTML = "Upload Failed";
-		}
-		function OnUploadAbort(event){
-			GetElement("status").innerHTML = "Upload Aborted";
+
+		function OnUploadAbort(event)
+		{
+			var $Event = {};
+			$Event.error = "Upload Aborted";
+			OnUploadError($Event);
 		}
 		
+		function OnUploadComplete($Event)
+		{
+			//	decode response
+			var $Json = {};
+			try
+			{
+				$Json = JSON.parse(event.target.responseText);
+			}
+			catch ( e )
+			{
+				$Json.error = "Error parsing response from server " + e.message;
+			}
+			
+			if ( $Json.error )
+			{
+				var $Event = {};
+				$Event.error = $Json.error;
+				OnUploadError($Event);
+				return;
+			}
+			GetElement("status").innerHTML = "Your new url is " + $Json.panoname;
+		}
+
 		function OnClickedShrink()
 		{
 			var Container = document.getElementById("container");
@@ -272,7 +299,7 @@ function LoadPano()
 	var Url = "http://image.panopo.ly/" + PanoName + ".0.jpg";
 	//	do initial load
 	Material.map.sourceFile = Url;
-	console.log("loading" + PanoName);
+	console.log("loading " + PanoName);
 	
 	//	replace
 	return LoadHigher( Material );
@@ -281,7 +308,7 @@ function LoadPano()
 	
 	
 
-			function init(container) {
+			function init($Container) {
 		
 				var fov = 75;
 				camera = new THREE.PerspectiveCamera( fov, 1, 1, 1000 );
@@ -320,7 +347,7 @@ function LoadPano()
 				else
 					renderer = new THREE.CanvasRenderer();
 				renderer.setClearColor( 0xFF0000, 1);
-				container.appendChild( renderer.domElement );
+				$Container.appendChild( renderer.domElement );
 
 				onContainerResize();
 				window.addEventListener( 'resize', onContainerResize, false );
