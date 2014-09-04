@@ -141,18 +141,48 @@
 			
 		}
 		
+function DeleteControl()
+{
+	Gyro = null;
+	if ( InputController && InputController.disconnect != undefined )
+		InputController.disconnect();
+	UpdateList.remove( InputController );
+	InputController = null;
+}
+		
+function OnCreatedRiftControl()
+{
+	//	destroy other controls and use this
+	DeleteControl();
+}
+
+function OnCreatedGyroControl()
+{
+	//	destroy other controls and use this
+	DeleteControl();
+	
+	Gyro = new THREE.Object3D();
+	InputController = new THREE.DeviceOrientationControls( Gyro );
+	InputController.connect();
+	UpdateList.push( InputController );
+}
+		
 function CreateGyroControl()
 {
 	if ( !IsGyroSupported() )
 		return false;
 
-	Gyro = new THREE.Object3D();
-	InputController = new THREE.DeviceOrientationControls( Gyro );
-	InputController.connect();
-	UpdateList.push( InputController );
+	//	todo: wait for first gyro message (some devices report support, but don't work)
+	OnCreatedGyroControl();
 	return true;
 }
-	
+
+function CreateRiftControl()
+{
+	//	create websocket connection to common rift quaternion ports
+	return false;
+}
+
 function CreateMouseControl($Container)
 {
 	//	"has mouse" ?
@@ -162,41 +192,13 @@ function CreateMouseControl($Container)
 	UpdateList.push( InputController );
 	return true;
 }
-		
-function CreateDemoControl()
-{
-	return false;
-}
-
-
-
+	
 function GetCameraQuaternion()
 {
 	//	using gyro
 	if ( Gyro )
 		return Gyro.quaternion;
-/*
-	
-	lat = Math.max( - 85, Math.min( 85, lat ) );
-	phi = THREE.Math.degToRad( 90 - lat );
-	theta = THREE.Math.degToRad( lon );
-	
-	 camera.target.x = 500 * Math.sin( phi ) * Math.cos( theta );
-	 camera.target.y = 500 * Math.cos( phi );
-	 camera.target.z = 500 * Math.sin( phi ) * Math.sin( theta );
-	 */
 
-/*
-	var Origin = new THREE.Vector3(0,0,0);
-	var Forward = new THREE.Vector3( 0, 0, 1 );
-	var Up = new THREE.Vector3
-	var Mat = new THREE.Matrix4();
-	Mat.lookAt( Origin, Forward, Up );
-	var Quat = new THREE.Quaternion();
-	Quat.setFromRotationMatrix( Mat );
-	//console.log(Quat);
-	return Quat;
- */
 	return camera.quaternion;
 }
 
@@ -412,9 +414,9 @@ function LoadPano()
 			
 			init( Container );
 			
-			if ( !CreateGyroControl() )
-				if ( !CreateMouseControl(Container) )
-					CreateDemoControl();
+			CreateMouseControl(Container);
+			CreateGyroControl(Container);
+			CreateRiftControl(Container);
 
 			//	load user's required pano
 			LoadPano();
