@@ -7,10 +7,13 @@
 	
 	function OnFile($File)
 	{
+		var_dump($File);
+		
 		$desiredname = array_key_exists('customname',$_POST) ? $_POST['customname'] : false;
 		$size = $File['size'];
 		$tmpfilename = $File['tmp_name'];
 		$error = $File['error'];
+		$imagetype = "missing tmpfilename";
 		if ( file_exists($tmpfilename) )
 			$imagetype = exif_imagetype($tmpfilename);
 
