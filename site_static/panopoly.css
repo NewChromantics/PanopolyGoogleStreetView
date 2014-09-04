@@ -1,0 +1,69 @@
+body
+{
+	background:#3CF;
+	padding:0;
+	margin:0;
+	font-weight: bold;
+	overflow:hidden;
+	font-family:Monospace;
+	font-size:13px;
+	color:#036;
+	height:100%;
+}
+
+#info 
+{
+	position: absolute;
+	top: 0px; width: 100%;
+	color: #fff;
+	padding: 5px;
+	font-family:Monospace;
+	font-size:13px;
+	text-align:center;
+	z-index:1000;
+}
+
+a 
+{
+	color: #ffffff;
+}
+
+#container
+{
+	text-align: center;
+	position: absolute;
+	cursor: pointer;
+
+	top: 0px;
+	left:0px;
+	bottom:0px;
+	right:0px;
+}
+
+#container.ipad_smallviewport
+{
+	top: auto;
+	height: 55%;
+	bottom:0px;
+	left:10%;
+	right:10%;
+}
+
+.FileInput, .Button
+{
+	background: rgba( 255,255,255,0.4 );
+	float:left;
+	xxmargin-left:auto;
+	margin-left:10px;
+	margin-right:auto;
+	margin-bottom: 10px;
+	xxwidth:30%;
+	display: none;	/*	all off by default*/
+	border: dashed 3px #fff;
+	padding:10px;
+}
+
+#oldie a
+{
+	color:#da0 
+}

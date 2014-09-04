@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>panopo.ly</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<link rel="Stylesheet" href="panopoly.css" type="text/css">
+</head>
+
+<body>
+<div id="info">
+	panopo.ly
+</div>
+
+<div id="TestContainer"></div>
+
+<script src="threejs/three.min.js"></script>
+<script src="threejs/effects/StereoEffect.js"></script>
+<script src="js/DeviceOrientationControls.js"></script>
+<script src="js/MouseControls.js"></script>
+<script src="js/GoogleAnalytics.js"></script>
+<script src="js/ClearDefaultText.js"></script>
+<script src="js/soy.js"></script>
+<script src="js/panopoly.js"></script>
+
+
+
+
+<script>
+	
+function RenderTest($Name,$Result)
+{
+	var Container = GetElement("TestContainer");
+	if ( !Container )
+		return;
+	
+	var Div = document.createElement('div');
+	Div.innerText = $Name + " = " + $Result;
+	Container.appendChild( Div );
+}
+
+RenderTest(	'IsSupported',	IsSupported() );
+RenderTest(	'AllowWebGl',	AllowWebGl() );
+RenderTest(	'HasWebGl',		HasWebGl() );
+RenderTest(	'GetUploadUrl',	GetUploadUrl() );
+RenderTest(	'IsMobile',		IsMobile() );
+RenderTest(	'GetDefaultPanoFilename',	GetDefaultPanoFilename() );
+RenderTest(	'IsShrinkSupported',	IsShrinkSupported() );
+RenderTest(	'IsSplitSupported',	IsSplitSupported() );
+RenderTest(	'IsFileUploadSupported',	IsFileUploadSupported() );
+RenderTest(	'IsGyroSupported',	IsGyroSupported() );
+
+</script>
+
+
+
+</body>
+</html>
