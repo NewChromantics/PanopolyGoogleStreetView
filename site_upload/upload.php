@@ -2,32 +2,8 @@
 	require('panopoly.php');
 	require('s3.php');
 
-	define('UPLOAD_NAME','image');
-	
-	//	release mode catches exceptions
-	S3::setExceptions(true);
-	S3::setAuth( AWS_ACCESS, AWS_SECRET );
-	
-	function OnError($Error)
-	{
-		echo "<h1>Error</h1>";
-		echo "<p>$Error</p>";
-	}
-
-	//	returns TRUE or error string
-	function UploadFile($localfilename,$remotefilename,$ContentType)
-	{
-		try
-		{
-			echo "<p>putting $localfilename (" . filesize($localfilename) . ") into $remotefilename</p>";
-			S3::putObject( S3::inputFile($localfilename, false), BUCKET_IMAGE, $remotefilename, S3::ACL_PUBLIC_READ, array(), array('Content-Type' => $ContentType ));
-		}
-		catch ( Exception $e )
-		{
-			return "Error uploading $remotefilename: " . $e->getMessage();
-		}
-		return true;
-	}
+	define('UPLOADFILE_VAR','image');
+	define('CUSTONNAME_VAR','customname');
 	
 	function OnFile($File)
 	{
@@ -37,76 +13,53 @@
 		$error = $File['error'];
 		$imagetype = exif_imagetype($tmpfilename);
 
+		var_dump($desiredname);
 		var_dump($size);
 		var_dump($tmpfilename);
 		var_dump($error);
 		var_dump($imagetype);
 
 		//	clean filename to stop naughty hacking. if not good enough force hash
-		$Panoname = SanitiseImageName($desiredname);
+		$Panoname = SanitisePanoName($desiredname);
 		if ( $Panoname === false )
 		{
-			$Panoname = GetHashFile($tmpfilename);
+			$Panoname = SanitisePanoName( GetHashFile($tmpfilename) );
 		}
 		if ( $Panoname === false )
-		{
-			OnError("error determining filename $desiredname");
-			return false;
-		}
+			return OnError("error determining pano name $desiredname");
 		
 		if ( $error != 0 )
-		{
-			OnError("upload error $error");
-			return false;
-		}
+			return OnError("upload error $error");
 		
-		$ContentType = "";
+		$SpawnTempFilename = GetPanoTempFilename($Panoname);
+		if ( !move_uploaded_file( $tmpfilename, $SpawnTempFilename ) )
+			return OnError("Error with uploaded temp file ($tmpfilename,$SpawnTempFilename)");
 		
-		//	add extension
-		if ( $imagetype == IMAGETYPE_JPEG )
-		{
-			$Filename = "$Panoname.256.jpg";
-			$ContentType = "image/jpeg";
-		}
-		else if ( $imagetype == IMAGETYPE_PNG )
-		{
-			//	gr: atm, client only reads ".jpg" so we're gonna fake it and hope it works...
-			$Filename = "$Panoname.256.jpg";
-			$ContentType = "image/png";
-		}
-		else
-		{
-			OnError("unsupported image type $imagetype");
-			return false;
-		}
+		echo "move( $tmpfilename, $SpawnTempFilename )";
+
+		//	spawn
+		if ( !ExecPhpBackground("spawn.php", $Panoname, "spawn.log" ) )
+			return OnError("Failed to spawn");
 		
-		//	send response before upload
-		//	todo: spawn process for s3 upload
-		echo "<p>uploading [$Panoname] to s3...</p>";
-		ob_flush();
-		flush();
-		
-		//	upload file (todo; spawn resizing processes etc)
-		$result = UploadFile( $tmpfilename, $Filename, $ContentType );
-		if ( $result !== true )
-		{
-			OnError("upload erorr: " . $result );
-			return false;
-		}
-		
-		echo "<h1>Success</h1>";
-		echo "<p>$Panoname</p>";
-		return true;
+		return $Panoname;
 	}
 
 	//	check for upload
-	if ( !array_key_exists(UPLOAD_NAME, $_FILES) )
+	if ( !array_key_exists(UPLOADFILE_VAR, $_FILES) )
 	{
-		echo "upload_max_file_size: [" + ini_get('upload_max_filesize') + "]";
+		//echo "upload_max_file_size: [" + ini_get('upload_max_filesize') + "]";
 		var_dump($_FILES);
 		OnError("No file provided");
 		return;
 	}
-	OnFile( $_FILES[UPLOAD_NAME] );
+	
+	$Panoname = OnFile( $_FILES[UPLOADFILE_VAR] );
+	if ( !$Panoname )
+		return OnError("Error uploading pano file");
+	
+	$output = array();
+	$output['panoname'] = $Panoname;
+	$output['debug'] = ob_get_contents();
+	ob_clean();
+	echo json_encode( $output );
 ?>
-<p>finished</p>
