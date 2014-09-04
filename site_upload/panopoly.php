@@ -99,13 +99,16 @@
 		return sys_get_temp_dir() . "/$Panoname.orig.jpg";
 	}
 	
-	function ExecPhpBackground($Script,$Params,$LogFile)
+	function ExecPhp($Script,$Params,$LogFile,$Blocking)
 	{
 		//	todo: check $Script exists
 		if ( $LogFile === false )
 			$LogFile = "/dev/null";
-		$Command = "php $Script " . escapeshellarg($Params) . " >> $LogFile 2>&1 &";
-		exec($Command);
+		$StdErrtoStdOut = "2>&1";
+		$Blocking = $Blocking ? "" : "&";
+		$Command = "php $Script " . escapeshellarg($Params) . " >> $LogFile $StdErrtoStdOut $Blocking";
+		$result = exec($Command);
+		echo $result;
 		return true;
 	}
 

@@ -42,7 +42,8 @@
 		echo "move( $tmpfilename, $SpawnTempFilename )";
 
 		//	spawn
-		if ( !ExecPhpBackground("spawn.php", $Panoname, "spawn.log" ) )
+		$blocking = true;
+		if ( !ExecPhp("spawn.php", $Panoname, "spawn.log", $blocking ) )
 			return OnError("Failed to spawn");
 		
 		return $Panoname;
