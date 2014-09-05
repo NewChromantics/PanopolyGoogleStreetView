@@ -138,7 +138,7 @@
 		$Param_Scale = "-vf scale=$Width:$Height";
 		$Param_Input = "-i {$Image->mFilename}";
 		$Param_Output = "$ResizedTempFilename";
-		$ExecCmd = FFMPEG_BIN . " $Param_Quiet $Param_Overwrite $Param_Quality $Param_Input $Param_Scale $Param_Output $Param_CatchStdErr";
+		$ExecCmd = FFMPEG_BIN . " $Param_Quiet $Param_Overwrite $Param_Input $Param_Scale $Param_Quality $Param_Output $Param_CatchStdErr";
 		exec( $ExecCmd, $ExecOut, $ExitCode );
 		$ExecOut = join('\n', $ExecOut );
 		if ( $ExitCode != 0 )
