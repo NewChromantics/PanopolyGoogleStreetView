@@ -5,22 +5,25 @@ WWW_DIR=/var/www/html
 
 while read oldrev newrev ref
 do
-  branch=`echo $ref | cut -d/ -f3`
-  if [ "master" == "$branch" ]; then
+	branch=`echo $ref | cut -d/ -f3`
+	if [ "master" == "$branch" ]; then
 
-	echo "checking out to $CLONE_DIR..."
-    git --work-tree=$CLONE_DIR checkout -f $branch
+		echo "checking out to $CLONE_DIR..."
+		git --work-tree=$CLONE_DIR checkout -f $branch
 
-	echo "cleaning $WWW_DIR"
-	rm -rf $WWW_DIR/*
+		echo "cleaning $WWW_DIR"
+		rm -rf $WWW_DIR/*
 
-	echo "copying to $WWW_DIR"
-	cp -Rf $CLONE_DIR/site_upload/* $WWW_DIR
+		echo "copying to $WWW_DIR"
+		cp -Rf $CLONE_DIR/site_upload/* $WWW_DIR
 
-	echo "renaming htaccess.txt to .htaccess"
-	mv $WWW_DIR/htaccess.txt $WWW_DIR/.htaccess
-    
-    echo 'Changes pushed to Amazon EC2 PROD.'
-  fi
+		echo "renaming htaccess.txt to .htaccess"
+		mv $WWW_DIR/htaccess.txt $WWW_DIR/.htaccess
+
+		echo "giving write permissions to .log files"
+		chmod o+w $WWW_DIR/*.log
+
+		echo 'Changes pushed to Amazon EC2 PROD.'
+	fi
 
 done
