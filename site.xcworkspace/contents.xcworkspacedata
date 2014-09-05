@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Workspace
+   version = "1.0">
+   <FileRef
+      location = "container:site_static/js/ClearDefaultText.js">
+   </FileRef>
+   <FileRef
+      location = "container:site_static/js/DeviceOrientationControls.js">
+   </FileRef>
+   <FileRef
+      location = "container:site_static/js/GoogleAnalytics.js">
+   </FileRef>
+   <FileRef
+      location = "container:site_static/js/MouseControls.js">
+   </FileRef>
+   <FileRef
+      location = "container:site_static/js/panopoly.js">
+   </FileRef>
+   <FileRef
+      location = "container:site_static/js/soy.js">
+   </FileRef>
+   <FileRef
+      location = "container:site_static/js/SoyFullscreen.js">
+   </FileRef>
+   <FileRef
+      location = "container:site_static/js/SoyRiftWebsocket.js">
+   </FileRef>
+  <FileRef
+      location = "container:site_static/js/SoyRiftAjax.js">
+   </FileRef>
+   <FileRef
+      location = "container:site_static/js/SoyShrink.js">
+   </FileRef>
+   <FileRef
+      location = "container:site_static/js/SoySplit.js">
+   </FileRef>
+   <FileRef
+      location = "container:site_static/js/SoySupport.js">
+   </FileRef>
+   <FileRef
+      location = "container:site_static/js/SoyWebsocket-1.0.js">
+   </FileRef>
+   <FileRef
+      location = "container:site_static/js/support.js">
+   </FileRef>
+   <FileRef
+      location = "group:../../../../Volumes/SHARED/NewChromantics/panopo.ly/site_static/index.html">
+   </FileRef>
+</Workspace>
