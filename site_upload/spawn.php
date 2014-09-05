@@ -84,10 +84,10 @@
 	UploadMeta();
 
 	//	resize and upload different sizes (height will dictate filename)
-	UploadResize( 256, 256 );
-	UploadResize( 2048, 1024 );
-	UploadResize( 4096, 2048 );
-	UploadResize( 8192, 4096 );
+	if ( UploadResize( 256, 256 ) )		echo "created 256\n";
+	if ( UploadResize( 2048, 1024 ) )	echo "created 1024\n";
+	if ( UploadResize( 4096, 2048 ) )	echo "created 2048\n";
+	if ( UploadResize( 8192, 4096 ) )	echo "created 4096\n";
 	
 	//	upload orig
 	UploadOrig();
