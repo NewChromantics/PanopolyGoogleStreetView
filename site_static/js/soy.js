@@ -24,11 +24,7 @@ function IsDevice(Name)
 	return ( navigator.userAgent.indexOf(Name) != -1 );
 }
 
-function IsFileUploadSupported()
+function IsWebsocketSupported()
 {
-	//	does browser support input?
-	if ( !window.File || !window.FileReader )
-		return false;
-	
 	return true;
 }

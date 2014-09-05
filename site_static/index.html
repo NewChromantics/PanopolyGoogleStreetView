@@ -27,13 +27,21 @@
 				<p id="loaded_n_total"></p>
 			</div>
 			
-			<div id="ShrinkButton" class="Button" onClick="OnClickedShrink()">
+			<div id="ShrinkButton" class="Button" onClick="SupportToggleEnable('Shrink')">
 				Shrink
 			</div>
-			<div id="SplitButton" class="Button" onClick="OnClickedSplit()">
+			<div id="SplitButton" class="Button" onClick="SupportToggleEnable('Split')">
 				Stereo View
 			</div>
-		
+			
+			<div id="RiftButton" class="Button" onClick="SupportToggleEnable('Rift')">
+				Rift
+			</div>
+			
+			<div id="FullscreenButton" class="Button" onClick="SupportToggleEnable('Fullscreen')">
+				Fullscreen
+			</div>
+			
 		</div>
 
 		<script src="threejs/three.min.js"></script>
@@ -44,13 +52,47 @@
 		<script src="js/MouseControls.js"></script>
 		<script src="js/GoogleAnalytics.js"></script>
 		<script src="js/ClearDefaultText.js"></script>
+		<script src="js/SoyWebSocket-1.0.js"></script>
 		<script src="js/soy.js"></script>
 		<script src="js/panopoly.js"></script>
+		<script src="js/SoySupport.js"></script>
+		<script src="js/SoyRiftWebsocket.js"></script>
+		<script src="js/SoySplit.js"></script>
+		<script src="js/SoyShrink.js"></script>
+		<script src="js/SoyFullscreen.js"></script>
+		<script src="js/support.js"></script>
 	
 		<div id="container"></div>
 
 
 <script>
+
+function OnRiftWebsocketSupportChanged($Supported)
+{
+	ShowElement('RiftButton', $Supported);
+}
+
+function OnSplitSupportChanged($Supported)
+{
+	ShowElement('SplitButton', $Supported);
+}
+
+function OnShrinkSupportChanged($Supported)
+{
+	ShowElement('ShrinkButton', $Supported);
+}
+
+function OnFullscreenSupportChanged($Supported)
+{
+	ShowElement('FullscreenButton', $Supported);
+}
+
+
+//	support callbacks
+AddOnSupportedChangedListener('RiftWebsocket', OnRiftWebsocketSupportChanged );
+AddOnSupportedChangedListener('Split', OnSplitSupportChanged );
+AddOnSupportedChangedListener('Shrink', OnShrinkSupportChanged );
+AddOnSupportedChangedListener('Fullscreen', OnFullscreenSupportChanged );
 
 
 //	scene
@@ -64,10 +106,10 @@ var Gyro = null;
 var InputController = null;
 var UpdateList = [];	//	anything here gets .update() called
 
-		function EnableUploadForm()
+		function OnFileUploadSupported($Enable)
 		{
 			//	image binary loaded okay, enable upload
-			ShowElement("ImageUploader", true );
+			ShowElement("ImageUploader", $Enable );
 		}
 		
 		function UploadImage()
@@ -142,33 +184,44 @@ var UpdateList = [];	//	anything here gets .update() called
 
 		function OnClickedShrink()
 		{
-			var Container = document.getElementById("container");
-			if ( !Container )
-				return;
-			if ( Container.className == "ipad_smallviewport" )
-				Container.className = "";
-			else
-				Container.className = "ipad_smallviewport";
-			onContainerResize();
+			EnableShrink( !IsShrinkEnabled() );
 		}
-		
+
 		function OnClickedSplit()
 		{
-			//	toggle stereo effect
-			if ( effect )
-			{
-				effect = null;
-				onContainerResize();
-			}
-			else
-			{
-				effect = new THREE.StereoEffect( renderer );
-				effect.separation = 1;
-				onContainerResize();
-			}
-			
+			EnableSplit( !IsSplitMode() );
 		}
+
+function OnClickedRiftMode()
+{
+	if ( !IsRiftModeSupported() )
+		return false;
 		
+	var OldFullscreen = IsFullscreen();
+	var OldSplitMode = IsSplitMode();
+	
+	//	go full screen
+	if ( !SetFullscreen(true) )
+		return false;
+	
+	//	enable split mode
+	if ( !SetSplitMode(true) )
+	{
+		SetFullscreen(OldFullscreen);
+		return false;
+	}
+	
+	//	use rift control
+	if ( !CreateRiftControl() )
+	{
+		SetFullscreen(OldFullscreen);
+		SetSplitMode(OldSplitMode);
+		return false;
+	}
+	
+	return true;
+}
+
 function DeleteControl()
 {
 	Gyro = null;
@@ -282,7 +335,7 @@ function GetCameraQuaternion()
 				var ImageData = $Event.target.result;
 				
 				if ( SetTextureFromData( ImageData ) )
-					EnableUploadForm();
+					OnFileUploadSupported(true);
 			}
 		
 		
@@ -415,30 +468,11 @@ function LoadPano()
 		}
 		
 		
-		//	enable uploader for ipad
-		if ( IsFileUploadSupported() )
-		{
-			var Uploader = GetElement("image_selector");
-			if ( Uploader )
-			{
-				ShowElement("ImageSelector",true);
-				Uploader.addEventListener('change', OnFileSelect, false);
-			}
-		}
-
+		InitSupport();
 
 		var Container = GetElement("container");
 		if ( IsSupported() )
 		{
-			if ( IsShrinkSupported() )
-			{
-				ShowElement("ShrinkButton");
-			}
-			
-			if ( IsSplitSupported() )
-			{
-				ShowElement("SplitButton");
-			}
 			
 			init( Container );
 			
