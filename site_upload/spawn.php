@@ -84,7 +84,8 @@
 	if ( UploadResize( 256, 256 ) )		echo "created 256\n";
 	if ( UploadResize( 2048, 1024 ) )	echo "created 1024\n";
 	if ( UploadResize( 4096, 2048 ) )	echo "created 2048\n";
-	if ( UploadResize( 8192, 4096 ) )	echo "created 4096\n";
+	//	gr: jpeg has a limit of 4096x4096!
+	if ( UploadResize( 4096, 4096 ) )	echo "created 4096\n";
 	
 	//	upload orig
 	UploadOrig();
