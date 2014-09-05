@@ -4,6 +4,7 @@
 	define('AWS_ACCESS','AKIAJK2WSC6CZI3Y7YUQ');
 	define('AWS_SECRET','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');
 	define('DEBUG_VAR', 'debug' );
+	define('FFMPEG_BIN', './ffmpeg' );
 	
 	function Init()
 	{
@@ -29,6 +30,9 @@
 
 	function ErrorHandler($errno, $errstr, $errfile, $errline)
 	{
+		//	ignore @ errors
+		if ( error_reporting() == 0 )
+			return;
 		$Error = "$errfile($errline): $errstr";
 		OnError($Error);
 	}
@@ -69,9 +73,14 @@
 	//	returns TRUE or error string
 	function UploadFile($localfilename,$remotefilename,$ContentType)
 	{
+		if ( !file_exists($localfilename) )
+		{
+			echo "Missing localfile: $localfilename";
+			return false;
+		}
 		try
 		{
-			echo "<p>putting $localfilename (" . filesize($localfilename) . ") into $remotefilename</p>";
+			//echo "putting $localfilename (" . filesize($localfilename) . ") into $remotefilename...";
 			S3::putObject( S3::inputFile($localfilename, false), BUCKET_IMAGE, $remotefilename, S3::ACL_PUBLIC_READ, array(), array('Content-Type' => $ContentType ));
 		}
 		catch ( Exception $e )
@@ -95,9 +104,9 @@
 		return true;
 	}
 	
-	function GetPanoTempFilename($Panoname)
+	function GetPanoTempFilename($Panoname,$Suffix='temp')
 	{
-		return sys_get_temp_dir() . "/$Panoname.orig.jpg";
+		return sys_get_temp_dir() . "/$Panoname.$Suffix.jpg";
 	}
 	
 	function ExecPhp($Script,$Params,$LogFile,$Blocking)
