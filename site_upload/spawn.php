@@ -20,42 +20,51 @@
 	if ( !array_key_exists(1,$argv) )
 		return OnError("Missing argv[1]");
 
+	if ( !file_exists(FFMPEG_BIN) )
+		return OnError("Missing ffmpeg " . FFMPEG_BIN );
+	
 	//	get temp file
 	$Panoname = $argv[1];
 	$TempFilename = GetPanoTempFilename($Panoname);
 	if ( !file_exists($TempFilename) )
 		return OnError("Missing temp file $TempFilename");
 
-	//	read temp file into binary string
-	$ImageData = file_get_contents($TempFilename);
-	if ( $ImageData === false )
-		return OnError("Failed to read temp file $TempFilename");
-
-	//	delete temp file if called properly
+	function DeleteTempFile($TempFilename)
+	{
+		@unlink($TempFilename);
+	}
+	
+	//	delete temp file on exit if not executed via GET test
 	if ( !array_key_exists('arg',$_GET) )
-		unlink( $TempFilename );
+	{
+		register_shutdown_function('DeleteTempFile',$TempFilename);
+	}
 
+	
 	class TImage
 	{
-		public $mData;
-		public $mResource = false;
+		public $mFilename;
 		public $mInfo;
 		
-		public function __construct($Data)
+		public function __construct($Filename)
 		{
-			$this->mData = $Data;
-			$this->mInfo = getimagesizefromstring( $this->mData );
-			$this->mResource = imagecreatefromstring( $this->mData );
+			$this->mFilename = $Filename;
+			$this->mInfo = getimagesize( $this->mFilename );
+		}
+		
+		public function IsValid()
+		{
+			return $this->mInfo !== false;
 		}
 		
 		public function GetWidth()
 		{
-			return imagesx($this->mResource);
+			return $this->mInfo[0];
 		}
 		
 		public function GetHeight()
 		{
-			return imagesy($this->mResource);
+			return $this->mInfo[1];
 		}
 		
 		public function GetContentType()
@@ -63,22 +72,10 @@
 			return image_type_to_mime_type( $this->mInfo[2] );
 		}
 		
-		public function GetResizedJpeg($Width,$Height)
-		{
-			$imageresized = imagecreatetruecolor( $Width, $Height );
-			if ( !imagecopyresampled( $imageresized, $this->mResource, 0,0,0,0, $Width, $Height, $this->GetWidth(), $this->GetHeight() ) )
-				return false;
-
-			//	imagejpeg ouputs to browser, capture it
-			ob_start();
-			$result = imagejpeg( $imageresized );
-			$imagejpeg = ob_get_clean();
-			if ( !$result )
-				return false;
-			return $imagejpeg;
-		}
 	};
-	$Image = new TImage($ImageData);
+	$Image = new TImage($TempFilename);
+	if ( !$Image->IsValid() )
+		return OnError("failed to read image information from $TempFilename");
 	
 	//	upload meta
 	UploadMeta();
@@ -125,19 +122,35 @@
 		if ( $w <= $Height )
 			$Width = $Height;
 		
-		//	make resized jpeg
-		$ResizedImage = $Image->GetResizedJpeg( $Width, $Height );
-		if ( $ResizedImage === false )
+		//	gr: process parent should ensure these filenames won't clash beforehand so this script can assume these filenames are safe
+		//	make filename
+		$RemoteFilename = "$Panoname.$Height.jpg";
+		$ResizedTempFilename = GetPanoTempFilename($Panoname,$Height);
+		register_shutdown_function('DeleteTempFile',$ResizedTempFilename);
+		
+		//	resize with ffmpeg
+		$ExitCode = -1;
+		$Param_Quiet = "-loglevel error";
+		$Param_Overwrite = "-y";
+		$Param_CatchStdErr = "2>&1";
+		$Param_Scale = "-vf scale=$Width:$Height";
+		$Param_Input = "-i {$Image->mFilename}";
+		$Param_Output = "$ResizedTempFilename";
+		$ExecCmd = FFMPEG_BIN . " $Param_Quiet $Param_Overwrite $Param_Input $Param_Scale $Param_Output $Param_CatchStdErr";
+		exec( $ExecCmd, $ExecOut, $ExitCode );
+		$ExecOut = join('\n', $ExecOut );
+		if ( $ExitCode != 0 )
 		{
-			echo "failed to resize $Width $Height";
+			echo "failed to resize $Width $Height: [$ExitCode] $ExecOut\n";
+			DeleteTempFile( $ResizedTempFilename );
 			return false;
 		}
 		
-		$RemoteFilename = "$Panoname.$Height.jpg";
-
-		$Error = UploadContent( $ResizedImage, $RemoteFilename, "image/jpeg" );
+		//	upload
+		$Error = UploadFile( $ResizedTempFilename, $RemoteFilename, "image/jpeg" );
 		if ( $Error !== true )
 			OnError($Error);
+		DeleteTempFile( $ResizedTempFilename );
 		return true;
 	}
 	
@@ -145,7 +158,7 @@
 	{
 		global $Panoname,$Image;
 		$RemoteFilename = "$Panoname.orig.jpg";
-		$Error = UploadContent( $Image->mData, $RemoteFilename, $Image->GetContentType() );
+		$Error = UploadFile( $Image->mFilename, $RemoteFilename, $Image->GetContentType() );
 		if ( $Error !== true )
 			OnError($Error);
 		return true;
