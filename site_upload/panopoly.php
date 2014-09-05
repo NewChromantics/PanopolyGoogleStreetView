@@ -40,7 +40,8 @@
 		$object['debug'] = ob_get_contents();
 		ob_clean();
 		$json = json_encode( $object );
-		exit($json);
+		echo $json;
+		exit(1);
 	}
 
 	function SanitisePanoName($Filename)
