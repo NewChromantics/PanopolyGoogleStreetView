@@ -158,5 +158,6 @@
 	if ( strlen($output['debug'] ) > 0 )
 	{
 		echo json_encode( $output );
+		echo '\n';
 	}
 ?>
