@@ -5,6 +5,7 @@
 	define('AWS_SECRET','OP5gbapC3xlXo1kbO73cJ8T8GkZyZLKyzxjjelPT');
 	define('DEBUG_VAR', 'debug' );
 	define('FFMPEG_BIN', './ffmpeg' );
+	define('FFMPEG_JPEG_QUALITY', 2 );	//	1(best)...31(worst)
 	
 	function Init()
 	{
