@@ -5,14 +5,10 @@
 //	create probes and trigger static callbacks
 var $Supports = {};
 
-function CreateSupports()
+function RegisterSupport($Name,$Instance)
 {
-	$Supports['RiftWebsocket'] = new SoyRiftWebsocket();
-	$Supports['Split'] = new SoySplit();
-	$Supports['Shrink'] = new SoyShrink();
-	$Supports['Fullscreen'] = new SoyFullscreen();
+	$Supports[$Name] = $Instance;
 }
-CreateSupports();
 
 function InitSupport()
 {

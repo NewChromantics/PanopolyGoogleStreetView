@@ -1,5 +1,7 @@
 
 SoyRiftWebsocket.prototype = new SoySupport('SoyRiftWebsocket');
+RegisterSupport('RiftWebsocket', new SoyRiftWebsocket() );
+
 
 function SoyRiftWebsocket()
 {
@@ -9,6 +11,7 @@ function SoyRiftWebsocket()
 	this.mWebsocket = null;
 	this.mQuaternion = null;
 	this.mEular = null;
+	this.mReconnectMs = 10*1000;
 }
 
 
@@ -35,7 +38,7 @@ SoyRiftWebsocket.prototype.OnRiftDisconnected = function()
 	
 	//	try to reconnect again in 10 secs
 	var $this = this;
-	setTimeout( function(){ $this.Init() }, 10*1000 );
+	setTimeout( function(){ $this.Init() }, this.mReconnectMs );
 }
 
 SoyRiftWebsocket.prototype.OnRiftConnected = function()

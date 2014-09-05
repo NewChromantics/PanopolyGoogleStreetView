@@ -1,5 +1,6 @@
 
 SoyShrink.prototype = new SoySupport('SoyShrink');
+RegisterSupport('Shrink', new SoyShrink() );
 
 function SoyShrink()
 {

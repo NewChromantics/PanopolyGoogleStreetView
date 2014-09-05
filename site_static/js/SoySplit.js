@@ -1,5 +1,6 @@
 
 SoySplit.prototype = new SoySupport('SoySplit');
+RegisterSupport('Split', new SoySplit() );
 
 function SoySplit()
 {

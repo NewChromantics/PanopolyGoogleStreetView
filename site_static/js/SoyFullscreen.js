@@ -1,5 +1,6 @@
 
 SoyFullscreen.prototype = new SoySupport('SoyFullscreen');
+RegisterSupport('Fullscreen', new SoyFullscreen() );
 
 function SoyFullscreen()
 {

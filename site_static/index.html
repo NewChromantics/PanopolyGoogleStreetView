@@ -34,8 +34,12 @@
 				Stereo View
 			</div>
 			
-			<div id="RiftButton" class="Button" onClick="SupportToggleEnable('Rift')">
-				Rift
+			<div id="RiftWebsocketButton" class="Button" onClick="SupportToggleEnable('RiftWebsocket')">
+				Rift Websocket
+			</div>
+			
+			<div id="RiftAjaxButton" class="Button" onClick="SupportToggleEnable('RiftAjax')">
+				Rift Ajax
 			</div>
 			
 			<div id="FullscreenButton" class="Button" onClick="SupportToggleEnable('Fullscreen')">
@@ -55,21 +59,27 @@
 		<script src="js/SoyWebSocket-1.0.js"></script>
 		<script src="js/soy.js"></script>
 		<script src="js/panopoly.js"></script>
+		<script src="js/support.js"></script>
 		<script src="js/SoySupport.js"></script>
 		<script src="js/SoyRiftWebsocket.js"></script>
 		<script src="js/SoySplit.js"></script>
 		<script src="js/SoyShrink.js"></script>
 		<script src="js/SoyFullscreen.js"></script>
-		<script src="js/support.js"></script>
+		<script src="js/SoyRiftAjax.js"></script>
 	
 		<div id="container"></div>
 
 
 <script>
-
+	
 function OnRiftWebsocketSupportChanged($Supported)
 {
-	ShowElement('RiftButton', $Supported);
+	ShowElement('RiftWebsocketButton', $Supported);
+}
+
+function OnRiftAjaxSupportChanged($Supported)
+{
+	ShowElement('RiftAjaxButton', $Supported);
 }
 
 function OnSplitSupportChanged($Supported)
@@ -90,6 +100,7 @@ function OnFullscreenSupportChanged($Supported)
 
 //	support callbacks
 AddOnSupportedChangedListener('RiftWebsocket', OnRiftWebsocketSupportChanged );
+AddOnSupportedChangedListener('RiftAjax', OnRiftAjaxSupportChanged );
 AddOnSupportedChangedListener('Split', OnSplitSupportChanged );
 AddOnSupportedChangedListener('Shrink', OnShrinkSupportChanged );
 AddOnSupportedChangedListener('Fullscreen', OnFullscreenSupportChanged );
@@ -440,8 +451,16 @@ function LoadPano()
 				var timer = 0.0001 * Date.now();
 
 				//	update camera
-				camera.quaternion.copy( GetCameraQuaternion() );
-
+				var $Rift = GetSupport('RiftAjax');
+				if ( $Rift && $Rift.IsEnabled() )
+				{
+					camera.quaternion.copy( $Rift.mQuaternion );
+				}
+				else
+				{
+					camera.quaternion.copy( GetCameraQuaternion() );
+				}
+				
 				if ( effect )
 					effect.render( scene, camera );
 				else

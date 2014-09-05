@@ -28,3 +28,8 @@ function IsWebsocketSupported()
 {
 	return true;
 }
+
+function IsAjaxSupported()
+{
+	return true;
+}
