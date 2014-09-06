@@ -46,13 +46,16 @@
 				Fullscreen
 			</div>
 			
+			<div id="GyroButton" class="Button" onClick="SupportToggleEnable('Gyro')">
+				Gyro
+			</div>
+			
 		</div>
 
 		<script src="threejs/three.min.js"></script>
 
 		<script src="threejs/effects/StereoEffect.js"></script>
 		
-		<script src="js/DeviceOrientationControls.js"></script>
 		<script src="js/MouseControls.js"></script>
 		<script src="js/GoogleAnalytics.js"></script>
 		<script src="js/ClearDefaultText.js"></script>
@@ -66,11 +69,49 @@
 		<script src="js/SoyShrink.js"></script>
 		<script src="js/SoyFullscreen.js"></script>
 		<script src="js/SoyRiftAjax.js"></script>
+		<script src="js/SoyGyro.js"></script>
 	
 		<div id="container"></div>
 
 
 <script>
+
+function SoyMode($CameraControl)
+{
+	this.mCameraControl = $CameraControl;
+	this.mSplit = IsSupportEnabled('Split');
+	this.mFullscreen = IsSupportEnabled('Fullscreen');
+}
+
+//	current control
+var $CurrentCameraControl = null;
+//	previous modes
+var $ModeStack = array();
+
+//	save current mode
+function PushMode()
+{
+	var $CurrentMode = new SoyMode($ModeControl);
+	$ModeStack.push( $CurrentMode );
+}
+
+//	restore last mode
+function PopMode()
+{
+	//	pop last
+	var $Last = $ModeStack.length-1;
+	if ( $Last < 0 )
+		return;
+
+	var $LastMode = $ModeStack[$Last];
+	$ModeStack.splice($Last);
+	
+	//	restore settings
+	$CurrentCameraControl = $LastMode.mCameraControl;
+	SetSupportEnabled('Split',$LastMode.mSplit);
+	SetSupportEnabled('Fullscreen',$LastMode.mFullscreen);
+}
+	
 	
 function OnRiftWebsocketSupportChanged($Supported)
 {
@@ -97,6 +138,11 @@ function OnFullscreenSupportChanged($Supported)
 	ShowElement('FullscreenButton', $Supported);
 }
 
+function OnGyroSupportChanged($Supported)
+{
+	ShowElement('GyroButton', $Supported);
+}
+
 
 //	support callbacks
 AddOnSupportedChangedListener('RiftWebsocket', OnRiftWebsocketSupportChanged );
@@ -104,6 +150,7 @@ AddOnSupportedChangedListener('RiftAjax', OnRiftAjaxSupportChanged );
 AddOnSupportedChangedListener('Split', OnSplitSupportChanged );
 AddOnSupportedChangedListener('Shrink', OnShrinkSupportChanged );
 AddOnSupportedChangedListener('Fullscreen', OnFullscreenSupportChanged );
+AddOnSupportedChangedListener('Gyro', OnGyroSupportChanged );
 
 
 //	scene
@@ -451,10 +498,20 @@ function LoadPano()
 				var timer = 0.0001 * Date.now();
 
 				//	update camera
-				var $Rift = GetSupport('RiftAjax');
-				if ( $Rift && $Rift.IsEnabled() )
+				var $RiftWebsocket = GetSupport('RiftWebsocket');
+				var $RiftAjax = GetSupport('RiftAjax');
+				var $Gyro = GetSupport('Gyro');
+				if ( $RiftWebsocket && $RiftWebsocket.IsEnabled() )
 				{
-					camera.quaternion.copy( $Rift.mQuaternion );
+					camera.quaternion.copy( $RiftWebsocket.mQuaternion );
+				}
+				else if ( $RiftAjax && $RiftAjax.IsEnabled() )
+				{
+					camera.quaternion.copy( $RiftAjax.mQuaternion );
+				}
+				else if ( $Gyro && $Gyro.IsEnabled() )
+				{
+					camera.quaternion.copy( $Gyro.mQuaternion );
 				}
 				else
 				{

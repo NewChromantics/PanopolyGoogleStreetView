@@ -5,9 +5,6 @@
       location = "container:site_static/js/ClearDefaultText.js">
    </FileRef>
    <FileRef
-      location = "container:site_static/js/DeviceOrientationControls.js">
-   </FileRef>
-   <FileRef
       location = "container:site_static/js/GoogleAnalytics.js">
    </FileRef>
    <FileRef
@@ -25,8 +22,11 @@
    <FileRef
       location = "container:site_static/js/SoyRiftWebsocket.js">
    </FileRef>
-  <FileRef
+   <FileRef
       location = "container:site_static/js/SoyRiftAjax.js">
+   </FileRef>
+   <FileRef
+      location = "container:site_static/js/SoyGyro.js">
    </FileRef>
    <FileRef
       location = "container:site_static/js/SoyShrink.js">

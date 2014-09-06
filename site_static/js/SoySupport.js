@@ -42,12 +42,12 @@ SoySupport.prototype.IsEnabled = function()
 
 SoySupport.prototype.Enable = function()
 {
-	OnEnabled();
+	this.OnEnabled();
 }
 
 SoySupport.prototype.Disable = function()
 {
-	OnDisabled();
+	this.OnDisabled();
 }
 
 SoySupport.prototype.OnEnabled = function()

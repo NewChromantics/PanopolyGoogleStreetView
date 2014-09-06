@@ -51,9 +51,26 @@ function SupportToggleEnable($Name)
 	return true;
 }
 
+function IsSupportEnabled($Name)
+{
+	var $Support = GetSupport($Name);
+	if ( !$Support )
+		return false;
+	return $Support.IsSupported() && $Support.IsEnabled();
+}
 
-
-
+function SetSupportEnabled($Name,$Enable)
+{
+	var $Support = GetSupport($Name);
+	if ( !$Support )
+		return false;
+	
+	if ( $Enable )
+		$Support.Enable();
+	else
+		$Support.Disable();
+	return true;
+}
 
 
 
