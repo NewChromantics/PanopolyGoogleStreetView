@@ -38,6 +38,17 @@ function AddOnSupportedChangedListener($Name,$Function)
 	return true;
 }
 
+
+function AddOnEnabledChangedListener($Name,$Function)
+{
+	var $Support = GetSupport($Name);
+	if ( !$Support )
+		return false;
+	
+	$Support.mOnEnabledChanged = $Function;
+	return true;
+}
+
 function SupportToggleEnable($Name)
 {
 	var $Support = GetSupport($Name);
@@ -51,6 +62,15 @@ function SupportToggleEnable($Name)
 	return true;
 }
 
+
+function IsSupported($Name)
+{
+	var $Support = GetSupport($Name);
+	if ( !$Support )
+		return false;
+	return $Support.IsSupported();
+}
+
 function IsSupportEnabled($Name)
 {
 	var $Support = GetSupport($Name);
@@ -61,6 +81,9 @@ function IsSupportEnabled($Name)
 
 function SetSupportEnabled($Name,$Enable)
 {
+	if ( $Enable == undefined )
+		$Enable = true;
+	
 	var $Support = GetSupport($Name);
 	if ( !$Support )
 		return false;
@@ -69,7 +92,8 @@ function SetSupportEnabled($Name,$Enable)
 		$Support.Enable();
 	else
 		$Support.Disable();
-	return true;
+	
+	return $Support.IsEnabled() == $Enable;
 }
 
 
