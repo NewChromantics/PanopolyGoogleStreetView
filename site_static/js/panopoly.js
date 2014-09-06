@@ -143,3 +143,9 @@ function LoadHigher(Material)
 												 }
 												 );
 }
+
+function IsPanopolySupported()
+{
+	return ( HasWebGl() || !IsMobile() );
+}
+
