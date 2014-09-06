@@ -1,10 +1,37 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<title>panopo.ly</title>
-	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-	<link rel="Stylesheet" href="panopoly.css" type="text/css">
+<title>panopo.ly</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+<link rel="Stylesheet" href="panopoly.css" type="text/css">
+<style>
+
+div.Test
+{
+	margin: 10px;
+}
+
+div.Test span
+{
+	font-weight: normal;
+	font-size: 20pt;
+	padding:10px;
+	margin:2px;
+}
+
+.it1	{	background: #0F0;	}
+.it2	{	background: #8F0;	}
+.it3	{	background: #FF0;	}
+.it4	{	background: #F80;	}
+.it5	{	background: #F00;	}
+.it6	{	background: #F08;	}
+.it7	{	background: #F0F;	}
+.it8	{	background: #80F;	}
+.it9	{	background: #00F;	}
+.it10	{	background: #08F;	}
+
+</style>
 </head>
 
 <body>
@@ -13,42 +40,92 @@
 </div>
 
 <div id="TestContainer"></div>
+<div id="UpTest">0</div>
 
+<script src="js/soy.js"></script>
 <script src="threejs/three.min.js"></script>
 <script src="threejs/effects/StereoEffect.js"></script>
-<script src="js/DeviceOrientationControls.js"></script>
 <script src="js/MouseControls.js"></script>
 <script src="js/GoogleAnalytics.js"></script>
 <script src="js/ClearDefaultText.js"></script>
-<script src="js/soy.js"></script>
+<script src="js/SoyWebSocket-1.0.js"></script>
 <script src="js/panopoly.js"></script>
-
+<script src="js/support.js"></script>
+<script src="js/SoySupport.js"></script>
+<script src="js/SoyRiftWebsocket.js"></script>
+<script src="js/SoySplit.js"></script>
+<script src="js/SoyShrink.js"></script>
+<script src="js/SoyFullscreen.js"></script>
+<script src="js/SoyRiftAjax.js"></script>
+<script src="js/SoyGyro.js"></script>
+<script src="js/SoyCss3d.js"></script>
 
 
 
 <script>
 	
-function RenderTest($Name,$Result)
+
+
+	var effect = null;
+	
+function UpdateSupported($Name)
+{
+	var Element = document.getElementById($Name + '_supported');
+	Element.innerText = "Supported: " + IsSupported($Name);
+	Element.className = 'it' + (parseInt(Element.className.substr(2))+1);
+}
+
+function UpdateEnabled($Name)
+{
+	var Element = document.getElementById($Name + '_enabled');
+	Element.innerText = "Enabled: " + IsSupportEnabled($Name);
+	Element.className = 'it' + (parseInt(Element.className.substr(2))+1);
+}
+
+function RenderTest($Name)
 {
 	var Container = GetElement("TestContainer");
 	if ( !Container )
 		return;
 	
 	var Div = document.createElement('div');
-	Div.innerText = $Name + " = " + $Result;
+	Div.className = 'Test';
 	Container.appendChild( Div );
+
+	var SpanName = document.createElement('span');
+	SpanName.innerText = $Name;
+	Div.appendChild(SpanName);
+	
+	var SpanSupported = document.createElement('span');
+	SpanSupported.id = $Name + '_supported';
+	SpanSupported.className = 'it0';
+	Div.appendChild( SpanSupported );
+	
+	var SpanEnabled = document.createElement('span');
+	SpanEnabled.id = $Name + '_enabled';
+	SpanEnabled.className = 'it0';
+	Div.appendChild( SpanEnabled );
+	
+	UpdateSupported( $Name );
+	UpdateEnabled( $Name );
+	AddOnSupportedChangedListener( $Name, function($Supported){ UpdateSupported($Name); } );
 }
 
-RenderTest(	'IsSupported',	IsSupported() );
-RenderTest(	'AllowWebGl',	AllowWebGl() );
-RenderTest(	'HasWebGl',		HasWebGl() );
-RenderTest(	'GetUploadUrl',	GetUploadUrl() );
-RenderTest(	'IsMobile',		IsMobile() );
-RenderTest(	'GetDefaultPanoFilename',	GetDefaultPanoFilename() );
-RenderTest(	'IsShrinkSupported',	IsShrinkSupported() );
-RenderTest(	'IsSplitSupported',	IsSplitSupported() );
-RenderTest(	'IsFileUploadSupported',	IsFileUploadSupported() );
-RenderTest(	'IsGyroSupported',	IsGyroSupported() );
+for ( var $Key in $Supports )
+{
+	RenderTest($Key);
+}
+InitSupport();
+
+function UpdateUpTest()
+{
+	var Container = GetElement("UpTest");
+	if ( !Container )
+		return;
+	Container.innerText = parseInt( Container.innerText ) + 1;
+	setTimeout( UpdateUpTest, 1000 );
+}
+UpdateUpTest();
 
 </script>
 
