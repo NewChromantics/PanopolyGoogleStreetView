@@ -22,19 +22,19 @@ div.Test span
 
 #experiment {
 	-webkit-perspective: 800px;
-	-webkit-perspective-origin: 50% 200px;
+	-webkit-perspective-origin: 50% 50px;
 	-moz-perspective: 800px;
-	-moz-perspective-origin: 50% 200px;
+	-moz-perspective-origin: 50% 50px;
 	perspective: 800px;
-	perspective-origin: 50% 200px;
+	perspective-origin: 50% 50px;
 }
 
 
 #cube, #cubeparent {
 	position: relative;
 	margin: 100px auto;
-	height: 400px;
-	width: 400px;
+	height: 100px;
+	width: 100px;
 	-webkit-transition: -webkit-transform 1s linear;
 	-webkit-transform-style: preserve-3d;
 	-moz-transition: -moz-transform 1s linear;
@@ -55,70 +55,85 @@ div.Test span
 
 .face {
 	position: absolute;
-	height: 360px;
-	width: 360px;
-	padding: 20px;
-	font-size: 27px;
+	height: 100px;
+	width: 100px;
+	padding: 0px;
+	margin: 0px;
+	font-size: 20px;
 	line-height: 1em;
 	color: #fff;
-	border: 1px solid #555;
-	border-radius: 3px;
 }
 
-
-
-#cube .one  {
-	-webkit-transform: rotateX(90deg) translateZ(200px);
-	-moz-transform: rotateX(90deg) translateZ(200px);
-	transform: rotateX(90deg) translateZ(200px);
+#cube .top  {
+	-webkit-transform: rotateX(90deg) translateZ(50px);
+	-moz-transform: rotateX(90deg) translateZ(50px);
+	transform: rotateX(90deg) translateZ(50px);
 	
 	background-color: red;
 	opacity: 0.9;
+	background: url(cubemap.jpg);
+	background-position: -100px -0px;
+	background-size: 400px 300px;	/* image space...scale up with this */
 }
 
-#cube .two {
-	-webkit-transform: translateZ(200px);
-	-moz-transform: translateZ(200px);
-	transform: translateZ(200px);
+#cube .front {
+	-webkit-transform: translateZ(50px);
+	-moz-transform: translateZ(50px);
+	transform: translateZ(50px);
 
 	background-color: lime;
 	opacity: 0.9;
+	background: url(cubemap.jpg);
+	background-position: -300px -100px;
+	background-size: 400px 300px;	/* image space...scale up with this */
 }
 
-#cube .three {
-	-webkit-transform: rotateY(90deg) translateZ(200px);
-	-moz-transform: rotateY(90deg) translateZ(200px);
-	transform: rotateY(90deg) translateZ(200px);
+#cube .left {
+	-webkit-transform: rotateY(90deg) translateZ(50px);
+	-moz-transform: rotateY(90deg) translateZ(50px);
+	transform: rotateY(90deg) translateZ(50px);
 	
 	background-color: blue;
 	opacity: 0.9;
+	background: url(cubemap.jpg);
+	background-position: -0px -100px;
+	background-size: 400px 300px;	/* image space...scale up with this */
 }
 
-#cube .four {
-	-webkit-transform: rotateY(180deg) translateZ(200px);
-	-moz-transform: rotateY(180deg) translateZ(200px);
-	transform: rotateY(180deg) translateZ(200px);
+#cube .back {
+	-webkit-transform: rotateY(180deg) translateZ(50px);
+	-moz-transform: rotateY(180deg) translateZ(50px);
+	transform: rotateY(180deg) translateZ(50px);
 	
 	background-color: yellow;
 	opacity: 0.9;
+	background: url(cubemap.jpg);
+	background-position: -100px -100px;
+	background-size: 400px 300px;	/* image space...scale up with this */
 }
 
-#cube .five {
-	-webkit-transform: rotateY(-90deg) translateZ(200px);
-	-moz-transform: rotateY(-90deg) translateZ(200px);
-	transform: rotateY(-90deg) translateZ(200px);
+#cube .right {
+	-webkit-transform: rotateY(-90deg) translateZ(50px);
+	-moz-transform: rotateY(-90deg) translateZ(50px);
+	transform: rotateY(-90deg) translateZ(50px);
 
 	background-color: cyan;
 	opacity: 0.9;
+	background: url(cubemap.jpg);
+	background-position: -200px -100px;
+	background-size: 400px 300px;	/* image space...scale up with this */
 }
 
-#cube .six {
-	-webkit-transform: rotateX(-90deg) rotate(180deg) translateZ(200px);
-	-moz-transform: rotateX(-90deg) rotate(180deg) translateZ(200px);
-	transform: rotateX(-90deg) rotate(180deg) translateZ(200px);
+#cube .bottom {
+	-webkit-transform: rotateX(-90deg) rotate(180deg) translateZ(50px);
+	-moz-transform: rotateX(-90deg) rotate(180deg) translateZ(50px);
+	transform: rotateX(-90deg) rotate(180deg) translateZ(50px);
 
 	background-color: magenta;
 	opacity: 0.9;
+	background: url(cubemap.jpg);
+	background-position: -100px -200px;
+	background-size: 400px 300px;	/* image space...scale up with this */
 }
 
 
@@ -162,24 +177,12 @@ div.Test span
 	
 	<div id="cubeparent">
     <div id="cube">
-		<div class="face one">
-			One face
-		</div>
-		<div class="face two">
-			Up, down, left, right
-		</div>
-		<div class="face three">
-			Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-		</div>
-		<div class="face four">
-			New forms of navigation are fun.
-		</div>
-		<div class="face five">
-			Rotating 3D cube
-		</div>
-		<div class="face six">
-			<img src="images/sonic.gif" />
-		</div>
+		<div id="cube_up" class="face top">top</div>
+		<div id="cube_front" class="face front">front</div>
+		<div id="cube_left" class="face left">left</div>
+		<div id="cube_back" class="face back">back</div>
+		<div id="cube_right" class="face right">right</div>
+		<div id="cube_down" class="face bottom">bottom</div>
     </div>    </div>
 </div>
     </div>
@@ -263,6 +266,61 @@ function ascii (a) { return a.charCodeAt(0); }
 	AutoRotate();
 	
 	document.body.onkeydown = OnKeyDown;
+
+
+function CubemapLayout()
+{
+	this.mFront = new THREE.Vector2(0,1);
+	this.mBack = new THREE.Vector2(0,1);
+	this.mLeft = new THREE.Vector2(0,1);
+	this.mRight = new THREE.Vector2(0,1);
+	this.mUp = new THREE.Vector2(0,1);
+	this.mDown = new THREE.Vector2(0,1);
+}
+
+function ScaleVectors($a,$b)
+{
+	return new THREE.Vector2( $a.x * $b.x, $a.y * $b.y );
+}
+
+CubemapLayout.prototype.GetFront = function($Size)	{	return ScaleVectors( this.mFront, $Size );	}
+CubemapLayout.prototype.GetBack = function($Size)	{	return ScaleVectors( this.mBack, $Size );	}
+CubemapLayout.prototype.GetLeft = function($Size)	{	return ScaleVectors( this.mLeft, $Size );	}
+CubemapLayout.prototype.GetRight = function($Size)	{	return ScaleVectors( this.mRight, $Size );	}
+CubemapLayout.prototype.GetUp = function($Size)		{	return ScaleVectors( this.mUp, $Size );	}
+CubemapLayout.prototype.GetDown = function($Size)	{	return ScaleVectors( this.mDown, $Size );	}
+
+//	intialise cube faces
+function SetCubemapBackground($Front,$Back,$Left,$Right,$Up,$Down)
+{
+	var $ImageUrl = 'cubemap.jpg';
+	var $ImageSize = new THREE.Vector2( 400, 300 );
+	var $FaceWidth = 100;
+	var $FaceHeight = 100;
+
+	var $Layout = new CubemapLayout();
+	SetFaceBackground( $Front, $Layout.GetFront($ImageSize), $ImageSize );
+	SetFaceBackground( $Back, $Layout.GetBack($ImageSize), $ImageSize );
+	SetFaceBackground( $Left, $Layout.GetLeft($ImageSize), $ImageSize );
+	SetFaceBackground( $Right, $Layout.GetRight($ImageSize), $ImageSize );
+	SetFaceBackground( $Up, $Layout.GetUp($ImageSize), $ImageSize );
+	SetFaceBackground( $Down, $Layout.GetDown($ImageSize), $ImageSize );
+}
+
+function SetFaceBackground($Element,$ImageOffset,$ImageSize)
+{
+	if ( !$Element )
+		return;
+	
+	var $x = -$ImageOffset.x;
+	var $y = -$ImageOffset.x;
+	$Element.style.background_position = "" + $x + 'px ' + $y + 'px';
+	$Element.style.background_size = "" + $ImageSize.x + 'px ' + $ImageSize.y + 'px';
+}
+
+SetCubemapBackground( GetElement('cube_front'), GetElement('cube_back'), GetElement('cube_left'), GetElement('cube_right'), GetElement('cube_up'), GetElement('cube_down') );
+
+
 
 </script>
 
