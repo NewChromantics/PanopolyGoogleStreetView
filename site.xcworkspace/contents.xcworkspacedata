@@ -2,6 +2,9 @@
 <Workspace
    version = "1.0">
    <FileRef
+      location = "group:site_static/cubemap.html">
+   </FileRef>
+   <FileRef
       location = "container:site_static/js/ClearDefaultText.js">
    </FileRef>
    <FileRef
