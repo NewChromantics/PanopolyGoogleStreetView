@@ -22,7 +22,14 @@ SoyRiftWebsocket.prototype.Init = function()
 		this.OnUnsupported();
 		return;
 	}
-
+	
+	if ( !("SoyWebSocket" in window) )
+	{
+		//alert("Websocket supported, SoyWebSocket missing");
+		this.OnUnsupported();
+		return;
+	}
+	
 	var $this = this;
 	this.mWebsocket = new SoyWebSocket("OculusRest",0,false);
 	this.mWebsocket.mOnMessage = function() { $this.OnRiftMessage(); }
@@ -69,7 +76,7 @@ SoyRiftWebsocket.prototype.IsSupported = function()
 {
 	if ( !this.mWebsocket )
 		return false;
-	console.log(this.mWebsocket);
+
 	if ( !this.mWebsocket.open() )
 		return false;
 	return true;
