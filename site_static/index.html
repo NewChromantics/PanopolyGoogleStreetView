@@ -52,15 +52,13 @@
 			
 		</div>
 
+		<script src="js/soy.js"></script>
 		<script src="threejs/three.min.js"></script>
-
 		<script src="threejs/effects/StereoEffect.js"></script>
-		
 		<script src="js/MouseControls.js"></script>
 		<script src="js/GoogleAnalytics.js"></script>
 		<script src="js/ClearDefaultText.js"></script>
 		<script src="js/SoyWebSocket-1.0.js"></script>
-		<script src="js/soy.js"></script>
 		<script src="js/panopoly.js"></script>
 		<script src="js/support.js"></script>
 		<script src="js/SoySupport.js"></script>
@@ -86,61 +84,130 @@ function SoyMode($CameraControl)
 //	current control
 var $CurrentCameraControl = null;
 //	previous modes
-var $ModeStack = array();
+var $ModeStack = new Array();
+
+//	auto-switch modesets
+var $DesktopRiftMode = new Array('RiftAjax','Split');
+//var $IosExternalMode = new Array('Gyro','Split','ExternalDisplay');
+var $IosExternalMode = new Array('Gyro','Split');
+
+
 
 //	save current mode
 function PushMode()
 {
-	var $CurrentMode = new SoyMode($ModeControl);
+	var $CurrentMode = new SoyMode($CurrentCameraControl);
 	$ModeStack.push( $CurrentMode );
 }
 
 //	restore last mode
-function PopMode()
+function PopMode($SpecificMode)
 {
 	//	pop last
 	var $Last = $ModeStack.length-1;
 	if ( $Last < 0 )
-		return;
+		return false;
 
 	var $LastMode = $ModeStack[$Last];
+
+	//	if specified, only pop if in certain mode
+	if ( $SpecificMode )
+		if ( $LastMode.mCameraControl != $SpecificMode )
+			return false;
+	
 	$ModeStack.splice($Last);
 	
 	//	restore settings
 	$CurrentCameraControl = $LastMode.mCameraControl;
 	SetSupportEnabled('Split',$LastMode.mSplit);
 	SetSupportEnabled('Fullscreen',$LastMode.mFullscreen);
+	return true;
 }
+
+
+function TryMode($ModeParams)
+{
+	var $InModeNow = true;
+	for ( var $Key in $ModeParams )
+	{
+		var $Support = GetSupport( $ModeParams[$Key] );
+		if ( !$Support )
+			return false;
+		if ( !$Support.IsSupported() )
+			return false;
+		if ( !$Support.IsEnabled() )
+			$InModeNow = false;
+	}
 	
+	//	alraedy in mode
+	if ( $InModeNow )
+		return true;
+	
+	//	all supported, try and switch
+	PushMode();
+	for ( var $Key in $ModeParams )
+	{
+		if ( !SetSupportEnabled( $ModeParams[$Key] ) )
+		{
+			PopMode();
+			return false;
+		}
+	}
+
+	return true;
+}
+
+function CheckAutoSwitch($ChangedSupport,$Supported)
+{
+	//	support was lost, if it's the current control, drop out of mode
+	if ( !$Supported )
+	{
+		while ( $CurrentCameraControl == $ChangedSupport )
+			if ( !PopMode( $ChangedSupport ) )
+				break;
+		return;
+	}
+	
+	//	something became enabled, try the different modes
+	TryMode( $DesktopRiftMode );
+	TryMode( $IosExternalMode );
+}
+
 	
 function OnRiftWebsocketSupportChanged($Supported)
 {
 	ShowElement('RiftWebsocketButton', $Supported);
+	CheckAutoSwitch( 'RiftWebsocket', $Supported );
 }
 
 function OnRiftAjaxSupportChanged($Supported)
 {
 	ShowElement('RiftAjaxButton', $Supported);
+	CheckAutoSwitch( 'RiftAjax', $Supported );
 }
 
 function OnSplitSupportChanged($Supported)
 {
 	ShowElement('SplitButton', $Supported);
+	CheckAutoSwitch( 'Split', $Supported );
 }
 
 function OnShrinkSupportChanged($Supported)
 {
 	ShowElement('ShrinkButton', $Supported);
+	CheckAutoSwitch( 'Shrink', $Supported );
 }
 
 function OnFullscreenSupportChanged($Supported)
 {
 	ShowElement('FullscreenButton', $Supported);
+	CheckAutoSwitch( 'Fullscreen', $Supported );
 }
 
 function OnGyroSupportChanged($Supported)
 {
 	ShowElement('GyroButton', $Supported);
+	CheckAutoSwitch( 'Gyro', $Supported );
 }
 
 
@@ -288,39 +355,7 @@ function DeleteControl()
 	removeFromArray( UpdateList, InputController );
 	InputController = null;
 }
-		
-function OnCreatedRiftControl()
-{
-	//	destroy other controls and use this
-	DeleteControl();
-}
 
-function OnCreatedGyroControl()
-{
-	//	destroy other controls and use this
-	DeleteControl();
-	
-	Gyro = new THREE.Object3D();
-	InputController = new THREE.DeviceOrientationControls( Gyro );
-	InputController.connect();
-	UpdateList.push( InputController );
-}
-		
-function CreateGyroControl()
-{
-	if ( !IsGyroSupported() )
-		return false;
-
-	//	todo: wait for first gyro message (some devices report support, but don't work)
-	OnCreatedGyroControl();
-	return true;
-}
-
-function CreateRiftControl()
-{
-	//	create websocket connection to common rift quaternion ports
-	return false;
-}
 
 function CreateMouseControl($Container)
 {
@@ -334,16 +369,18 @@ function CreateMouseControl($Container)
 	
 function GetCameraQuaternion()
 {
-	//	using gyro
-	if ( Gyro )
-		return Gyro.quaternion;
-
+	var $Control = GetSupport($CurrentCameraControl);
+	if ( $Control && $Control.IsEnabled() )
+	{
+		return $Control.mQuaternion;
+	}
+	
 	return camera.quaternion;
 }
 
 
 
-		
+
 			function GetPanoName()
 			{
 				//	extract from url;
@@ -498,31 +535,12 @@ function LoadPano()
 				var timer = 0.0001 * Date.now();
 
 				//	update camera
-				var $RiftWebsocket = GetSupport('RiftWebsocket');
-				var $RiftAjax = GetSupport('RiftAjax');
-				var $Gyro = GetSupport('Gyro');
-				if ( $RiftWebsocket && $RiftWebsocket.IsEnabled() )
-				{
-					camera.quaternion.copy( $RiftWebsocket.mQuaternion );
-				}
-				else if ( $RiftAjax && $RiftAjax.IsEnabled() )
-				{
-					camera.quaternion.copy( $RiftAjax.mQuaternion );
-				}
-				else if ( $Gyro && $Gyro.IsEnabled() )
-				{
-					camera.quaternion.copy( $Gyro.mQuaternion );
-				}
-				else
-				{
-					camera.quaternion.copy( GetCameraQuaternion() );
-				}
+				camera.quaternion.copy( GetCameraQuaternion() );
 				
 				if ( effect )
 					effect.render( scene, camera );
 				else
 					renderer.render( scene, camera );
-
 			}
 	
 		
@@ -530,21 +548,13 @@ function LoadPano()
 		
 		
 		<script>
+		
 		//	main
-		var Info = document.getElementById("info");
-		if ( Info )
-		{
-			/*
-			Info.innerText += " | " + navigator.userAgent;
-			if ( HasWebGl() )
-				Info.innerText += " | has webgl";
-			else
-				Info.innerText += " | no webgl";
-			 */
-		}
 		
-		
+		//	init support
 		InitSupport();
+		//	save initial mode
+		PushMode();
 
 		var Container = GetElement("container");
 		if ( IsSupported() )
@@ -553,8 +563,6 @@ function LoadPano()
 			init( Container );
 			
 			CreateMouseControl(Container);
-			CreateGyroControl(Container);
-			CreateRiftControl(Container);
 
 			//	load user's required pano
 			LoadPano();
