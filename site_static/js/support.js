@@ -23,6 +23,16 @@ function InitSupport()
 	}
 }
 
+function ShutdownSupport()
+{
+	for ( var $Key in $Supports )
+	{
+		var $Support = $Supports[$Key];
+		delete $Supports[$Key];
+		$Support.OnUnsupported();
+	}
+}
+
 function GetSupport($Name)
 {
 	return $Supports[$Name];

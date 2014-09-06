@@ -617,6 +617,7 @@ function LoadPano()
 		}
 		else
 		{
+			ShutdownSupport();
 			var Container = document.getElementById("container");
 			Container.style.padding = "20%";
 			Container.innerText = "Not currently supported without webgl.";
