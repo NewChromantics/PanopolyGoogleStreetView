@@ -8,10 +8,10 @@
       location = "container:site_static/js/GoogleAnalytics.js">
    </FileRef>
    <FileRef
-      location = "container:site_static/js/MouseControls.js">
+      location = "container:site_static/js/panopoly.js">
    </FileRef>
    <FileRef
-      location = "container:site_static/js/panopoly.js">
+      location = "group:site_static/js/SoyMouse.js">
    </FileRef>
    <FileRef
       location = "container:site_static/js/soy.js">
