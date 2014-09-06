@@ -46,14 +46,6 @@ function IsMobile()
 	return !HasWebGl();
 }
 
-function IsSupported()
-{
-	if ( HasWebGl() )
-		return true;
-	if ( !IsMobile() )
-		return true;
-	return false;
-}
 
 function GetDefaultPanoFilename()
 {

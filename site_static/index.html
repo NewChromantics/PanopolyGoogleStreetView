@@ -556,8 +556,11 @@ function LoadPano()
 		//	save initial mode
 		PushMode();
 
+
+
+		
 		var Container = GetElement("container");
-		if ( IsSupported() )
+		if ( HasWebGl() || !IsMobile() )
 		{
 			
 			init( Container );
