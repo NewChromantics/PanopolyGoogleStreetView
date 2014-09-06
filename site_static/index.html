@@ -10,7 +10,8 @@
 	<body id="xxxcontainer">
 		<div id="info">
 			panopo.ly
-			
+			<div id="UpTest" class="Button">0</div>
+
 			<div id="ImageSelector" class="FileInput">
 				Select Image
 				<form id="uploaderform" enctype="multipart/form-data" method="POST">
@@ -48,6 +49,10 @@
 			
 			<div id="GyroButton" class="Button" onClick="SupportToggleEnable('Gyro')">
 				Gyro
+			</div>
+			
+			<div id="QuatDebug" class="Button" style="display:block;">
+				quaternion
 			</div>
 			
 		</div>
@@ -125,7 +130,7 @@ function PopMode($SpecificMode)
 }
 
 
-function TryMode($ModeParams)
+function TryMode($ModeParams,$ModeName)
 {
 	var $InModeNow = true;
 	for ( var $Key in $ModeParams )
@@ -141,19 +146,29 @@ function TryMode($ModeParams)
 	
 	//	alraedy in mode
 	if ( $InModeNow )
+	{
+		//alert("already in mode " + $ModeName );
 		return true;
+	}
+
+	//	save current state
+	PushMode();
 	
 	//	all supported, try and switch
-	PushMode();
 	for ( var $Key in $ModeParams )
 	{
-		if ( !SetSupportEnabled( $ModeParams[$Key] ) )
+		var $SupportName = $ModeParams[$Key];
+		if ( !SetSupportEnabled( $SupportName ) )
 		{
+			//alert("failed to enable " + $SupportName );
 			PopMode();
 			return false;
 		}
 	}
+	//	and set controller
+	$CurrentCameraControl = $ModeParams[0];
 
+	//alert("set mode " + $ModeName );
 	return true;
 }
 
@@ -169,8 +184,8 @@ function CheckAutoSwitch($ChangedSupport,$Supported)
 	}
 	
 	//	something became enabled, try the different modes
-	TryMode( $DesktopRiftMode );
-	TryMode( $IosExternalMode );
+	TryMode( $DesktopRiftMode, "DesktopRift" );
+	TryMode( $IosExternalMode, "IosGyro" );
 }
 
 	
@@ -535,7 +550,12 @@ function LoadPano()
 				var timer = 0.0001 * Date.now();
 
 				//	update camera
-				camera.quaternion.copy( GetCameraQuaternion() );
+				var Quaternion = GetCameraQuaternion();
+				camera.quaternion.copy( Quaternion );
+				
+				var QuatDebugElement = GetElement("QuatDebug");
+				if ( QuatDebugElement )
+					QuatDebugElement.innerText = $CurrentCameraControl + ": " + Quaternion.x + " " + Quaternion.y + " " + Quaternion.z + " " + Quaternion.w;
 				
 				if ( effect )
 					effect.render( scene, camera );
@@ -551,6 +571,18 @@ function LoadPano()
 		
 		//	main
 		
+		function UpdateUpTest()
+		{
+			ShowElement("UpTest");
+			var Container = GetElement("UpTest");
+			if ( !Container )
+				return;
+			Container.innerText = parseInt( Container.innerText ) + 1;
+			setTimeout( UpdateUpTest, 1000 );
+		}
+		UpdateUpTest();
+
+
 		//	init support
 		InitSupport();
 		//	save initial mode
