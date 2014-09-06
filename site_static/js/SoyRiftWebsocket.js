@@ -77,7 +77,7 @@ SoyRiftWebsocket.prototype.IsSupported = function()
 	if ( !this.mWebsocket )
 		return false;
 
-	if ( !this.mWebsocket.open() )
+	if ( !this.mWebsocket.IsConnected() )
 		return false;
 	return true;
 }

@@ -21,6 +21,13 @@ function SoyWebSocket($Name,$DefaultPort,$CreateUI)
 	this.OnDisconnected(true);
 }
 
+SoyWebSocket.prototype.IsConnected = function()
+{
+	if ( !this.mSocket )
+		return false;
+	//http://stackoverflow.com/a/12466133/355753
+	return (this.mSocket.readyState == 1);
+}
 
 SoyWebSocket.prototype.Connect = function($Url)
 {
@@ -32,7 +39,7 @@ SoyWebSocket.prototype.Connect = function($Url)
 		$Url = this.mUrlInput.value;
 	}
 	
-	console.log( this.mName + " connecting to " +  $Url );
+	//console.log( this.mName + " connecting to " +  $Url );
 	
 	this.mSocket = new WebSocket( $Url );
 	this.mSocket.mSoyWebSocket = this;
