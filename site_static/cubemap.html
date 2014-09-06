@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>panopo.ly</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+<link rel="Stylesheet" href="panopoly.css" type="text/css">
+<style>
+
+div.Test
+{
+	margin: 10px;
+}
+
+div.Test span
+{
+	font-weight: normal;
+	font-size: 20pt;
+	padding:10px;
+	margin:2px;
+}
+
+#experiment {
+	-webkit-perspective: 800px;
+	-webkit-perspective-origin: 50% 200px;
+	-moz-perspective: 800px;
+	-moz-perspective-origin: 50% 200px;
+	perspective: 800px;
+	perspective-origin: 50% 200px;
+}
+
+
+#cube, #cubeparent {
+	position: relative;
+	margin: 100px auto;
+	height: 400px;
+	width: 400px;
+	-webkit-transition: -webkit-transform 1s linear;
+	-webkit-transform-style: preserve-3d;
+	-moz-transition: -moz-transform 1s linear;
+	-moz-transform-style: preserve-3d;
+	transition: transform 1s linear;
+	transform-style: preserve-3d;
+}
+
+#cubeparent
+{
+	/*
+		when all translate z is 200....
+		far face 1000
+		near face 600
+		middle z = near + ((far-near)/2) = 800
+	 */
+}
+
+.face {
+	position: absolute;
+	height: 360px;
+	width: 360px;
+	padding: 20px;
+	font-size: 27px;
+	line-height: 1em;
+	color: #fff;
+	border: 1px solid #555;
+	border-radius: 3px;
+}
+
+
+
+#cube .one  {
+	-webkit-transform: rotateX(90deg) translateZ(200px);
+	-moz-transform: rotateX(90deg) translateZ(200px);
+	transform: rotateX(90deg) translateZ(200px);
+	
+	background-color: red;
+	opacity: 0.9;
+}
+
+#cube .two {
+	-webkit-transform: translateZ(200px);
+	-moz-transform: translateZ(200px);
+	transform: translateZ(200px);
+
+	background-color: lime;
+	opacity: 0.9;
+}
+
+#cube .three {
+	-webkit-transform: rotateY(90deg) translateZ(200px);
+	-moz-transform: rotateY(90deg) translateZ(200px);
+	transform: rotateY(90deg) translateZ(200px);
+	
+	background-color: blue;
+	opacity: 0.9;
+}
+
+#cube .four {
+	-webkit-transform: rotateY(180deg) translateZ(200px);
+	-moz-transform: rotateY(180deg) translateZ(200px);
+	transform: rotateY(180deg) translateZ(200px);
+	
+	background-color: yellow;
+	opacity: 0.9;
+}
+
+#cube .five {
+	-webkit-transform: rotateY(-90deg) translateZ(200px);
+	-moz-transform: rotateY(-90deg) translateZ(200px);
+	transform: rotateY(-90deg) translateZ(200px);
+
+	background-color: cyan;
+	opacity: 0.9;
+}
+
+#cube .six {
+	-webkit-transform: rotateX(-90deg) rotate(180deg) translateZ(200px);
+	-moz-transform: rotateX(-90deg) rotate(180deg) translateZ(200px);
+	transform: rotateX(-90deg) rotate(180deg) translateZ(200px);
+
+	background-color: magenta;
+	opacity: 0.9;
+}
+
+
+</style>
+</head>
+
+<body>
+<div id="info">
+	panopo.ly
+</div>
+
+<div id="TestContainer"></div>
+<div id="UpTest">0</div>
+
+<script src="js/soy.js"></script>
+<script src="threejs/three.min.js"></script>
+<script src="threejs/effects/StereoEffect.js"></script>
+<script src="js/MouseControls.js"></script>
+<script src="js/GoogleAnalytics.js"></script>
+<script src="js/ClearDefaultText.js"></script>
+<script src="js/SoyWebSocket-1.0.js"></script>
+<script src="js/panopoly.js"></script>
+<script src="js/support.js"></script>
+<script src="js/SoySupport.js"></script>
+<script src="js/SoyRiftWebsocket.js"></script>
+<script src="js/SoySplit.js"></script>
+<script src="js/SoyShrink.js"></script>
+<script src="js/SoyFullscreen.js"></script>
+<script src="js/SoyRiftAjax.js"></script>
+<script src="js/SoyGyro.js"></script>
+<script src="js/SoyCss3d.js"></script>
+<script src="js/SoyFileSelect.js"></script>
+<script src="js/SoyMouse.js"></script>
+
+
+
+<div class="experiment-body clearfix">
+    
+	<div class="test test-3dtransforms">
+<div id="experiment">
+	
+	<div id="cubeparent">
+    <div id="cube">
+		<div class="face one">
+			One face
+		</div>
+		<div class="face two">
+			Up, down, left, right
+		</div>
+		<div class="face three">
+			Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+		</div>
+		<div class="face four">
+			New forms of navigation are fun.
+		</div>
+		<div class="face five">
+			Rotating 3D cube
+		</div>
+		<div class="face six">
+			<img src="images/sonic.gif" />
+		</div>
+    </div>    </div>
+</div>
+    </div>
+</div>
+
+<script>
+	
+	var $TransformProperty = GetTransformProperty();
+	function GetTransformProperty()
+	{
+		var props = 'transform WebkitTransform MozTransform OTransform msTransform'.split(' '),
+		prop,
+		el = document.createElement('div');
+		
+		for(var i = 0, l = props.length; i < l; i++) {
+			if(typeof el.style[props[i]] !== "undefined") {
+				return props[i];
+			}
+		}
+
+		return undefined;
+	}
+	
+	var xAngle = 0, yAngle = 0;
+	//var zTrans = 800;	//	center. Need to change this to account for fov
+	var zTrans = 700;	//	center. Need to change this to account for fov
+
+	function OnTransformChanged()
+	{
+		var $Transform = "rotateX("+xAngle+"deg) rotateY("+yAngle+"deg)";
+		document.getElementById('cube').style[$TransformProperty] = $Transform;
+		var $ParentTransform = "translateZ("+zTrans+"px)";
+		document.getElementById('cube').parentNode.style[$TransformProperty] = $ParentTransform;
+	}
+	OnTransformChanged();
+
+function ascii (a) { return a.charCodeAt(0); }
+	function OnKeyDown(evt)
+	{
+		switch(evt.keyCode) {
+			case 37: // left
+			yAngle -= 90;
+			break;
+			
+			case 38: // up
+			xAngle += 90;
+			evt.preventDefault();
+			break;
+			
+			case 39: // right
+			yAngle += 90;
+			break;
+			
+			case 40: // down
+			xAngle -= 90;
+			evt.preventDefault();
+			break;
+			
+			case ascii('A'):
+			zTrans += 50;
+			evt.preventDefault();
+			console.log(zTrans);
+			break;
+
+			case ascii('Z'):
+			zTrans -= 50;
+			evt.preventDefault();
+			console.log(zTrans);
+			break;
+		};
+		OnTransformChanged();
+	}
+
+	function AutoRotate()
+	{
+		yAngle += 1;
+		xAngle += 0.01;
+		OnTransformChanged();
+		setTimeout( AutoRotate, 1000/30 );
+	}
+	AutoRotate();
+	
+	document.body.onkeydown = OnKeyDown;
+
+</script>
+
+
+
+</body>
+</html>
