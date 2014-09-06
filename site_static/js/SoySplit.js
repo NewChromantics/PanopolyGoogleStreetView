@@ -27,8 +27,6 @@ SoySplit.prototype.Enable = function()
 {
 	if ( !this.IsEnabled() )
 	{
-		console.log("SoySplit.prototype.Enable");
-		console.log(this);
 		effect = new THREE.StereoEffect( renderer );
 		effect.separation = 1;
 		onContainerResize();
@@ -38,8 +36,6 @@ SoySplit.prototype.Enable = function()
 
 SoySplit.prototype.Disable = function()
 {
-	console.log("SoySplit.prototype.Disable");
-	console.log(this);
 	if ( this.IsEnabled() )
 	{
 		effect = null;

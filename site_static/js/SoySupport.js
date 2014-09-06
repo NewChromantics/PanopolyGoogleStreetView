@@ -3,14 +3,18 @@ function SoySupport($Type)
 {
 	var $this = this;
 	this.mType = $Type;
-	this.mOnSupportedChanged = function($Supported) {	console.log("mOnSupportedChanged " + $this.GetType() );	}
-	this.mOnEnabledChanged = function($Enabled)		{	console.log("mOnEnabledChanged " + $this.GetType() );	}
-	this.GetType = function() { return $Type;	}
+	this.mOnSupportedChanged = function($Supported) {	console.log( "" + $this.GetType() + "::mOnSupportedChanged: " + $this.IsSupported() );	}
+	this.mOnEnabledChanged = function($Enabled)		{	console.log( "" + $this.GetType() + "::mOnEnabledChanged " + $this.IsSupported() );	}
+	this.GetType = function() { return $this.mType;	}
 	this.mIsEnabled = false;
 }
 
 SoySupport.prototype.Init = function()
 {
+	if ( this.IsSupported() )
+		this.OnSupported();
+	else
+		this.OnUnsupported();
 }
 
 SoySupport.prototype.IsSupported = function()
@@ -28,11 +32,6 @@ SoySupport.prototype.OnUnsupported = function()
 {
 	if ( this.mOnSupportedChanged )
 		this.mOnSupportedChanged(false);
-}
-
-SoySupport.prototype.IsSupported = function()
-{
-	return false;
 }
 
 SoySupport.prototype.IsEnabled = function()
