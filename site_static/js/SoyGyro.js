@@ -11,6 +11,10 @@ function SoyGyro()
 	//	constructed on first message to determine if we recieve any
 	this.mQuaternion = null;
 	this.mScreenOrientation = 0;
+	
+	//	init orientation
+	//this.OnScreenOrientationChanged();
+	this.mScreenOrientation = window.orientation || 0;
 }
 
 
