@@ -12,8 +12,6 @@ function RegisterSupport($Name,$Instance)
 
 function InitSupport()
 {
-	OnFileSelectSupported();
-	
 	for ( var $Key in $Supports )
 	{
 		var $Support = $Supports[$Key];
@@ -104,34 +102,6 @@ function SetSupportEnabled($Name,$Enable)
 		$Support.Disable();
 	
 	return $Support.IsEnabled() == $Enable;
-}
-
-
-
-
-
-
-function IsFileSelectSupported()
-{
-	//	does browser support input?
-	if ( !window.File || !window.FileReader )
-		return false;
-	
-	return true;
-}
-
-function OnFileSelectSupported()
-{
-	var $Supported = IsFileSelectSupported();
-	var Uploader = GetElement("image_selector");
-	if ( Uploader )
-	{
-		ShowElement("ImageSelector", $Supported );
-		if ( $Supported )
-			Uploader.addEventListener('change', OnFileSelect, false);
-		else
-			Uploader.removeEventListener('change', OnFileSelect, false);
-	}
 }
 
 

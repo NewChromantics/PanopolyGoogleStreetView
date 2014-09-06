@@ -9,11 +9,6 @@ function SoyShrink()
 }
 
 
-SoyShrink.prototype.Init = function()
-{
-	this.OnSupported();
-}
-
 SoyShrink.prototype.IsSupported = function()
 {
 	return IsDevice('iPad');

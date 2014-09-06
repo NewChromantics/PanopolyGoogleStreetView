@@ -9,14 +9,6 @@ function SoyFullscreen()
 }
 
 
-SoyFullscreen.prototype.Init = function()
-{
-	if ( this.IsSupported() )
-		this.OnSupported();
-	else
-		this.OnUnsupported();
-}
-
 SoyFullscreen.prototype.IsSupported = function()
 {
 	return false;

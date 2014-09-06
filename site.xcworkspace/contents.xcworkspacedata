@@ -26,6 +26,18 @@
       location = "container:site_static/js/SoyRiftAjax.js">
    </FileRef>
    <FileRef
+      location = "group:site_static/js/SoyFileSelect.js">
+   </FileRef>
+   <FileRef
+      location = "group:site_static/test.html">
+   </FileRef>
+   <FileRef
+      location = "group:site_static/panopoly.css">
+   </FileRef>
+   <FileRef
+      location = "group:site_static/js/SoyCss3d.js">
+   </FileRef>
+   <FileRef
       location = "container:site_static/js/SoyGyro.js">
    </FileRef>
    <FileRef

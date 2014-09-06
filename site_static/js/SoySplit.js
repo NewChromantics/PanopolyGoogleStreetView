@@ -8,11 +8,6 @@ function SoySplit()
 	SoySupport.apply( this, arguments );
 }
 
-SoySplit.prototype.Init = function()
-{
-	this.OnSupported();
-}
-
 SoySplit.prototype.IsSupported = function()
 {
 	return true;
