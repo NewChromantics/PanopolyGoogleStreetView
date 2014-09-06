@@ -44,8 +44,11 @@ SoyRiftAjax.prototype.Fetch = function()
 
 SoyRiftAjax.prototype.OnError = function($Event)
 {
-	this.mLastFetchSuccess = false;
-	this.OnUnsupported();
+	if ( this.mLastFetchSuccess )
+	{
+		this.mLastFetchSuccess = false;
+		this.OnUnsupported();
+	}
 	
 	//	try to reconnect again in 10 secs
 	var $this = this;
@@ -66,8 +69,11 @@ SoyRiftAjax.prototype.OnReply = function($Event)
 		return;
 	}
 
-	this.mLastFetchSuccess = true;
-	this.OnSupported();
+	if ( !this.mLastFetchSuccess )
+	{
+		this.mLastFetchSuccess = true;
+		this.OnSupported();
+	}
 	
 	//	update rift input quaternion
 	this.mQuaternion.set( $Json.quat.x, $Json.quat.y, $Json.quat.z, $Json.quat.w );
