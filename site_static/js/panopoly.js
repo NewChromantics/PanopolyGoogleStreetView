@@ -98,12 +98,13 @@ function GetNextResFilename(Filename)
 	if ( NewFilename )
 		return NewFilename;
 	
+	if ( IsMobile() )
+		return null;
+
 	var NewFilename = ReplaceFilename( Filename, 1024, 2048 );
 	if ( NewFilename )
 		return NewFilename;
 	
-	if ( IsMobile() )
-		return null;
 	NewFilename = ReplaceFilename( Filename, 2048, 4096 );
 	if ( NewFilename )
 		return NewFilename;
