@@ -58,7 +58,7 @@ SoyGyro.prototype.OnDeviceOrientationChanged = function($Event)
 	if ( $First )
 	{
 		$First = false;
-		OnSupported();
+		this.OnSupported();
 	}
 }
 
