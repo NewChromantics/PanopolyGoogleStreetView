@@ -73,6 +73,7 @@
 		<script src="js/SoyFullscreen.js"></script>
 		<script src="js/SoyRiftAjax.js"></script>
 		<script src="js/SoyGyro.js"></script>
+		<script src="js/SoyFileSelect.js"></script>
 	
 		<div id="container"></div>
 
@@ -249,6 +250,26 @@ function OnGyroSupportChanged($Supported)
 }
 
 
+
+
+function OnFileSelectSupportChanged()
+{
+	var $Supported = IsSupported('FileSelect');
+	var Uploader = GetElement("image_selector");
+	if ( Uploader )
+	{
+		ShowElement("ImageSelector", $Supported );
+		if ( $Supported )
+			Uploader.addEventListener('change', OnFileSelect, false);
+		else
+			Uploader.removeEventListener('change', OnFileSelect, false);
+	}
+}
+
+
+
+
+
 //	support callbacks
 AddOnSupportedChangedListener('RiftWebsocket', OnRiftWebsocketSupportChanged );
 AddOnSupportedChangedListener('RiftAjax', OnRiftAjaxSupportChanged );
@@ -256,6 +277,7 @@ AddOnSupportedChangedListener('Split', OnSplitSupportChanged );
 AddOnSupportedChangedListener('Shrink', OnShrinkSupportChanged );
 AddOnSupportedChangedListener('Fullscreen', OnFullscreenSupportChanged );
 AddOnSupportedChangedListener('Gyro', OnGyroSupportChanged );
+AddOnSupportedChangedListener('FileSelect', OnFileSelectSupportChanged );
 
 
 //	scene
@@ -605,7 +627,7 @@ function LoadPano()
 
 		
 		var Container = GetElement("container");
-		if ( HasWebGl() || !IsMobile() )
+		if ( IsPanopolySupported() )
 		{
 			
 			init( Container );
