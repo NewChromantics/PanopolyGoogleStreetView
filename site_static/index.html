@@ -10,7 +10,7 @@
 	<body id="xxxcontainer">
 		<div id="info">
 			panopo.ly
-			<div id="UpTest" class="Button">0</div>
+			<div id="Uptime" class="Button">0</div>
 
 			<div id="ImageSelector" class="FileInput">
 				Select Image
@@ -51,7 +51,7 @@
 				Gyro
 			</div>
 			
-			<div id="QuatDebug" class="Button" style="display:block;">
+			<div id="QuatDebug" class="Button">
 				quaternion
 			</div>
 			
@@ -78,6 +78,25 @@
 
 
 <script>
+	
+	
+//	turn on debug stuff
+if ( window.location.hash == '#debug' )
+{
+	//alert('debug mode');
+	ShowElement('QuatDebug');
+	
+	function UpdateUptime()
+	{
+		ShowElement("Uptime");
+		var Container = GetElement("Uptime");
+		if ( !Container )
+		return;
+		Container.innerText = parseInt( Container.innerText ) + 1;
+		setTimeout( UpdateUptime, 1000 );
+	}
+	UpdateUptime();
+}
 
 function SoyMode($CameraControl)
 {
@@ -92,10 +111,10 @@ var $CurrentCameraControl = null;
 var $ModeStack = new Array();
 
 //	auto-switch modesets
-var $DesktopRiftMode = new Array('RiftAjax','Split');
-//var $IosExternalMode = new Array('Gyro','Split','ExternalDisplay');
-var $IosExternalMode = new Array('Gyro','Split');
-
+var $DesktopRiftAjaxMode = new Array('RiftAjax','Split'/*,'Fullscreen'*/);
+var $DesktopRiftWebsocketMode = new Array('RiftWebsocket','Split','Fullscreen');
+var $IosRiftMode = new Array('Gyro','Split','ExternalDisplay');
+var $IosGyroMode = new Array('Gyro');
 
 
 //	save current mode
@@ -180,12 +199,16 @@ function CheckAutoSwitch($ChangedSupport,$Supported)
 		while ( $CurrentCameraControl == $ChangedSupport )
 			if ( !PopMode( $ChangedSupport ) )
 				break;
-		return;
+		return false;
 	}
 	
 	//	something became enabled, try the different modes
-	TryMode( $DesktopRiftMode, "DesktopRift" );
-	TryMode( $IosExternalMode, "IosGyro" );
+	if ( TryMode( $DesktopRiftAjaxMode, "DesktopRiftAjax" ) )	return true;
+	if ( TryMode( $DesktopRiftWebsocketMode, "DesktopRiftWebsocket" ) )	return true;
+	if ( TryMode( $IosRiftMode, "IosRift" ) )	return true;
+	if ( TryMode( $IosGyroMode, "IosGyro" ) )	return true;
+	
+	return false;
 }
 
 	
@@ -571,16 +594,6 @@ function LoadPano()
 		
 		//	main
 		
-		function UpdateUpTest()
-		{
-			ShowElement("UpTest");
-			var Container = GetElement("UpTest");
-			if ( !Container )
-				return;
-			Container.innerText = parseInt( Container.innerText ) + 1;
-			setTimeout( UpdateUpTest, 1000 );
-		}
-		UpdateUpTest();
 
 
 		//	init support
