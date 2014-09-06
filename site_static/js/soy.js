@@ -26,10 +26,37 @@ function IsDevice(Name)
 
 function IsWebsocketSupported()
 {
-	return true;
+	if ( "WebSocket" in window )
+		return true;
+	
+	//ws = new MozWebSocket(url);
+	//if ( "MozWebSocket" in window )
+	//	return true;
+	
+	return false;
 }
 
 function IsAjaxSupported()
 {
-	return true;
+	if ( "XMLHttpRequest" in window )
+		return true;
+	return false;
 }
+
+function console_logStack()
+{
+	var stack = new Error().stack;
+	console.log(stack);
+}
+
+//	register error handler for devices where we can't see the console
+//	if chrome()
+if ( IsDevice('iPad') || IsDevice('iPhone') )
+{
+	window.onerror = function(error,file,line) {
+		var Debug = file + "(" + line + "): " + error;
+		alert(Debug);
+	};
+}
+
+
