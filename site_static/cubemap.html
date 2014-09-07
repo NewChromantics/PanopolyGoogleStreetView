@@ -117,7 +117,6 @@
 <script src="js/soy.js"></script>
 <script src="threejs/three.min.js"></script>
 <script src="threejs/effects/StereoEffect.js"></script>
-<script src="js/MouseControls.js"></script>
 <script src="js/GoogleAnalytics.js"></script>
 <script src="js/ClearDefaultText.js"></script>
 <script src="js/SoyWebSocket-1.0.js"></script>
@@ -214,7 +213,7 @@ function ascii (a) { return a.charCodeAt(0); }
 
 
 
-function CubemapLayout()
+function CubemapLayout($ImageUrl,$ImageWidth,$ImageHeight)
 {
 	this.mFront = new THREE.Vector2(3,1);
 	this.mBack = new THREE.Vector2(1,1);
@@ -223,6 +222,8 @@ function CubemapLayout()
 	this.mUp = new THREE.Vector2(1,0);
 	this.mDown = new THREE.Vector2(1,2);
 	this.mBlockCount = new THREE.Vector2( 4, 3 );
+	this.mImageUrl = $ImageUrl;
+	this.mImageSize = new THREE.Vector2( $ImageWidth, $ImageHeight );
 }
 
 function ScaleVectors($a,$b)
@@ -235,42 +236,60 @@ function DivideVectors($a,$b)
 	return new THREE.Vector2( $a.x / $b.x, $a.y / $b.y );
 }
 
-CubemapLayout.prototype.GetFront = function($Size)	{	return ScaleVectors( this.mFront, DivideVectors( $Size, this.mBlockCount ) );	}
-CubemapLayout.prototype.GetBack = function($Size)	{	return ScaleVectors( this.mBack, DivideVectors( $Size, this.mBlockCount ) );	}
-CubemapLayout.prototype.GetLeft = function($Size)	{	return ScaleVectors( this.mLeft, DivideVectors( $Size, this.mBlockCount ) );	}
-CubemapLayout.prototype.GetRight = function($Size)	{	return ScaleVectors( this.mRight, DivideVectors( $Size, this.mBlockCount ) );	}
-CubemapLayout.prototype.GetUp = function($Size)		{	return ScaleVectors( this.mUp, DivideVectors( $Size, this.mBlockCount ) );	}
-CubemapLayout.prototype.GetDown = function($Size)	{	return ScaleVectors( this.mDown, DivideVectors( $Size, this.mBlockCount ) );	}
+CubemapLayout.prototype.GetFaceSize = function()	{	return DivideVectors( this.mImageSize, this.mBlockCount );	}
+CubemapLayout.prototype.GetFront = function()	{	return ScaleVectors( this.mFront, this.GetFaceSize() );	}
+CubemapLayout.prototype.GetBack = function()	{	return ScaleVectors( this.mBack, this.GetFaceSize() );	}
+CubemapLayout.prototype.GetLeft = function()	{	return ScaleVectors( this.mLeft, this.GetFaceSize() );	}
+CubemapLayout.prototype.GetRight = function()	{	return ScaleVectors( this.mRight, this.GetFaceSize() );	}
+CubemapLayout.prototype.GetUp = function()		{	return ScaleVectors( this.mUp, this.GetFaceSize() );	}
+CubemapLayout.prototype.GetDown = function()	{	return ScaleVectors( this.mDown, this.GetFaceSize() );	}
 
 //	intialise cube faces
 function SetCubemapBackground($Front,$Back,$Left,$Right,$Up,$Down)
 {
-	var $ImageUrl = 'cubemap.jpg';
-	var $ImageSize = new THREE.Vector2( 400, 300 );
-	var $FaceWidth = 100;
-	var $FaceHeight = 100;
+//	var $Layout = new CubemapLayout('cubemap.jpg',400,300);
+//	var $Layout = new CubemapLayout('cubemap2x.jpg',800,600);
+	var $Layout = new CubemapLayout('stormycubemap.jpg',4096,3072);
+/*
+	var $Layout = new CubemapLayout('churchcubemap.jpg',8192, 2048);
+	$Layout.mFront = new THREE.Vector2(2,0);
+	$Layout.mBack = new THREE.Vector2(4,0);
+	$Layout.mLeft = new THREE.Vector2(3,0);
+	$Layout.mRight = new THREE.Vector2(1,0);
+	$Layout.mUp = new THREE.Vector2(0,0);
+	$Layout.mDown = new THREE.Vector2(5,0);
+	$Layout.mBlockCount = new THREE.Vector2( 6, 1 );
+*/
 
-	var $Layout = new CubemapLayout();
 	
-	SetFaceBackground( $Front, $Layout.GetFront($ImageSize), $ImageSize, $ImageUrl );
-	SetFaceBackground( $Back, $Layout.GetBack($ImageSize), $ImageSize, $ImageUrl );
-	SetFaceBackground( $Left, $Layout.GetLeft($ImageSize), $ImageSize, $ImageUrl );
-	SetFaceBackground( $Right, $Layout.GetRight($ImageSize), $ImageSize, $ImageUrl );
-	SetFaceBackground( $Up, $Layout.GetUp($ImageSize), $ImageSize, $ImageUrl );
-	SetFaceBackground( $Down, $Layout.GetDown($ImageSize), $ImageSize, $ImageUrl );
+	SetFaceBackground( $Front, $Layout.GetFront(), $Layout );
+	SetFaceBackground( $Back, $Layout.GetBack(), $Layout );
+	SetFaceBackground( $Left, $Layout.GetLeft(), $Layout );
+	SetFaceBackground( $Right, $Layout.GetRight(), $Layout );
+	SetFaceBackground( $Up, $Layout.GetUp(), $Layout );
+	SetFaceBackground( $Down, $Layout.GetDown(), $Layout );
 }
 
 
-function SetFaceBackground($Element,$ImageOffset,$ImageSize,$ImageUrl)
+function SetFaceBackground($Element,$ImageOffset,$Layout)
 {
+	var $ImageSize = $Layout.mImageSize;
+	var $ImageUrl = $Layout.mImageUrl;
 	if ( !$Element )
 		return;
 		
-	var $x = -$ImageOffset.x;
-	var $y = -$ImageOffset.y;
+	var $FaceSize = new THREE.Vector2( $Element.clientWidth, $Element.clientHeight );
+	var $CssScale = DivideVectors( $Layout.GetFaceSize(), $FaceSize );
+	console.log	($Layout.GetFaceSize());
+	console.log	($CssScale);
+	var $x = -($ImageOffset.x/$CssScale.x) + 'px ';
+	var $y = -($ImageOffset.y/$CssScale.y) + 'px ';
+	var $w = ($ImageSize.x/$CssScale.x) + 'px ';
+	var $h = ($ImageSize.y/$CssScale.y) + 'px ';
 	
 	
-	$Element.style.background = 'url(' + $ImageUrl + ') ' + $x + 'px ' + $y +'px';
+	$Element.style.background = 'url(' + $ImageUrl + ') ' + $x + $y;
+	$Element.style.backgroundSize = $w + $h;
 /*
  gr: setting these individually just didn't work...
 	$Element.style.backgroundImage = 'url(' + $ImageUrl + ')';
