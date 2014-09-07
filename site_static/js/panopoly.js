@@ -149,3 +149,135 @@ function IsPanopolySupported()
 	return ( HasWebGl() || !IsMobile() );
 }
 
+
+
+
+
+
+function SoyMode($CameraControl)
+{
+	this.mCameraControl = $CameraControl;
+	this.mSplit = IsSupportEnabled('Split');
+	this.mFullscreen = IsSupportEnabled('Fullscreen');
+}
+
+//	current control
+var $CurrentCameraControl = null;
+//	previous modes
+var $ModeStack = new Array();
+
+//	auto-switch modesets
+var $DesktopRiftAjaxMode = new Array('RiftAjax','Split'/*,'Fullscreen'*/);
+var $DesktopRiftWebsocketMode = new Array('RiftWebsocket','Split','Fullscreen');
+var $IosRiftMode = new Array('Gyro','Split','ExternalDisplay');
+var $IosGyroMode = new Array('Gyro');
+var $DesktopMouseMode = new Array('Mouse');
+
+
+//	save current mode
+function PushMode()
+{
+	var $CurrentMode = new SoyMode($CurrentCameraControl);
+	$ModeStack.push( $CurrentMode );
+}
+
+//	restore last mode
+function PopMode($SpecificMode)
+{
+	//	pop last
+	var $Last = $ModeStack.length-1;
+	if ( $Last < 0 )
+		return false;
+	
+	var $LastMode = $ModeStack[$Last];
+	
+	//	if specified, only pop if in certain mode
+	if ( $SpecificMode )
+		if ( $LastMode.mCameraControl != $SpecificMode )
+			return false;
+	
+	$ModeStack.splice($Last);
+	
+	//	restore settings
+	$CurrentCameraControl = $LastMode.mCameraControl;
+	SetSupportEnabled('Split',$LastMode.mSplit);
+	SetSupportEnabled('Fullscreen',$LastMode.mFullscreen);
+	return true;
+}
+
+
+function TryMode($ModeParams,$ModeName)
+{
+	var $InModeNow = true;
+	for ( var $Key in $ModeParams )
+	{
+		var $Support = GetSupport( $ModeParams[$Key] );
+		if ( !$Support )
+			return false;
+		if ( !$Support.IsSupported() )
+			return false;
+		if ( !$Support.IsEnabled() )
+			$InModeNow = false;
+	}
+	
+	//	alraedy in mode
+	if ( $InModeNow )
+	{
+		//alert("already in mode " + $ModeName );
+		return true;
+	}
+	
+	//	save current state
+	PushMode();
+	
+	//	all supported, try and switch
+	for ( var $Key in $ModeParams )
+	{
+		var $SupportName = $ModeParams[$Key];
+		if ( !SetSupportEnabled( $SupportName ) )
+		{
+			//alert("failed to enable " + $SupportName );
+			PopMode();
+			return false;
+		}
+	}
+	//	and set controller
+	$CurrentCameraControl = $ModeParams[0];
+	
+	//alert("set mode " + $ModeName );
+	return true;
+}
+
+function CheckAutoSwitch($ChangedSupport,$Supported)
+{
+	//	support was lost, if it's the current control, drop out of mode
+	if ( !$Supported )
+	{
+		while ( $CurrentCameraControl == $ChangedSupport )
+			if ( !PopMode( $ChangedSupport ) )
+				break;
+		return false;
+	}
+	
+	//	something became enabled, try the different modes
+	if ( TryMode( $DesktopRiftAjaxMode, "DesktopRiftAjax" ) )	return true;
+	if ( TryMode( $DesktopRiftWebsocketMode, "DesktopRiftWebsocket" ) )	return true;
+	if ( TryMode( $IosRiftMode, "IosRift" ) )	return true;
+	if ( TryMode( $IosGyroMode, "IosGyro" ) )	return true;
+	if ( TryMode( $DesktopMouseMode, "DesktopMouseMode" ) )	return true;
+	
+	return false;
+}
+
+
+function GetCameraQuaternion()
+{
+	var $Control = GetSupport($CurrentCameraControl);
+	if ( $Control && $Control.IsEnabled() )
+	{
+		return $Control.mQuaternion;
+	}
+	
+	return camera.quaternion;
+}
+
