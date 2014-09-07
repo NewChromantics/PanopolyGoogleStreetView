@@ -64,16 +64,12 @@ div.Test span
 	color: #fff;
 }
 
-#cube .top  {
+#cube .up  {
 	-webkit-transform: rotateX(90deg) translateZ(50px);
 	-moz-transform: rotateX(90deg) translateZ(50px);
 	transform: rotateX(90deg) translateZ(50px);
 	
 	background-color: red;
-	opacity: 0.9;
-	background: url(cubemap.jpg);
-	background-position: -100px -0px;
-	background-size: 400px 300px;	/* image space...scale up with this */
 }
 
 #cube .front {
@@ -82,10 +78,6 @@ div.Test span
 	transform: translateZ(50px);
 
 	background-color: lime;
-	opacity: 0.9;
-	background: url(cubemap.jpg);
-	background-position: -300px -100px;
-	background-size: 400px 300px;	/* image space...scale up with this */
 }
 
 #cube .left {
@@ -94,10 +86,6 @@ div.Test span
 	transform: rotateY(90deg) translateZ(50px);
 	
 	background-color: blue;
-	opacity: 0.9;
-	background: url(cubemap.jpg);
-	background-position: -0px -100px;
-	background-size: 400px 300px;	/* image space...scale up with this */
 }
 
 #cube .back {
@@ -106,10 +94,6 @@ div.Test span
 	transform: rotateY(180deg) translateZ(50px);
 	
 	background-color: yellow;
-	opacity: 0.9;
-	background: url(cubemap.jpg);
-	background-position: -100px -100px;
-	background-size: 400px 300px;	/* image space...scale up with this */
 }
 
 #cube .right {
@@ -118,22 +102,14 @@ div.Test span
 	transform: rotateY(-90deg) translateZ(50px);
 
 	background-color: cyan;
-	opacity: 0.9;
-	background: url(cubemap.jpg);
-	background-position: -200px -100px;
-	background-size: 400px 300px;	/* image space...scale up with this */
 }
 
-#cube .bottom {
+#cube .down {
 	-webkit-transform: rotateX(-90deg) rotate(180deg) translateZ(50px);
 	-moz-transform: rotateX(-90deg) rotate(180deg) translateZ(50px);
 	transform: rotateX(-90deg) rotate(180deg) translateZ(50px);
 
 	background-color: magenta;
-	opacity: 0.9;
-	background: url(cubemap.jpg);
-	background-position: -100px -200px;
-	background-size: 400px 300px;	/* image space...scale up with this */
 }
 
 
@@ -177,13 +153,15 @@ div.Test span
 	
 	<div id="cubeparent">
     <div id="cube">
-		<div id="cube_up" class="face top">top</div>
+		<div id="cube_up" class="face up">up</div>
 		<div id="cube_front" class="face front">front</div>
 		<div id="cube_left" class="face left">left</div>
 		<div id="cube_back" class="face back">back</div>
 		<div id="cube_right" class="face right">right</div>
-		<div id="cube_down" class="face bottom">bottom</div>
-    </div>    </div>
+		<div id="cube_down" class="face down">down</div>
+    </div>
+	</div>
+	
 </div>
     </div>
 </div>
@@ -208,7 +186,7 @@ div.Test span
 	
 	var xAngle = 0, yAngle = 0;
 	//var zTrans = 800;	//	center. Need to change this to account for fov
-	var zTrans = 700;	//	center. Need to change this to account for fov
+	var zTrans = 400;	//	center. Need to change this to account for fov
 
 	function OnTransformChanged()
 	{
@@ -270,12 +248,13 @@ function ascii (a) { return a.charCodeAt(0); }
 
 function CubemapLayout()
 {
-	this.mFront = new THREE.Vector2(0,1);
-	this.mBack = new THREE.Vector2(0,1);
+	this.mFront = new THREE.Vector2(3,1);
+	this.mBack = new THREE.Vector2(1,1);
 	this.mLeft = new THREE.Vector2(0,1);
-	this.mRight = new THREE.Vector2(0,1);
-	this.mUp = new THREE.Vector2(0,1);
-	this.mDown = new THREE.Vector2(0,1);
+	this.mRight = new THREE.Vector2(2,1);
+	this.mUp = new THREE.Vector2(1,0);
+	this.mDown = new THREE.Vector2(1,2);
+	this.mBlockCount = new THREE.Vector2( 4, 3 );
 }
 
 function ScaleVectors($a,$b)
@@ -283,12 +262,17 @@ function ScaleVectors($a,$b)
 	return new THREE.Vector2( $a.x * $b.x, $a.y * $b.y );
 }
 
-CubemapLayout.prototype.GetFront = function($Size)	{	return ScaleVectors( this.mFront, $Size );	}
-CubemapLayout.prototype.GetBack = function($Size)	{	return ScaleVectors( this.mBack, $Size );	}
-CubemapLayout.prototype.GetLeft = function($Size)	{	return ScaleVectors( this.mLeft, $Size );	}
-CubemapLayout.prototype.GetRight = function($Size)	{	return ScaleVectors( this.mRight, $Size );	}
-CubemapLayout.prototype.GetUp = function($Size)		{	return ScaleVectors( this.mUp, $Size );	}
-CubemapLayout.prototype.GetDown = function($Size)	{	return ScaleVectors( this.mDown, $Size );	}
+function DivideVectors($a,$b)
+{
+	return new THREE.Vector2( $a.x / $b.x, $a.y / $b.y );
+}
+
+CubemapLayout.prototype.GetFront = function($Size)	{	return ScaleVectors( this.mFront, DivideVectors( $Size, this.mBlockCount ) );	}
+CubemapLayout.prototype.GetBack = function($Size)	{	return ScaleVectors( this.mBack, DivideVectors( $Size, this.mBlockCount ) );	}
+CubemapLayout.prototype.GetLeft = function($Size)	{	return ScaleVectors( this.mLeft, DivideVectors( $Size, this.mBlockCount ) );	}
+CubemapLayout.prototype.GetRight = function($Size)	{	return ScaleVectors( this.mRight, DivideVectors( $Size, this.mBlockCount ) );	}
+CubemapLayout.prototype.GetUp = function($Size)		{	return ScaleVectors( this.mUp, DivideVectors( $Size, this.mBlockCount ) );	}
+CubemapLayout.prototype.GetDown = function($Size)	{	return ScaleVectors( this.mDown, DivideVectors( $Size, this.mBlockCount ) );	}
 
 //	intialise cube faces
 function SetCubemapBackground($Front,$Back,$Left,$Right,$Up,$Down)
@@ -299,27 +283,39 @@ function SetCubemapBackground($Front,$Back,$Left,$Right,$Up,$Down)
 	var $FaceHeight = 100;
 
 	var $Layout = new CubemapLayout();
-	SetFaceBackground( $Front, $Layout.GetFront($ImageSize), $ImageSize );
-	SetFaceBackground( $Back, $Layout.GetBack($ImageSize), $ImageSize );
-	SetFaceBackground( $Left, $Layout.GetLeft($ImageSize), $ImageSize );
-	SetFaceBackground( $Right, $Layout.GetRight($ImageSize), $ImageSize );
-	SetFaceBackground( $Up, $Layout.GetUp($ImageSize), $ImageSize );
-	SetFaceBackground( $Down, $Layout.GetDown($ImageSize), $ImageSize );
+	
+	SetFaceBackground( $Front, $Layout.GetFront($ImageSize), $ImageSize, $ImageUrl );
+	SetFaceBackground( $Back, $Layout.GetBack($ImageSize), $ImageSize, $ImageUrl );
+	SetFaceBackground( $Left, $Layout.GetLeft($ImageSize), $ImageSize, $ImageUrl );
+	SetFaceBackground( $Right, $Layout.GetRight($ImageSize), $ImageSize, $ImageUrl );
+	SetFaceBackground( $Up, $Layout.GetUp($ImageSize), $ImageSize, $ImageUrl );
+	SetFaceBackground( $Down, $Layout.GetDown($ImageSize), $ImageSize, $ImageUrl );
 }
 
-function SetFaceBackground($Element,$ImageOffset,$ImageSize)
+
+function SetFaceBackground($Element,$ImageOffset,$ImageSize,$ImageUrl)
 {
 	if ( !$Element )
 		return;
-	
+		
 	var $x = -$ImageOffset.x;
-	var $y = -$ImageOffset.x;
-	$Element.style.background_position = "" + $x + 'px ' + $y + 'px';
-	$Element.style.background_size = "" + $ImageSize.x + 'px ' + $ImageSize.y + 'px';
+	var $y = -$ImageOffset.y;
+	
+	
+	$Element.style.background = 'url(' + $ImageUrl + ') ' + $x + 'px ' + $y +'px';
+/*
+ gr: setting these individually just didn't work...
+	$Element.style.backgroundImage = 'url(' + $ImageUrl + ')';
+	$Element.style.backgroundAttachment = "fixed";
+	$Element.style.backgroundPosition = '-100px -0px';
+	//$Element.style.backgroundSize = '' + $ImageSize.x + 'px ' + $ImageSize.y + 'px';
+	//$Element.style.backgroundPosition = '' + $x + 'px ' + $y + 'px';
+	//$Element.style.backgroundSize = '' + $ImageSize.x + 'px ' + $ImageSize.y + 'px';
+	$Element.style.backgroundSize = '400px 300px';
+*/
 }
 
 SetCubemapBackground( GetElement('cube_front'), GetElement('cube_back'), GetElement('cube_left'), GetElement('cube_right'), GetElement('cube_up'), GetElement('cube_down') );
-
 
 
 </script>
