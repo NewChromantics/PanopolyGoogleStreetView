@@ -10,11 +10,17 @@ function SoySplit()
 
 SoySplit.prototype.IsSupported = function()
 {
+	//if ( typeof effect == 'undefined' )
+	//	return false;
 	return true;
 }
 
 SoySplit.prototype.IsEnabled = function()
 {
+	if ( !this.IsSupported() )
+		return false;
+	if ( typeof effect == 'undefined' )
+		return false;
 	return (effect!=null);
 }
 
