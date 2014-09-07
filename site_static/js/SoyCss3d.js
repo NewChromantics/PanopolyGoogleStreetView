@@ -1,4 +1,22 @@
 
+function GetTransformProperty()
+{
+	var props = 'transform WebkitTransform MozTransform OTransform msTransform'.split(' ');
+	var el = document.createElement('div');
+	
+	for(var i = 0, l = props.length; i < l; i++) {
+		if(typeof el.style[props[i]] !== "undefined") {
+			return props[i];
+		}
+	}
+	
+	return undefined;
+}
+
+
+
+
+
 SoyCss3d.prototype = new SoySupport('SoyCss3d');
 RegisterSupport('Css3d', new SoyCss3d() );
 
@@ -35,4 +53,5 @@ SoyCss3d.prototype.IsSupported = function()
 	
     return (has3d !== undefined && has3d.length > 0 && has3d !== "none");
 }
+
 
