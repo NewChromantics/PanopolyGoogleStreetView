@@ -278,6 +278,9 @@ function GetCameraQuaternion()
 		return $Control.mQuaternion;
 	}
 	
-	return camera.quaternion;
+	if ( typeof camera != 'undefined' )
+		return camera.quaternion;
+
+	return new THREE.Quaternion();
 }
 

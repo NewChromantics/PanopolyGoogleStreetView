@@ -7,19 +7,6 @@
 <link rel="Stylesheet" href="panopoly.css" type="text/css">
 <style>
 
-div.Test
-{
-	margin: 10px;
-}
-
-div.Test span
-{
-	font-weight: normal;
-	font-size: 20pt;
-	padding:10px;
-	margin:2px;
-}
-
 #experiment {
 	-webkit-perspective: 800px;
 	-webkit-perspective-origin: 50% 50px;
@@ -30,21 +17,24 @@ div.Test span
 }
 
 
-#cube, #cubeparent {
+#cube {
 	position: relative;
 	margin: 100px auto;
 	height: 100px;
 	width: 100px;
-	-webkit-transition: -webkit-transform 1s linear;
+	-webkit-transition: -webkit-transform 0s linear;
 	-webkit-transform-style: preserve-3d;
-	-moz-transition: -moz-transform 1s linear;
+	-moz-transition: -moz-transform 0s linear;
 	-moz-transform-style: preserve-3d;
-	transition: transform 1s linear;
+	transition: transform 0s linear;
 	transform-style: preserve-3d;
 }
 
 #cubeparent
 {
+	-webkit-transform-style: preserve-3d;
+	-moz-transform-style: preserve-3d;
+	transform-style: preserve-3d;
 	/*
 		when all translate z is 200....
 		far face 1000
@@ -168,34 +158,22 @@ div.Test span
 
 <script>
 	
+	//	if x & y angle == 0 then sides disapear... need to catch this case
+	var xAngle = 0, yAngle = 0.001;
+	var zTrans = 780;	//	center. Need to change this to account for fov
 	var $TransformProperty = GetTransformProperty();
-	function GetTransformProperty()
-	{
-		var props = 'transform WebkitTransform MozTransform OTransform msTransform'.split(' '),
-		prop,
-		el = document.createElement('div');
-		
-		for(var i = 0, l = props.length; i < l; i++) {
-			if(typeof el.style[props[i]] !== "undefined") {
-				return props[i];
-			}
-		}
-
-		return undefined;
-	}
-	
-	var xAngle = 0, yAngle = 0;
-	//var zTrans = 800;	//	center. Need to change this to account for fov
-	var zTrans = 400;	//	center. Need to change this to account for fov
 
 	function OnTransformChanged()
 	{
-		var $Transform = "rotateX("+xAngle+"deg) rotateY("+yAngle+"deg)";
-		document.getElementById('cube').style[$TransformProperty] = $Transform;
+		console.log("OnTransformChanged: " + zTrans );
+		SetCameraRotation( xAngle, yAngle, 0 );
 		var $ParentTransform = "translateZ("+zTrans+"px)";
 		document.getElementById('cube').parentNode.style[$TransformProperty] = $ParentTransform;
 	}
 	OnTransformChanged();
+
+
+
 
 function ascii (a) { return a.charCodeAt(0); }
 	function OnKeyDown(evt)
@@ -234,16 +212,6 @@ function ascii (a) { return a.charCodeAt(0); }
 		OnTransformChanged();
 	}
 
-	function AutoRotate()
-	{
-		yAngle += 1;
-		xAngle += 0.01;
-		OnTransformChanged();
-		setTimeout( AutoRotate, 1000/30 );
-	}
-	AutoRotate();
-	
-	document.body.onkeydown = OnKeyDown;
 
 
 function CubemapLayout()
@@ -315,7 +283,84 @@ function SetFaceBackground($Element,$ImageOffset,$ImageSize,$ImageUrl)
 */
 }
 
+
+
+function SetCameraRotation($RotateX,$RotateY,$RotateZ)
+{
+	var $Transform = "rotateX("+$RotateX+"deg) rotateY("+$RotateY+"deg) rotateZ("+$RotateZ+"deg)";
+	document.getElementById('cube').style[$TransformProperty] = $Transform;
+	
+}
+
+function SetCameraQuaternion($Quaternion)
+{
+	//	convert quaternion to matrix
+	var $Matrix = new THREE.Matrix4();
+	$Matrix.makeRotationFromQuaternion( $Quaternion );
+	
+	//	doc's say css and three matrixes are column major... but doens't seem to be...
+	$Matrix.getInverse($Matrix);
+
+	//	convert matrix to css matrix
+	//	according to https://developer.apple.com/library/safari/documentation/appleapplications/reference/SafariCSSRef/Articles/Functions.html
+	//	this is column major
+//	matrix3d(n,n,n,n,n,n,n,n,n,n,n,n,n,n,n,n)
+	var $CssMatrix = 'matrix3d(';
+	var $MatrixComponents = $Matrix.elements;
+	for ( var $i=0;	$i<$MatrixComponents.length;	$i++)
+	{
+		if ( $i != 0 )
+			$CssMatrix += ',';
+		$CssMatrix += $MatrixComponents[$i];
+	}
+	$CssMatrix += ')';
+	
+	//	convert Quaternion to eular
+	var $Transform = $CssMatrix;
+	document.getElementById('cube').style[$TransformProperty] = $Transform;
+}
+
+function Update()
+{
+	//	update camera
+	var Quaternion = GetCameraQuaternion();
+	SetCameraQuaternion( Quaternion );
+	
+	var $UpdateRateMs = 1000/40;
+	setTimeout( Update, $UpdateRateMs );
+}
+
+
+//	support callbacks
+AddOnSupportedChangedListener('RiftWebsocket',	function($Supported){	CheckAutoSwitch('RiftWebsocket',$Supported);	} );
+AddOnSupportedChangedListener('RiftAjax',		function($Supported){	CheckAutoSwitch('RiftAjax',$Supported);	} );
+AddOnSupportedChangedListener('Gyro',			function($Supported){	CheckAutoSwitch('Gyro',$Supported);	} );
+AddOnSupportedChangedListener('Mouse',			function($Supported){	CheckAutoSwitch('Mouse',$Supported);	} );
+
+
+
 SetCubemapBackground( GetElement('cube_front'), GetElement('cube_back'), GetElement('cube_left'), GetElement('cube_right'), GetElement('cube_up'), GetElement('cube_down') );
+
+
+//	init support
+InitSupport();
+
+//	save initial mode
+PushMode();
+
+Update();
+
+/*
+function AutoRotate()
+{
+	yAngle += 1;
+	xAngle += 0.01;
+	OnTransformChanged();
+	setTimeout( AutoRotate, 1000/30 );
+}
+AutoRotate();
+*/
+//document.body.onkeydown = OnKeyDown;
 
 
 </script>
