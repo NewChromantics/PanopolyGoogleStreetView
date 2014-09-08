@@ -28,6 +28,8 @@ function SetElementPerspective3d($Element,$Value)
 {
 	if ( !$Element )
 		return;
+	$Element.style.WebkitPerspective = $Value;
+	$Element.style.MozPerspective = $Value;
 	$Element.style.perspective = $Value;
 }
 
@@ -35,6 +37,8 @@ function SetElementPerspectiveOrigin3d($Element,$Value)
 {
 	if ( !$Element )
 		return;
+	$Element.style.WebkitPerspectiveOrigin = $Value;
+	$Element.style.MozPerspectiveOrigin = $Value;
 	$Element.style.perspectiveOrigin = $Value;
 }
 
