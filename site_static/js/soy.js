@@ -60,3 +60,9 @@ if ( IsDevice('iPad') || IsDevice('iPhone') )
 }
 
 
+function ascii (a)
+{
+	return a.charCodeAt(0);
+}
+
+

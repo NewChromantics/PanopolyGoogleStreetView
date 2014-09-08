@@ -7,35 +7,26 @@
 <link rel="Stylesheet" href="panopoly.css" type="text/css">
 <style>
 
-#CubeMapViewport
-{
-	-webkit-perspective: 800px;
-	-webkit-perspective-origin: 50% 500px;
-	-moz-perspective: 800px;
-	-moz-perspective-origin: 50% 500px;
-	perspective: 800px;
-	perspective-origin: 50% 500px;
-}
 
+.ThreeD
+{
+	-webkit-transform-style: preserve-3d;
+	-moz-transform-style: preserve-3d;
+	transform-style: preserve-3d;
+
+	/* only needed for objects where we change tranform... */
+	/* add transition for smoothing in low FPS mode */
+	-webkit-transition: -webkit-transform 0s linear;
+	-moz-transition: -moz-transform 0s linear;
+	transition: transform 0s linear;
+}
 
 #CubeMap
 {
 	position: relative;
 	margin: 100px auto;	/* might want to work this out from screen height? */
-	-webkit-transition: -webkit-transform 0s linear;
-	-webkit-transform-style: preserve-3d;
-	-moz-transition: -moz-transform 0s linear;
-	-moz-transform-style: preserve-3d;
-	transition: transform 0s linear;
-	transform-style: preserve-3d;
 }
 
-#CubeMapParent
-{
-	-webkit-transform-style: preserve-3d;
-	-moz-transform-style: preserve-3d;
-	transform-style: preserve-3d;
-}
 
 .face {
 	position: absolute;
@@ -54,7 +45,6 @@
 	panopo.ly
 </div>
 
-<div id="TestContainer"></div>
 <div id="UpTest">0</div>
 
 <script src="js/soy.js"></script>
@@ -64,6 +54,7 @@
 <script src="js/ClearDefaultText.js"></script>
 <script src="js/SoyWebSocket-1.0.js"></script>
 <script src="js/panopoly.js"></script>
+<script src="js/CubeMap.js"></script>
 <script src="js/support.js"></script>
 <script src="js/SoySupport.js"></script>
 <script src="js/SoyRiftWebsocket.js"></script>
@@ -79,180 +70,11 @@
 
 
 
-<div id="CubeMapViewport">
-	<div id="CubeMapParent">
-	<div id="CubeMap">
-	</div>
-	</div>
+<div id="Container">
 </div>
 
 <script>
 	
-	//	if x & y angle == 0 then sides disapear... need to catch this case
-	var xAngle = 0, yAngle = 0.001;
-	var zTrans = 780;	//	center. Need to change this to account for fov
-
-	function OnTransformChanged()
-	{
-		console.log("OnTransformChanged: " + zTrans );
-		SetCameraRotation( xAngle, yAngle, 0 );
-		var $ParentTransform = "translateZ("+zTrans+"px)";
-		SetElementTransform3d( document.getElementById('CubeMap').parentNode, $ParentTransform );
-	}
-	OnTransformChanged();
-
-
-
-
-function ascii (a) { return a.charCodeAt(0); }
-	function OnKeyDown(evt)
-	{
-		switch(evt.keyCode)
-		{
-			case 37: // left
-			yAngle -= 90;
-			break;
-			
-			case 38: // up
-			xAngle += 90;
-			evt.preventDefault();
-			break;
-			
-			case 39: // right
-			yAngle += 90;
-			break;
-			
-			case 40: // down
-			xAngle -= 90;
-			evt.preventDefault();
-			break;
-			
-			case ascii('A'):
-			zTrans += 50;
-			evt.preventDefault();
-			console.log(zTrans);
-			break;
-
-			case ascii('Z'):
-			zTrans -= 50;
-			evt.preventDefault();
-			console.log(zTrans);
-			break;
-		};
-		OnTransformChanged();
-	}
-
-
-
-//	intialise cube faces
-function SetCubemapBackground($Cube)
-{
-	if ( !$Cube )
-		return false;
-	var $Layout = new CubemapLayout('cubemap.jpg',400,300);
-//	var $Layout = new CubemapLayout('cubemap2x.jpg',800,600);
-//	var $Layout = new CubemapLayout('stormycubemap.jpg',4096,3072);
-/*
-	var $Layout = new CubemapLayout('churchcubemap.jpg',8192, 2048);
-	$Layout.mFront = new THREE.Vector2(2,0);
-	$Layout.mBack = new THREE.Vector2(4,0);
-	$Layout.mLeft = new THREE.Vector2(3,0);
-	$Layout.mRight = new THREE.Vector2(1,0);
-	$Layout.mUp = new THREE.Vector2(0,0);
-	$Layout.mDown = new THREE.Vector2(5,0);
-	$Layout.mBlockCount = new THREE.Vector2( 6, 1 );
-*/
-
-	
-	SetFaceBackground( $Cube.mFaces['Front'], $Layout.GetFront(), $Layout );
-	SetFaceBackground( $Cube.mFaces['Back'], $Layout.GetBack(), $Layout );
-	SetFaceBackground( $Cube.mFaces['Left'], $Layout.GetLeft(), $Layout );
-	SetFaceBackground( $Cube.mFaces['Right'], $Layout.GetRight(), $Layout );
-	SetFaceBackground( $Cube.mFaces['Up'], $Layout.GetUp(), $Layout );
-	SetFaceBackground( $Cube.mFaces['Down'], $Layout.GetDown(), $Layout );
-	return true;
-}
-
-
-function SetFaceBackground($Element,$ImageOffset,$Layout)
-{
-	var $ImageSize = $Layout.mImageSize;
-	var $ImageUrl = $Layout.mImageUrl;
-	if ( !$Element )
-		return;
-		
-	var $FaceSize = new THREE.Vector2( $Element.clientWidth, $Element.clientHeight );
-	var $CssScale = DivideVectors( $Layout.GetFaceSize(), $FaceSize );
-	var $x = -($ImageOffset.x/$CssScale.x) + 'px ';
-	var $y = -($ImageOffset.y/$CssScale.y) + 'px ';
-	var $w = ($ImageSize.x/$CssScale.x) + 'px ';
-	var $h = ($ImageSize.y/$CssScale.y) + 'px ';
-	
-	
-	$Element.style.background = 'url(' + $ImageUrl + ') ' + $x + $y;
-	$Element.style.backgroundSize = $w + $h;
-/*
- gr: setting these individually just didn't work...
-	$Element.style.backgroundImage = 'url(' + $ImageUrl + ')';
-	$Element.style.backgroundAttachment = "fixed";
-	$Element.style.backgroundPosition = '-100px -0px';
-	//$Element.style.backgroundSize = '' + $ImageSize.x + 'px ' + $ImageSize.y + 'px';
-	//$Element.style.backgroundPosition = '' + $x + 'px ' + $y + 'px';
-	//$Element.style.backgroundSize = '' + $ImageSize.x + 'px ' + $ImageSize.y + 'px';
-	$Element.style.backgroundSize = '400px 300px';
-*/
-}
-
-function SetCameraRotation($RotateX,$RotateY,$RotateZ)
-{
-	var $Transform = "rotateX("+$RotateX+"deg) rotateY("+$RotateY+"deg) rotateZ("+$RotateZ+"deg)";
-	SetElementTransform3d( GetElement('CubeMap'), $Transform );
-}
-
-function GetCssMatrixFromQuaternion($Quaternion)
-{
-	var $Matrix = new THREE.Matrix4();
-	$Matrix.makeRotationFromQuaternion( $Quaternion );
-	
-	//	doc's say css and three matrixes are column major... but doens't seem to be...
-	//$Matrix.getInverse($Matrix);
-	$Matrix.transpose();
-
-	return GetCssMatrixFromMatrix4( $Matrix );
-}
-
-function GetCssMatrixFromMatrix4($Matrix4)
-{
-	//	copy as we modify it
-	var $Matrix = new THREE.Matrix4();
-	$Matrix.copy( $Matrix4 );
-	
-	//	convert matrix to css matrix
-	//	according to https://developer.apple.com/library/safari/documentation/appleapplications/reference/SafariCSSRef/Articles/Functions.html
-	//	this is column major
-	//	matrix3d(n,n,n,n,n,n,n,n,n,n,n,n,n,n,n,n)
-	var $CssMatrix = 'matrix3d(';
-	var $MatrixComponents = $Matrix.elements;
-	for ( var $i=0;	$i<$MatrixComponents.length;	$i++)
-	{
-		if ( $i != 0 )
-		$CssMatrix += ',';
-		$CssMatrix += $MatrixComponents[$i].toFixed(10);
-	}
-	$CssMatrix += ')';
-	
-	return $CssMatrix;
-}
-
-function SetCameraQuaternion($Quaternion)
-{
-	//	convert quaternion to matrix
-	var $CssMatrix = GetCssMatrixFromQuaternion( $Quaternion );
-
-//	convert Quaternion to eular
-	var $Transform = $CssMatrix;
-	SetElementTransform3d( GetElement('CubeMap'), $Transform );
-}
 
 function Update()
 {
@@ -264,39 +86,6 @@ function Update()
 	setTimeout( Update, $UpdateRateMs );
 }
 
-function CreateCubeFace($Parent,$FaceName,$FaceSize,$RotationTransform,$Colour)
-{
-	var $Element = document.createElement('div');
-	$Parent.mFaces[$FaceName] = $Element;	//	for easy access without id's later
-	$Parent.appendChild( $Element );
-	$Element.className = 'face';
-	$Element.id = 'cubemap_' + $FaceName;	//	just for debug
-	$Element.innerText = $FaceName;			//	just for debug
-	
-	$Element.style.width = $FaceSize + 'px';
-	$Element.style.height = $FaceSize + 'px';
-	var $ZTransform = ' translateZ(' + ($FaceSize/2) + 'px) ';
-	var $Transform = $RotationTransform + ' ' + $ZTransform;
-	SetElementTransform3d( $Element, $Transform );
-	$Element.style.backgroundColor = $Colour;
-}
-
-function InitCubemap($Cube,$FaceSize)
-{
-	if ( !$Cube )
-		return false;
-
-	$Cube.style.width = $FaceSize + 'px';
-	$Cube.style.height = $FaceSize + 'px';
-	$Cube.mFaces = {};
-	
-	CreateCubeFace( $Cube, 'Up', $FaceSize, 'rotateX(90deg)', 'red' );
-	CreateCubeFace( $Cube, 'Front', $FaceSize, '', 'lime' );
-	CreateCubeFace( $Cube, 'Left', $FaceSize, 'rotateY(90deg)', 'blue' );
-	CreateCubeFace( $Cube, 'Back', $FaceSize, 'rotateY(180deg)', 'yellow' );
-	CreateCubeFace( $Cube, 'Right', $FaceSize, 'rotateY(-90deg)', 'cyan' );
-	CreateCubeFace( $Cube, 'Down', $FaceSize, 'rotateX(-90deg)', 'magenta' );
-}
 
 //	support callbacks
 AddOnSupportedChangedListener('RiftWebsocket',	function($Supported){	CheckAutoSwitch('RiftWebsocket',$Supported);	} );
@@ -313,12 +102,10 @@ InitSupport();
 //	save initial mode
 PushMode();
 
+
+InitCubemap( GetElement('Container'), 1000 );
+SetCubemapBackground();
 Update();
-
-document.body.onkeydown = OnKeyDown;
-
-InitCubemap( GetElement('CubeMap'), 1000 );
-SetCubemapBackground( GetElement('CubeMap') );
 
 
 
