@@ -146,7 +146,6 @@ function LoadHigher(Material)
 
 function UseCanvasMode()
 {
-	return false;
 	return IsCanvasSupported() && ( HasWebGl() || !IsMobile() );
 }
 
