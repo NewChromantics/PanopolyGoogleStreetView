@@ -1,3 +1,5 @@
+var $TransformProperty = GetTransformProperty();
+
 
 function GetTransformProperty()
 {
@@ -10,7 +12,16 @@ function GetTransformProperty()
 		}
 	}
 	
-	return undefined;
+	return null;
+}
+
+
+
+function SetElementTransform3d($Element,$TransformCss)
+{
+	if ( !$Element && $TransformProperty != null )
+		return;
+	$Element.style[$TransformProperty] = $TransformCss;
 }
 
 
@@ -28,6 +39,9 @@ function SoyCss3d()
 
 SoyCss3d.prototype.IsSupported = function()
 {
+	if ( $TransformProperty == null )
+		return false;
+	
 	//	gr: cache this?
 	var el = document.createElement('p'),
 	has3d,
@@ -53,5 +67,3 @@ SoyCss3d.prototype.IsSupported = function()
 	
     return (has3d !== undefined && has3d.length > 0 && has3d !== "none");
 }
-
-

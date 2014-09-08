@@ -284,3 +284,38 @@ function GetCameraQuaternion()
 	return new THREE.Quaternion();
 }
 
+
+
+
+function CubemapLayout($ImageUrl,$ImageWidth,$ImageHeight)
+{
+	this.mFront = new THREE.Vector2(3,1);
+	this.mBack = new THREE.Vector2(1,1);
+	this.mLeft = new THREE.Vector2(0,1);
+	this.mRight = new THREE.Vector2(2,1);
+	this.mUp = new THREE.Vector2(1,0);
+	this.mDown = new THREE.Vector2(1,2);
+	this.mBlockCount = new THREE.Vector2( 4, 3 );
+	this.mImageUrl = $ImageUrl;
+	this.mImageSize = new THREE.Vector2( $ImageWidth, $ImageHeight );
+}
+
+function ScaleVectors($a,$b)
+{
+	return new THREE.Vector2( $a.x * $b.x, $a.y * $b.y );
+}
+
+function DivideVectors($a,$b)
+{
+	return new THREE.Vector2( $a.x / $b.x, $a.y / $b.y );
+}
+
+CubemapLayout.prototype.GetFaceSize = function()	{	return DivideVectors( this.mImageSize, this.mBlockCount );	}
+CubemapLayout.prototype.GetFront = function()	{	return ScaleVectors( this.mFront, this.GetFaceSize() );	}
+CubemapLayout.prototype.GetBack = function()	{	return ScaleVectors( this.mBack, this.GetFaceSize() );	}
+CubemapLayout.prototype.GetLeft = function()	{	return ScaleVectors( this.mLeft, this.GetFaceSize() );	}
+CubemapLayout.prototype.GetRight = function()	{	return ScaleVectors( this.mRight, this.GetFaceSize() );	}
+CubemapLayout.prototype.GetUp = function()		{	return ScaleVectors( this.mUp, this.GetFaceSize() );	}
+CubemapLayout.prototype.GetDown = function()	{	return ScaleVectors( this.mDown, this.GetFaceSize() );	}
+
+
