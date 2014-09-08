@@ -43,6 +43,12 @@ function IsAjaxSupported()
 	return false;
 }
 
+function IsCanvasSupported()
+{
+	//	check three.js support and canvas support...
+	return true;
+}
+
 function console_logStack()
 {
 	var stack = new Error().stack;

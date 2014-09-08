@@ -5,9 +5,10 @@
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 	<link rel="Stylesheet" href="panopoly.css" type="text/css">
+	<link rel="Stylesheet" href="Cubemap.css" type="text/css">
 </head>
 
-	<body id="xxxcontainer">
+	<body>
 		<div id="info">
 			panopo.ly
 			<div id="Uptime" class="Button">0</div>
@@ -64,6 +65,7 @@
 		<script src="js/ClearDefaultText.js"></script>
 		<script src="js/SoyWebSocket-1.0.js"></script>
 		<script src="js/panopoly.js"></script>
+		<script src="js/Cubemap.js"></script>
 		<script src="js/support.js"></script>
 		<script src="js/SoySupport.js"></script>
 		<script src="js/SoyRiftWebsocket.js"></script>
@@ -74,6 +76,7 @@
 		<script src="js/SoyGyro.js"></script>
 		<script src="js/SoyFileSelect.js"></script>
 		<script src="js/SoyMouse.js"></script>
+		<script src="js/SoyCss3d.js"></script>
 	
 		<div id="container"></div>
 
@@ -137,14 +140,6 @@ function OnGyroSupportChanged($Supported)
 }
 
 
-function OnMouseSupportChanged($Supported)
-{
-	CheckAutoSwitch( 'Mouse', $Supported );
-}
-
-
-
-
 
 function OnFileSelectSupportChanged()
 {
@@ -179,7 +174,6 @@ var camera, scene, renderer, effect;
 var mesh, lightMesh, geometry;
 var spheres = [];
 var directionalLight, pointLight;
-
 
 
 		function OnFileUploadSupported($Enable)
@@ -475,25 +469,33 @@ function LoadPano()
 		
 
 
-		//	init support
-		InitSupport();
-		
 		//	save initial mode
 		PushMode();
 		
+		//	init support
+		AddDefaultSupportAutoSwitch();
+		InitSupport();
+		
+		
 		
 		var Container = GetElement("container");
-		if ( IsPanopolySupported() )
+		if ( UseCanvasMode() )
 		{
 			init( Container );
 
 			//	load user's required pano
 			LoadPano();
 		}
+		else if ( UseCubemapMode() )
+		{
+			var $FaceResolution = 1000;
+			InitCubemap( Container, $FaceResolution );
+			SetCubemapBackground();
+			CubemapUpdate();
+		}
 		else
 		{
 			ShutdownSupport();
-			var Container = document.getElementById("container");
 			Container.style.padding = "20%";
 			Container.innerText = "Not currently supported without webgl.";
 			

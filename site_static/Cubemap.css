@@ -1,0 +1,29 @@
+
+.ThreeD
+{
+	-webkit-transform-style: preserve-3d;
+	-moz-transform-style: preserve-3d;
+	transform-style: preserve-3d;
+
+	/* only needed for objects where we change tranform... */
+	/* add transition for smoothing in low FPS mode */
+	-webkit-transition: -webkit-transform 0s linear;
+	-moz-transition: -moz-transform 0s linear;
+	transition: transform 0s linear;
+}
+
+#CubeMap
+{
+	position: relative;
+	margin: 100px auto;	/* might want to work this out from screen height? */
+}
+
+
+.face {
+	position: absolute;
+	padding: 0px;
+	margin: 0px;
+	font-size: 20px;
+	line-height: 1em;
+	color: #fff;
+}

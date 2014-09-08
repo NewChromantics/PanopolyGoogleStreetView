@@ -3,8 +3,14 @@ function SoySupport($Type)
 {
 	var $this = this;
 	this.mType = $Type;
-	this.mOnSupportedChanged = function($Supported) {	console.log( "" + $this.GetType() + "::mOnSupportedChanged: " + $this.IsSupported() );	}
-	this.mOnEnabledChanged = function($Enabled)		{	console.log( "" + $this.GetType() + "::mOnEnabledChanged " + $this.IsSupported() );	}
+	
+	//	gr: make this an array so we can do multiple events
+	//	gr: OR use bloody js events
+	//	this.mOnSupportedChanged = function($Supported) {	console.log( "" + $this.GetType() + "::mOnSupportedChanged: " + $this.IsSupported() );	}
+	//	this.mOnEnabledChanged = function($Enabled)		{	console.log( "" + $this.GetType() + "::mOnEnabledChanged " + $this.IsSupported() );	}
+	this.mOnSupportedChanged = null;
+	this.mOnEnabledChanged = null;
+
 	this.GetType = function() { return $this.mType;	}
 	this.mIsEnabled = false;
 }

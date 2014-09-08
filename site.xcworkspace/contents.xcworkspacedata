@@ -64,4 +64,7 @@
    <FileRef
       location = "group:../../../../Volumes/SHARED/NewChromantics/panopo.ly/site_static/index.html">
    </FileRef>
+   <FileRef
+      location = "group:site_static/Cubemap.css">
+   </FileRef>
 </Workspace>

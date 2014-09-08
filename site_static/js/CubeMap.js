@@ -1,4 +1,13 @@
 
+function CubemapUpdate()
+{
+	//	update camera
+	var Quaternion = GetCameraQuaternion();
+	SetCameraQuaternion( Quaternion );
+	
+	var $UpdateRateMs = 1000/40;
+	setTimeout( CubemapUpdate, $UpdateRateMs );
+}
 
 function CreateCubeFace($Parent,$FaceName,$FaceSize,$RotationTransform,$Colour)
 {

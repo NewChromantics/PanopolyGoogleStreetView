@@ -144,11 +144,18 @@ function LoadHigher(Material)
 												 );
 }
 
-function IsPanopolySupported()
+function UseCanvasMode()
 {
-	return ( HasWebGl() || !IsMobile() );
+	return false;
+	return IsCanvasSupported() && ( HasWebGl() || !IsMobile() );
 }
 
+function UseCubemapMode()
+{
+//	var $Css3D = new SoyCss3d();
+//	return $Css3D.IsSupported();
+	return true;
+}
 
 
 
@@ -268,6 +275,19 @@ function CheckAutoSwitch($ChangedSupport,$Supported)
 	
 	return false;
 }
+
+function AddDefaultSupportAutoSwitch()
+{
+	for ( var $Key in $Supports )
+	{
+		var $Support = $Supports[$Key];
+		if ( $Support.mOnSupportedChanged )
+			continue;
+		
+		$Support.mOnSupportedChanged = function($Supported){	CheckAutoSwitch( $Key, $Supported ); };
+	}
+}
+
 
 
 function GetCameraQuaternion()
