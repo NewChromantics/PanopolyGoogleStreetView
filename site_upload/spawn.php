@@ -150,7 +150,7 @@
 		$Param_Output = "$ResizedTempFilename";
 		$ExecCmd = FFMPEG_BIN . " $Param_Quiet $Param_Overwrite $Param_Input $Param_Scale $Param_Quality $Param_FrameSet $Param_OutputOther $Param_Output $Param_CatchStdErr";
 		exec( $ExecCmd, $ExecOut, $ExitCode );
-		$ExecOut = join('\n', $ExecOut );
+		$ExecOut = join("\n", $ExecOut );
 		if ( $ExitCode != 0 )
 		{
 			echo "failed to resize $Width $Height: [$ExitCode] $ExecOut\n";
@@ -188,6 +188,6 @@
 	if ( strlen($output['debug'] ) > 0 )
 	{
 		echo json_encode( $output );
-		echo '\n';
+		echo "\n";
 	}
 ?>

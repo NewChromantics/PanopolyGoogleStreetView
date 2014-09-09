@@ -6,11 +6,11 @@
 	define('FFPROBE_BIN', './ffprobe' );
 	
 	exec( FFMPEG_BIN . " 2>&1", $ExecOut, $ExitCode );
-	$ExecOut = join('\n', $ExecOut );
+	$ExecOut = join("\n", $ExecOut );
 	echo "<h1>exec " . FFMPEG_BIN . "</h1>[$ExitCode] $ExecOut </div>";
 
 	exec( FFPROBE_BIN . " 2>&1", $ExecOut, $ExitCode );
-	$ExecOut = join('\n', $ExecOut );
+	$ExecOut = join("\n", $ExecOut );
 	echo "<h1>exec " . FFMPEG_BIN . "</h1>[$ExitCode] $ExecOut </div>";
 ?>
 <h1>fin.</h1>
