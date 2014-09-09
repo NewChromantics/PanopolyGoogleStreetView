@@ -1,5 +1,16 @@
 <?php
-	echo "Memory limit: " . ini_get('memory_limit') . "<br />";
-	echo "Upload limit: " . ini_get('upload_max_filesize') . "<br />";
+	echo "<div><h1>Memory limit</h1>" . ini_get('memory_limit') . "</div>";
+	echo "<div><h1>Upload limit</h1>" . ini_get('upload_max_filesize') . "</div>";
+
+	define('FFMPEG_BIN', './ffmpeg' );
+	define('FFPROBE_BIN', './ffprobe' );
+	
+	exec( FFMPEG_BIN . " 2>&1", $ExecOut, $ExitCode );
+	$ExecOut = join('\n', $ExecOut );
+	echo "<h1>exec " . FFMPEG_BIN . "</h1>[$ExitCode] $ExecOut </div>";
+
+	exec( FFPROBE_BIN . " 2>&1", $ExecOut, $ExitCode );
+	$ExecOut = join('\n', $ExecOut );
+	echo "<h1>exec " . FFMPEG_BIN . "</h1>[$ExitCode] $ExecOut </div>";
 ?>
-Not Echo.
+<h1>fin.</h1>
