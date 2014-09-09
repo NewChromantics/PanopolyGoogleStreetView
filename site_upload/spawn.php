@@ -113,7 +113,7 @@
 		//	gr: process parent should ensure these filenames won't clash beforehand so this script can assume these filenames are safe
 		//	make filename
 		$RemoteFilename = "$Panoname.$Height.$Format";
-		$ResizedTempFilename = GetPanoTempFilename($Panoname,$Height);
+		$ResizedTempFilename = GetPanoTempFilename($Panoname,$Height,$Format);
 		register_shutdown_function('DeleteTempFile',$ResizedTempFilename);
 		
 		//	resize with ffmpeg
