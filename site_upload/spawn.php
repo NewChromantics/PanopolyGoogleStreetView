@@ -25,7 +25,21 @@
 	
 	//	get temp file
 	$Panoname = $argv[1];
-	$TempFilename = GetPanoTempFilename($Panoname);
+	
+	//	if we have a . assume it's a full path
+	if ( strpos($Panoname,'.') !== false || strpos($Panoname,'/') !== false )
+	{
+		$TempFilename = $Panoname;
+		$Panoname = 'ArgTemp';
+		if ( array_key_exists('panoname',$_GET) )
+		{
+			$Panoname = SanitisePanoName($_GET['panoname']);
+		}
+	}
+	else
+	{
+		$TempFilename = GetPanoTempFilename($Panoname);
+	}
 	if ( !file_exists($TempFilename) )
 		return OnError("Missing temp file $TempFilename");
 
@@ -40,56 +54,27 @@
 		register_shutdown_function('DeleteTempFile',$TempFilename);
 	}
 
-	
-	class TImage
-	{
-		public $mFilename;
-		public $mInfo;
-		
-		public function __construct($Filename)
-		{
-			$this->mFilename = $Filename;
-			$this->mInfo = getimagesize( $this->mFilename );
-		}
-		
-		public function IsValid()
-		{
-			return $this->mInfo !== false;
-		}
-		
-		public function GetWidth()
-		{
-			return $this->mInfo[0];
-		}
-		
-		public function GetHeight()
-		{
-			return $this->mInfo[1];
-		}
-		
-		public function GetContentType()
-		{
-			return image_type_to_mime_type( $this->mInfo[2] );
-		}
-		
-	};
-	$Image = new TImage($TempFilename);
+	//	parse images as video
+	$Image = new TVideo($TempFilename);
 	if ( !$Image->IsValid() )
-		return OnError("failed to read image information from $TempFilename");
+	{
+		return OnError("failed to read image or video information from $TempFilename");
+	}
 	
 	//	upload meta
 	UploadMeta();
 
 	//	resize and upload different sizes (height will dictate filename)
-	if ( UploadResize( 256, 256 ) )		echo "created 256\n";
-	if ( UploadResize( 2048, 1024 ) )	echo "created 1024\n";
-	if ( UploadResize( 4096, 2048 ) )	echo "created 2048\n";
+	if ( UploadResize( 256, 256, 'jpg' ) )		echo "created 256 jpg\n";
+	if ( UploadResize( 2048, 1024, 'jpg' ) )	echo "created 1024 jpg\n";
+	if ( UploadResize( 4096, 2048, 'jpg' ) )	echo "created 2048 jpg\n";
 	//	gr: jpeg has a limit of 4096x4096!
-	if ( UploadResize( 4096, 4096 ) )	echo "created 4096\n";
-	
+	if ( UploadResize( 4096, 4096, 'jpg' ) )	echo "created 4096 jpg\n";
+	if ( UploadResize( 256, 256, 'webm' ) )		echo "created 256 webm\n";
+
 	//	upload orig
 	UploadOrig();
-	
+
 	
 	function UploadMeta()
 	{
@@ -97,19 +82,21 @@
 		
 		$Meta = array();
 		//$Meta['date'] = gmdate('U');
-		$Meta['origwidth'] = $Image->GetWidth();
-		$Meta['origheight'] = $Image->GetHeight();
-		$Meta['origcontenttype'] = $Image->GetContentType();
+		$Meta['origWidth'] = $Image->GetWidth();
+		$Meta['origHeight'] = $Image->GetHeight();
+		$Meta['origType'] = $Image->GetContentType();
+		$Meta['isVideo'] = $Image->IsVideo();
 		
 		$MetaJson = json_encode($Meta);
 		$RemoteFilename = "$Panoname.meta";
 		$Error = UploadContent( $MetaJson, $RemoteFilename, "text/plain" );
 		if ( $Error !== true )
 			OnError($Error);
+		
 		return true;
 	}
 	
-	function UploadResize($Width,$Height)
+	function UploadResize($Width,$Height,$Format)
 	{
 		global $Panoname,$Image;
 		$w = $Image->GetWidth();
@@ -125,7 +112,7 @@
 		
 		//	gr: process parent should ensure these filenames won't clash beforehand so this script can assume these filenames are safe
 		//	make filename
-		$RemoteFilename = "$Panoname.$Height.jpg";
+		$RemoteFilename = "$Panoname.$Height.$Format";
 		$ResizedTempFilename = GetPanoTempFilename($Panoname,$Height);
 		register_shutdown_function('DeleteTempFile',$ResizedTempFilename);
 		
@@ -133,12 +120,35 @@
 		$ExitCode = -1;
 		$Param_Quiet = "-loglevel error";
 		$Param_Overwrite = "-y";
-		$Param_Quality = "-qscale:v " . FFMPEG_JPEG_QUALITY;
+		$Param_FrameSet = '';
+		$Param_CpuUsage = '';
+		$Param_OutputOther = '';
+		
+		//	jpg options
+		if ( $Format == 'jpg' )
+		{
+			$Param_Quality = "-qscale:v " . FFMPEG_JPEG_QUALITY;
+			$Param_FrameSet = "-vframes 1";
+		}
+		else if ( $Format == 'webm' )
+		{
+			if ( !$Image->IsVideo() )
+				return false;
+			
+			//https://www.virag.si/2012/01/webm-web-video-encoding-tutorial-with-ffmpeg-0-9/
+			define('FFMPEG_WEBM_QUALITY', 'realtime');
+			define('FFMPEG_WEBM_BITRATE', '500k' );
+			$Param_Quality = "-codec:v libvpx -quality " . FFMPEG_WEBM_QUALITY;
+			$Param_OutputOther = " -cpu-used 1";
+			$Param_OutputOther .= " -b:v " . FFMPEG_WEBM_BITRATE;
+			$Param_OutputOther .= " -qmin 10 -qmax 42";
+		}
+		
 		$Param_CatchStdErr = "2>&1";
 		$Param_Scale = "-vf scale=$Width:$Height";
 		$Param_Input = "-i {$Image->mFilename}";
 		$Param_Output = "$ResizedTempFilename";
-		$ExecCmd = FFMPEG_BIN . " $Param_Quiet $Param_Overwrite $Param_Input $Param_Scale $Param_Quality $Param_Output $Param_CatchStdErr";
+		$ExecCmd = FFMPEG_BIN . " $Param_Quiet $Param_Overwrite $Param_Input $Param_Scale $Param_Quality $Param_FrameSet $Param_OutputOther $Param_Output $Param_CatchStdErr";
 		exec( $ExecCmd, $ExecOut, $ExitCode );
 		$ExecOut = join('\n', $ExecOut );
 		if ( $ExitCode != 0 )
@@ -149,22 +159,27 @@
 		}
 		
 		//	upload
+		//	todo: correct content types... if neccessary?
 		$Error = UploadFile( $ResizedTempFilename, $RemoteFilename, "image/jpeg" );
 		if ( $Error !== true )
 			OnError($Error);
+	
 		DeleteTempFile( $ResizedTempFilename );
+
 		return true;
 	}
 	
 	function UploadOrig()
 	{
 		global $Panoname,$Image;
-		$RemoteFilename = "$Panoname.orig.jpg";
+		$Extension = $Image->GetContentTypeFileExtension();
+		$RemoteFilename = "$Panoname.orig.$Extension";
 		$Error = UploadFile( $Image->mFilename, $RemoteFilename, $Image->GetContentType() );
 		if ( $Error !== true )
 			OnError($Error);
 		return true;
 	}
+	
 	
 	$output = array();
 	$output['panoname'] = $Panoname;

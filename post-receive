@@ -2,6 +2,10 @@
 
 CLONE_DIR=~/clone
 WWW_DIR=/var/www/html
+FFMPEG_BIN=~/ffmpeg/ffmpeg
+FFPROBE_BIN=~/ffmpeg/ffprobe
+WWW_FFMPEG_BIN=$WWW_DIR/ffmpeg
+WWW_FFPROBE_BIN=$WWW_DIR/ffprobe
 
 while read oldrev newrev ref
 do
@@ -22,6 +26,12 @@ do
 
 		echo "giving write permissions to .log files"
 		chmod o+w $WWW_DIR/*.log
+
+		echo "Copying ffmpeg"
+		cp $FFMPEG_BIN $WWW_FFMPEG_BIN
+		cp $FFPROBE_BIN $WWW_FFPROBE_BIN
+		chmod o+x $WWW_FFMPEG_BIN
+		chmod o+x $WWW_FFPROBE_BIN
 
 		echo 'Changes pushed to Amazon EC2 PROD.'
 	fi
