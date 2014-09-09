@@ -159,7 +159,7 @@
 		$ExecOut = join("\n", $ExecOut );
 		if ( $ExitCode != 0 )
 		{
-			echo "failed to execute ffprobe: [$ExitCode] $ExecOut\n";
+			echo "failed to execute ffprobe: [$ExitCode][$ExecCmd] $ExecOut\n";
 			return false;
 		}
 
