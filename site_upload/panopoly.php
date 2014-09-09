@@ -120,7 +120,8 @@
 	
 	function GetPanoTempFilename($Panoname,$Suffix='temp')
 	{
-		return sys_get_temp_dir() . "/$Panoname.$Suffix.jpg";
+		//	gr: use .upload as if we use jpg ffprobe won't detect contents properly
+		return sys_get_temp_dir() . "/$Panoname.$Suffix.upload";
 	}
 	
 	function ExecPhp($Script,$Params,$LogFile,$Blocking)
