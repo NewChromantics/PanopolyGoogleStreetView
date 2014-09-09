@@ -159,8 +159,9 @@
 		}
 		
 		//	upload
-		//	todo: correct content types... if neccessary?
-		$Error = UploadFile( $ResizedTempFilename, $RemoteFilename, "image/jpeg" );
+		//	correct content type for easier online viewing
+		$ContentType = IsVideoFormat($Format) ? "video/$Format" : "image/$Format";
+		$Error = UploadFile( $ResizedTempFilename, $RemoteFilename, $ContentType );
 		if ( $Error !== true )
 			OnError($Error);
 	
@@ -174,7 +175,7 @@
 		global $Panoname,$Image;
 		$Extension = $Image->GetContentTypeFileExtension();
 		$RemoteFilename = "$Panoname.orig.$Extension";
-		$Error = UploadFile( $Image->mFilename, $RemoteFilename, $Image->GetContentType() );
+		$Error = UploadFile( $Image->mFilename, $RemoteFilename, $Image->GetMimeType() );
 		if ( $Error !== true )
 			OnError($Error);
 		return true;

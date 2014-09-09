@@ -8,6 +8,7 @@
 	define('FFMPEG_BIN', './ffmpeg' );
 	define('FFPROBE_BIN', './ffprobe' );
 	define('FFMPEG_JPEG_QUALITY', 2 );	//	1(best)...31(worst)
+	define('VIDEO_FORMATS', 'vp8 webm mp4 h264' );
 	
 	function Init()
 	{
@@ -227,6 +228,14 @@
 		return false;
 	}
 	
+	function IsVideoFormat($Format)
+	{
+		$Pos = strpos( VIDEO_FORMATS, $Format);
+		if ( $Pos === false )
+			return false;
+		return true;
+	}
+	
 	class TVideo
 	{
 		public $mFilename;
@@ -245,10 +254,7 @@
 		
 		public function IsVideo()
 		{
-			$Type = $this->GetContentType();
-			if ( $Type == 'h264' || $Type == 'vp8' )
-				return true;
-			return false;
+			return IsVideoFormat( $this->GetContentType() );
 		}
 		
 		public function GetWidth()
@@ -265,6 +271,13 @@
 		{
 			//return image_type_to_mime_type( $this->mInfo[2] );
 			return $this->mInfo->mCodec;
+		}
+		
+		public function GetMimeType()
+		{
+			$Format = $this->GetContentTypeFileExtension();
+			$ContentType = IsVideoFormat($Format) ? "video/$Format" : "image/$Format";
+			return $ContentType;
 		}
 		
 		public function GetContentTypeFileExtension()
