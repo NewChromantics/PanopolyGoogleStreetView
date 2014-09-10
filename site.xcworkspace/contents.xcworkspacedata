@@ -8,6 +8,12 @@
       location = "container:site_static/js/ClearDefaultText.js">
    </FileRef>
    <FileRef
+      location = "group:site_static/js/SoyOculusBridge.js">
+   </FileRef>
+   <FileRef
+      location = "group:site_static/js/SoyOculusRest.js">
+   </FileRef>
+   <FileRef
       location = "container:site_static/js/GoogleAnalytics.js">
    </FileRef>
    <FileRef
@@ -24,12 +30,6 @@
    </FileRef>
    <FileRef
       location = "container:site_static/js/SoyFullscreen.js">
-   </FileRef>
-   <FileRef
-      location = "container:site_static/js/SoyRiftWebsocket.js">
-   </FileRef>
-   <FileRef
-      location = "container:site_static/js/SoyRiftAjax.js">
    </FileRef>
    <FileRef
       location = "group:site_static/js/SoyFileSelect.js">
