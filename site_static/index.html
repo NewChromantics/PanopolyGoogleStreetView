@@ -359,6 +359,21 @@ function LoadPano()
 	if ( !Material )
 		return false;
 		
+	var $IsVideo = false;
+	
+	if ( $IsVideo )
+	{
+		//	0 is our magic "not loaded" res
+		var Url = "http://image.panopo.ly/" + PanoName + ".0.webm";
+		//	do initial load
+		Material.map.sourceFile = Url;
+		console.log("loading " + PanoName);
+		
+		//	replace
+		return LoadHigherVideo( Material );
+	}
+	
+		
 	//	0 is our magic "not loaded" res
 	var Url = "http://image.panopo.ly/" + PanoName + ".0.jpg";
 	//	do initial load
