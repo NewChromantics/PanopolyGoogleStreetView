@@ -274,8 +274,8 @@ var $CurrentCameraControl = null;
 var $ModeStack = new Array();
 
 //	auto-switch modesets
-var $DesktopRiftAjaxMode = new Array('RiftAjax','Split'/*,'Fullscreen'*/);
-var $DesktopRiftWebsocketMode = new Array('RiftWebsocket','Split','Fullscreen');
+var $DesktopOculusRestMode = new Array('OculusRest','Split'/*,'Fullscreen'*/);
+var $DesktopOculusBridgeMode = new Array('OculusBridge','Split'/*,'Fullscreen'*/);
 var $IosRiftMode = new Array('Gyro','Split','ExternalDisplay');
 var $IosGyroMode = new Array('Gyro');
 var $DesktopMouseMode = new Array('Mouse');
@@ -367,8 +367,8 @@ function CheckAutoSwitch($ChangedSupport,$Supported)
 	}
 	
 	//	something became enabled, try the different modes
-	if ( TryMode( $DesktopRiftAjaxMode, "DesktopRiftAjax" ) )	return true;
-	if ( TryMode( $DesktopRiftWebsocketMode, "DesktopRiftWebsocket" ) )	return true;
+	if ( TryMode( $DesktopOculusRestMode, "DesktopOculusRest" ) )	return true;
+	if ( TryMode( $DesktopOculusBridgeMode, "DesktopOculusBridge" ) )	return true;
 	if ( TryMode( $IosRiftMode, "IosRift" ) )	return true;
 	if ( TryMode( $IosGyroMode, "IosGyro" ) )	return true;
 	if ( TryMode( $DesktopMouseMode, "DesktopMouseMode" ) )	return true;

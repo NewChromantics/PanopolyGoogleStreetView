@@ -1,9 +1,9 @@
 
-SoyRiftAjax.prototype = new SoySupport('SoyRiftAjax');
-RegisterSupport('RiftAjax', new SoyRiftAjax() );
+SoyOculusRest.prototype = new SoySupport('SoyOculusRest');
+RegisterSupport('OculusRest', new SoyOculusRest() );
 
 
-function SoyRiftAjax()
+function SoyOculusRest()
 {
 	//	call super
 	SoySupport.apply( this, arguments );
@@ -17,7 +17,7 @@ function SoyRiftAjax()
 }
 
 
-SoyRiftAjax.prototype.Init = function()
+SoyOculusRest.prototype.Init = function()
 {
 	if ( !IsAjaxSupported() )
 	{
@@ -28,7 +28,7 @@ SoyRiftAjax.prototype.Init = function()
 	this.Fetch();
 }
 
-SoyRiftAjax.prototype.Fetch = function()
+SoyOculusRest.prototype.Fetch = function()
 {
 	var $this = this;
 	var ajax = new XMLHttpRequest();
@@ -42,7 +42,7 @@ SoyRiftAjax.prototype.Fetch = function()
 }
 
 
-SoyRiftAjax.prototype.OnError = function($Event)
+SoyOculusRest.prototype.OnError = function($Event)
 {
 	if ( this.mLastFetchSuccess )
 	{
@@ -55,7 +55,7 @@ SoyRiftAjax.prototype.OnError = function($Event)
 	setTimeout( function(){ $this.Fetch() }, this.mReconnectMs );
 }
 
-SoyRiftAjax.prototype.OnReply = function($Event)
+SoyOculusRest.prototype.OnReply = function($Event)
 {
 	var $Json = {};
 	try
@@ -86,7 +86,7 @@ SoyRiftAjax.prototype.OnReply = function($Event)
 	setTimeout( function(){ $this.Fetch() }, this.mRefreshMs );
 }
 
-SoyRiftAjax.prototype.IsSupported = function()
+SoyOculusRest.prototype.IsSupported = function()
 {
 	return this.mLastFetchSuccess;
 }

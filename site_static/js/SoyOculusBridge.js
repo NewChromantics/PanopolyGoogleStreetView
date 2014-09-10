@@ -1,9 +1,9 @@
 
-SoyRiftWebsocket.prototype = new SoySupport('SoyRiftWebsocket');
-RegisterSupport('RiftWebsocket', new SoyRiftWebsocket() );
+SoyOculusBridge.prototype = new SoySupport('SoyOculusBridge');
+RegisterSupport('OculusBridge', new SoyOculusBridge() );
 
 
-function SoyRiftWebsocket()
+function SoyOculusBridge()
 {
 	//	call super
 	SoySupport.apply( this, arguments );
@@ -15,7 +15,7 @@ function SoyRiftWebsocket()
 }
 
 
-SoyRiftWebsocket.prototype.Init = function()
+SoyOculusBridge.prototype.Init = function()
 {
 	if ( !IsWebsocketSupported() )
 	{
@@ -38,7 +38,7 @@ SoyRiftWebsocket.prototype.Init = function()
 	this.mWebsocket.Connect("ws://localhost:50000");
 }
 
-SoyRiftWebsocket.prototype.OnRiftDisconnected = function()
+SoyOculusBridge.prototype.OnRiftDisconnected = function()
 {
 	this.mWebsocket = null;
 	this.OnUnsupported();
@@ -48,12 +48,12 @@ SoyRiftWebsocket.prototype.OnRiftDisconnected = function()
 	setTimeout( function(){ $this.Init() }, this.mReconnectMs );
 }
 
-SoyRiftWebsocket.prototype.OnRiftConnected = function()
+SoyOculusBridge.prototype.OnRiftConnected = function()
 {
 	this.OnSupported();
 }
 
-SoyRiftWebsocket.prototype.OnRiftMessage = function($SoyWebSocket,$Message)
+SoyOculusBridge.prototype.OnRiftMessage = function($SoyWebSocket,$Message)
 {
 	var $Json = {};
 	try
@@ -72,7 +72,7 @@ SoyRiftWebsocket.prototype.OnRiftMessage = function($SoyWebSocket,$Message)
 	//{"quat":{"x":0.2326346,"y":0.0608177,"z":0.0048655,"w":0.9706457},"euler":{"y":0.1352325,"p":0.4679076,"r":0.0423000}}
 }
 
-SoyRiftWebsocket.prototype.IsSupported = function()
+SoyOculusBridge.prototype.IsSupported = function()
 {
 	if ( !this.mWebsocket )
 		return false;

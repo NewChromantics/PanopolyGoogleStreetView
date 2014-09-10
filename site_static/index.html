@@ -36,12 +36,12 @@
 				Stereo View
 			</div>
 			
-			<div id="RiftWebsocketButton" class="Button" onClick="SupportToggleEnable('RiftWebsocket')">
-				Rift Websocket
+			<div id="OculusBridgeButton" class="Button" onClick="SupportToggleEnable('OculusBridge')">
+				OculusBridge
 			</div>
 			
-			<div id="RiftAjaxButton" class="Button" onClick="SupportToggleEnable('RiftAjax')">
-				Rift Ajax
+			<div id="OculusRestButton" class="Button" onClick="SupportToggleEnable('OculusRest')">
+				OculusRest
 			</div>
 			
 			<div id="FullscreenButton" class="Button" onClick="SupportToggleEnable('Fullscreen')">
@@ -103,16 +103,16 @@ if ( window.location.hash == '#debug' )
 }
 
 	
-function OnRiftWebsocketSupportChanged($Supported)
+function OnOculusBridgeSupportChanged($Supported)
 {
-	ShowElement('RiftWebsocketButton', $Supported);
-	CheckAutoSwitch( 'RiftWebsocket', $Supported );
+	ShowElement('OculusBridgeButton', $Supported);
+	CheckAutoSwitch( 'OculusBridge', $Supported );
 }
 
-function OnRiftAjaxSupportChanged($Supported)
+function OnOculusRestSupportChanged($Supported)
 {
-	ShowElement('RiftAjaxButton', $Supported);
-	CheckAutoSwitch( 'RiftAjax', $Supported );
+	ShowElement('OculusRestButton', $Supported);
+	CheckAutoSwitch( 'OculusRest', $Supported );
 }
 
 function OnSplitSupportChanged($Supported)
@@ -160,8 +160,8 @@ function OnFileSelectSupportChanged()
 
 
 //	support callbacks
-AddOnSupportedChangedListener('RiftWebsocket', OnRiftWebsocketSupportChanged );
-AddOnSupportedChangedListener('RiftAjax', OnRiftAjaxSupportChanged );
+AddOnSupportedChangedListener('OculusBridge', OnOculusBridgeSupportChanged );
+AddOnSupportedChangedListener('OculusRest', OnOculusRestSupportChanged );
 AddOnSupportedChangedListener('Split', OnSplitSupportChanged );
 AddOnSupportedChangedListener('Shrink', OnShrinkSupportChanged );
 AddOnSupportedChangedListener('Fullscreen', OnFullscreenSupportChanged );
