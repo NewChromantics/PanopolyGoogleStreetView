@@ -29,18 +29,19 @@ SoyOculusBridge.prototype.Init = function()
 		this.OnUnsupported();
 		return;
 	}
-	
+
 	var $this = this;
-	this.mWebsocket = new SoyWebSocket("OculusRest",0,false);
-	this.mWebsocket.mOnMessage = function() { $this.OnRiftMessage(); }
-	this.mWebsocket.mOnConnected = function() { $this.OnRiftConnected(); }
-	this.mWebsocket.mOnDisconnected = function() { $this.OnRiftDisconnected(); }
-	this.mWebsocket.Connect("ws://localhost:50000");
+	this.mWebsocket = new SoyWebSocket("OculusBridge",0,false);
+	this.mWebsocket.mOnMessage = function($SoyWebSocket,$Message) { $this.OnRiftMessage($Message); }
+	this.mWebsocket.mOnConnected = function($SoyWebSocket) { $this.OnRiftConnected(); }
+	this.mWebsocket.mOnDisconnected = function($SoyWebSocket) { $this.OnRiftDisconnected(); }
+	this.mWebsocket.Connect("ws://localhost:9005");
 }
 
 SoyOculusBridge.prototype.OnRiftDisconnected = function()
 {
 	this.mWebsocket = null;
+	this.mQuaternion = null;
 	this.OnUnsupported();
 	
 	//	try to reconnect again in 10 secs
@@ -50,26 +51,43 @@ SoyOculusBridge.prototype.OnRiftDisconnected = function()
 
 SoyOculusBridge.prototype.OnRiftConnected = function()
 {
-	this.OnSupported();
+	//	gr: onsupported when we get our first orientation
+	//this.OnSupported();
 }
 
-SoyOculusBridge.prototype.OnRiftMessage = function($SoyWebSocket,$Message)
+SoyOculusBridge.prototype.OnRiftMessage = function($Message)
 {
 	var $Json = {};
 	try
 	{
-		$Json = JSON.parse(event.target.responseText);
+		$Json = JSON.parse($Message);
 	}
 	catch ( e )
 	{
 		//	ignore bad messages
+		console.log("Failed to parse oculus bridge JSON");
 		return;
 	}
 
-	//	update rift input quaternion
-	this.mQuaternion = $Json.quat;
-	this.mEular = $Json.euler;
-	//{"quat":{"x":0.2326346,"y":0.0608177,"z":0.0048655,"w":0.9706457},"euler":{"y":0.1352325,"p":0.4679076,"r":0.0423000}}
+	var $WasSupported = IsSupported();
+
+	//	update quaternion
+	var $QuatArray = $Json["o"];
+	if ( $QuatArray && ($QuatArray.length == 4) )
+	{
+		var $x = Number($QuatArray[1]);
+		var $y = Number($QuatArray[2]);
+		var $z = Number($QuatArray[3]);
+		var $w = Number($QuatArray[0]);
+		
+		
+		this.mQuaternion = new THREE.Quaternion( $x, $y, $z, $w );
+		
+	}
+	
+	//	detect first support
+	if ( $WasSupported != this.IsSupported() )
+		this.OnSupported();
 }
 
 SoyOculusBridge.prototype.IsSupported = function()
@@ -79,5 +97,10 @@ SoyOculusBridge.prototype.IsSupported = function()
 
 	if ( !this.mWebsocket.IsConnected() )
 		return false;
+	
+	//	not supported until we've had a quaternion through
+	if ( !this.mQuaternion )
+		return false;
+	
 	return true;
 }
