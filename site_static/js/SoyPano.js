@@ -188,9 +188,15 @@ SoyAsset_Video.prototype.Stop = function()
 {
 	this.mDesired = false;
 
-	this.mAsset.stop();
-	
-	delete this.mAsset;
+	if ( this.mAsset )
+	{
+		//	abort video by setting invalid src
+		this.mAsset.src = '';
+		this.mAsset.load();
+	//	this.mAsset.stop();
+		delete this.mAsset;
+		this.mAsset = null;
+	}
 }
 
 SoyAsset_Video.prototype.Load = function()
