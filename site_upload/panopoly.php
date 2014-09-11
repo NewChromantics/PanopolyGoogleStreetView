@@ -90,6 +90,10 @@
 			echo "Missing localfile: $localfilename";
 			return false;
 		}
+
+		if ( FAKE_UPLOAD )
+			return true;
+		
 		try
 		{
 			//echo "putting $localfilename (" . filesize($localfilename) . ") into $remotefilename...";
