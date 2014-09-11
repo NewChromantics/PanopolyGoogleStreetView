@@ -12,6 +12,9 @@ function AllowWebGl()
 	return true;
 }
 
+
+var $WebglCache = null;
+
 function HasWebGl()
 {
 	if ( !AllowWebGl() )
@@ -20,22 +23,26 @@ function HasWebGl()
 	if ( !window.WebGLRenderingContext )
 		return false;
 	
-	//	could exist, but not enabled (iphone!)
-	var canvas = document.createElement("canvas");
-	var gl = null;
-	var experimental = false;
-	try			{	gl = canvas.getContext("webgl");	}
-	catch (e)	{	gl = null;	}
-	if ( gl )
-		return true;
+	//	rendering context could exist, but not enabled (iphone!)
+	//	so need to check if we can fetch a context
 	
-	//	do we have experimental? (safari 7 osx enabled from developer menu)
-	try			{	gl = canvas.getContext("experimental-webgl"); experimental = true;	}
-	catch (e)	{	gl = null;	}
-	if (gl)
-		return true;
+	//	gr: there is no way to delete a context once we've "get" one, so cache
+	//	http://stackoverflow.com/a/14992981/355753
+	if ( !$WebglCache )
+	{
+		var canvas = document.createElement("canvas");
+		try			{	$WebglCache = canvas.getContext("webgl");	}
+		catch (e)	{		}
+	
+		//	do we have experimental? (safari 7 osx enabled from developer menu)
+		if ( !$WebglCache )
+		{
+			try			{	$WebglCache = canvas.getContext("experimental-webgl"); }
+			catch (e)	{	}
+		}
+	}
 
-	return false;
+	return ($WebglCache != null);
 }
 
 function IsMobile()

@@ -69,7 +69,7 @@ SoyOculusBridge.prototype.OnRiftMessage = function($Message)
 		return;
 	}
 
-	var $WasSupported = IsSupported();
+	var $WasSupported = this.IsSupported();
 
 	//	update quaternion
 	var $QuatArray = $Json["o"];
@@ -80,14 +80,15 @@ SoyOculusBridge.prototype.OnRiftMessage = function($Message)
 		var $z = Number($QuatArray[3]);
 		var $w = Number($QuatArray[0]);
 		
-		
 		this.mQuaternion = new THREE.Quaternion( $x, $y, $z, $w );
-		
 	}
 	
 	//	detect first support
 	if ( $WasSupported != this.IsSupported() )
+	{
+		assert( this.IsSupported(), "IsSupported wrong result" );
 		this.OnSupported();
+	}
 }
 
 SoyOculusBridge.prototype.IsSupported = function()
