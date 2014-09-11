@@ -62,12 +62,14 @@
 	}
 	
 	//	returns associative array
-	function TAsset($Width,$Height,$Format,$BitRate=false)
+	function SoyAssetMeta($Width,$Height,$Format,$Codec=false,$BitRate=false)
 	{
 		$Asset = [];
 		$Asset['Width'] = $Width;
 		$Asset['Height'] = $Height;
 		$Asset['Format'] = $Format;
+		if ( $Codec !== false )
+			$Asset['Codec'] = $Codec;
 		if ( $BitRate !== false )
 			$Asset['BitRate'] = $BitRate;
 		return $Asset;
@@ -81,18 +83,18 @@
 
 	//	assets we want to try and create
 	$AssetParams = [];
-	$AssetParams[] = TAsset( 256, 256, 'jpg' );
-	$AssetParams[] = TAsset( 1024, 1024, 'jpg' );
-	$AssetParams[] = TAsset( 2048, 2048, 'jpg' );
-	$AssetParams[] = TAsset( 4096, 2048, 'jpg' );
-	$AssetParams[] = TAsset( 4096, 4096, 'jpg' );
-	$AssetParams[] = TAsset( 512, 256, 'webm', '500k' );
-	$AssetParams[] = TAsset( 1024, 512, 'webm', '2000k' );
-	$AssetParams[] = TAsset( 2048, 1024, 'webm', '4000k' );
-	
-	//	these take ages. Not needed?
-	//$AssetParams[] = TAsset( 4096, 2048, 'webm', '6000k' );
-	//$AssetParams[] = TAsset( 4096, 4096, 'webm', '8000k' );
+	$AssetParams[] = SoyAssetMeta( 256, 256, 'jpg' );
+	$AssetParams[] = SoyAssetMeta( 1024, 1024, 'jpg' );
+	$AssetParams[] = SoyAssetMeta( 2048, 2048, 'jpg' );
+	$AssetParams[] = SoyAssetMeta( 4096, 2048, 'jpg' );
+	$AssetParams[] = SoyAssetMeta( 4096, 4096, 'jpg' );
+	$AssetParams[] = SoyAssetMeta( 512, 256, 'webm', 'vp8', '1000k' );
+	//$AssetParams[] = SoyAssetMeta( 1024, 512, 'webm', 'vp8', '2000k' );
+	$AssetParams[] = SoyAssetMeta( 2048, 1024, 'webm', 'vp8', '5000k' );
+	//$AssetParams[] = SoyAssetMeta( 4096, 2048, 'webm', 'vp8', '8000k' );
+	//$AssetParams[] = SoyAssetMeta( 4096, 4096, 'webm', 'vp8', '10000k' );
+	$AssetParams[] = SoyAssetMeta( 512, 256, 'mp4', 'h264', '1000k' );
+	$AssetParams[] = SoyAssetMeta( 2048, 1024, 'mp4', 'h264', '5000k' );
 
 	foreach ( $AssetParams as $Asset )
 	{
@@ -137,6 +139,7 @@
 		$Height = $Asset['Height'];
 		$Format = $Asset['Format'];
 		$BitRate = array_key_exists('BitRate',$Asset) ? $Asset['BitRate'] : false;
+		$Codec = array_key_exists('Codec',$Asset) ? $Asset['Codec'] : false;
 
 		global $Panoname,$Image;
 		$w = $Image->GetWidth();
@@ -164,23 +167,46 @@
 		$Param_CpuUsage = '';
 		$Param_OutputOther = '';
 		
-		//	jpg options
 		if ( $Format == 'jpg' )
 		{
 			$Param_Quality = "-qscale:v " . FFMPEG_JPEG_QUALITY;
 			$Param_FrameSet = "-vframes 1";
 		}
-		else if ( $Format == 'webm' )
+		else if ( $Format == 'webm' || $Format == 'mp4' )
 		{
 			if ( !$Image->IsVideo() )
 				return false;
-
-			//https://www.virag.si/2012/01/webm-web-video-encoding-tutorial-with-ffmpeg-0-9/
-			$FFMPEG_WEBM_QUALITY = 'realtime';
-			$Param_Quality = "-codec:v libvpx -quality " . $FFMPEG_WEBM_QUALITY;
-			$Param_OutputOther = " -cpu-used 1";
+			
 			$Param_OutputOther .= " -b:v $BitRate";
-			$Param_OutputOther .= " -qmin 10 -qmax 42";
+
+			//	configure video
+			if ( $Codec == 'vp8' )
+			{
+				//https://www.virag.si/2012/01/webm-web-video-encoding-tutorial-with-ffmpeg-0-9/
+				$FFMPEG_WEBM_QUALITY = 'realtime';
+				$Param_Quality = " -quality " . $FFMPEG_WEBM_QUALITY;
+				$Param_OutputOther .= " -codec:v libvpx";
+				$Param_OutputOther .= " -cpu-used 1";
+				$Param_OutputOther .= " -qmin 10 -qmax 42";
+			}
+			else if ( $Codec == 'h264' )
+			{
+				//	https://trac.ffmpeg.org/wiki/Encode/H.264
+				$FFMPEG_WEBM_QUALITY = 'medium';
+				$Param_Quality = " -preset " . $FFMPEG_H264_QUALITY;
+				$Param_OutputOther .= " -codec:v libx264";
+				$Param_OutputOther .= " -b:v $BitRate";
+			}
+			else
+			{
+				echo "Unsupported mix: $Format/$Codec";
+				return false;
+			}
+		}
+		else
+		{
+			echo "Unsupported mix: $Format/$Codec";
+			return false;
 		}
 		
 		$Param_CatchStdErr = "2>&1";
@@ -206,7 +232,8 @@
 		DeleteTempFile( $ResizedTempFilename );
 
 		//	return asset we created (in case params were changed)
-		$Asset = TAsset( $Width, $Height, $Format, $BitRate );
+		$Asset['Width'] = $Width;
+		$Asset['Height'] = $Height;
 		$Assset['Command'] = $ExecCmd;
 		return $Asset;
 	}

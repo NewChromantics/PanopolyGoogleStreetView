@@ -187,7 +187,7 @@ SoyAsset_Image.prototype.OnError = function($Event)
 
 
 //	same as asset data in .meta so can construct from json
-function SoyAssetMeta($Width,$Height,$Format,$BitRate)
+function SoyAssetMeta($Width,$Height,$Format,$Codec,$BitRate)
 {
 	//	if only one arg, we've supplied JSON
 	if ( arguments.length <= 1 )
@@ -196,6 +196,7 @@ function SoyAssetMeta($Width,$Height,$Format,$BitRate)
 		this.Width = $Json.Width;
 		this.Height = $Json.Height;
 		this.Format = $Json.Format;
+		this.Codec = $Json.Codec;
 		this.BitRate = $Json.BitRate;
 		return;
 	}
@@ -203,6 +204,7 @@ function SoyAssetMeta($Width,$Height,$Format,$BitRate)
 	this.Width = $Width;
 	this.Height = $Height;
 	this.Format = $Format;
+	this.Codec = $Codec;
 	this.BitRate = $BitRate;
 }
 
@@ -295,8 +297,7 @@ SoyAsset_Video.prototype.Load = function()
 	this.mVideo = $Video;
 
 	var $Type = this.mMeta.Format;
-//	var $Codec = this.mMeta.Format;
-	var $Codec = 'vp8';
+	var $Codec = this.mMeta.Codec;
 	var $VideoTypeString = 'video/' + $Type + ';codecs="' + $Codec + '"';
 	var $CanPlay = $Video.canPlayType($VideoTypeString);
 	if ( $CanPlay == "" )
@@ -484,7 +485,7 @@ SoyPano.prototype.OnLoadedMeta = function()
 		if ( !$RemoteMeta.IsSupported() )
 			continue;
 		
-		console.log($RemoteMeta);
+		//console.log($RemoteMeta);
 		if ( $CurrentMeta == null && $BestRemoteMeta == null )
 		{
 			$BestRemoteMeta = $RemoteMeta;
