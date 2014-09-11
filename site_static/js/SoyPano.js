@@ -26,6 +26,11 @@ function SoyAsset_Ajax($Pano,$FileExtension,$Priority,$OnLoaded,$OnFailed)
 	this.Load();
 }
 
+SoyAsset_Ajax.prototype.GetType = function()
+{
+	return 'Ajax';
+}
+
 SoyAsset_Ajax.prototype.Stop = function()
 {
 	this.mDesired = false;
@@ -103,6 +108,11 @@ function SoyAsset_Image($Pano,$FileExtension,$Priority,$OnLoaded,$OnFailed)
 	this.Load();
 }
 
+SoyAsset_Image.prototype.GetType = function()
+{
+	return 'Image';
+}
+
 SoyAsset_Image.prototype.Stop = function()
 {
 	this.mDesired = false;
@@ -141,6 +151,106 @@ SoyAsset_Image.prototype.OnError = function($Event)
 	this.mOnFailed( this );
 }
 
+
+
+function SoyVideoFormat($Size,$Type,$Codec)
+{
+	this.mSize = $Size;
+	this.mType = $Type;
+	this.mCodec = $Codec;
+}
+
+
+
+function SoyAsset_Video($Pano,$VideoFormat,$Priority,$OnLoaded,$OnFailed)
+{
+	var $Host = GetHost();
+	
+	this.mPano = $Pano;
+	this.mAsset = null;
+	this.mAssetType = null;
+	this.mUrl = $Host + $Pano.mName + '.' + $VideoFormat.mSize + '.' + $VideoFormat.mType;
+	this.mOnLoaded = $OnLoaded;
+	this.mOnFailed = $OnFailed;
+	this.mDesired = true;		//	when we don't want the
+
+	this.mVideoFormat = $VideoFormat;
+	
+	this.Load();
+}
+
+SoyAsset_Video.prototype.GetType = function()
+{
+	return 'Video';
+}
+
+SoyAsset_Video.prototype.Stop = function()
+{
+	this.mDesired = false;
+
+	this.mAsset.stop();
+	
+	delete this.mAsset;
+}
+
+SoyAsset_Video.prototype.Load = function()
+{
+	var $this = this;
+	
+	//	fetch
+	console.log("Loading " + this.mUrl );
+	
+	var $Video = document.createElement('video');
+	this.mAsset = $Video;
+
+	var $Type = this.mVideoFormat.mType;
+	var $Codec = this.mVideoFormat.mCodec;
+	var $CanPlay = $Video.canPlayType('video/' + $Type + ';codecs="' + $Codec + '"');
+	if ( $CanPlay == "" )
+	{
+		OnError();
+		return;
+	}
+	
+	//	video.width = 640;
+	//	video.height = 360;
+	//	video.type = ' video/ogg; codecs="theora, vorbis" ';
+	$Video.autoplay = true;
+	$Video.loop = true;
+	$Video.crossOrigin = '';
+	$Video.src = this.mUrl;
+
+	var $ErrorFunc = function($Event) { $this.OnError($Event); };
+	var $StartFunc = function($Event) { $this.OnLoad($Event); };
+/*	this.mVideo.addEventListener('loadstart', $ErrorFunc, false );
+	this.mVideo.addEventListener('progress', $ErrorFunc, false );
+	this.mVideo.addEventListener('canplaythrough', $ErrorFunc, false );
+	this.mVideo.addEventListener('loadeddata', $ErrorFunc, false );
+	this.mVideo.addEventListener('loadedmetadata', $ErrorFunc, false );
+	this.mVideo.addEventListener('timeupdate', $ErrorFunc, false );
+	this.mVideo.addEventListener('playing', $ErrorFunc, false );
+	this.mVideo.addEventListener('waiting', $ErrorFunc, false );
+*/
+	$Video.addEventListener('error', $ErrorFunc, false );
+	$Video.addEventListener('loadedmetadata', $StartFunc, false );
+
+	$Video.load(); // must call after setting/changing source
+	$Video.play();
+
+}
+
+SoyAsset_Video.prototype.OnLoad = function($Event)
+{
+	this.mOnLoaded( this );
+}
+
+SoyAsset_Video.prototype.OnError = function($Event)
+{
+	//	not a failure if we cancelled
+	if ( !this.mDesired )
+		return;
+	this.mOnFailed( this );
+}
 
 
 
@@ -212,7 +322,12 @@ SoyPano.prototype.OnLoadedAsset = function($Asset)
 		}
 		
 		//	update texture
-		this.OnNewJpegFrame($Asset);
+		if ( $Asset.GetType() == 'Image' )
+			this.OnNewJpegFrame($Asset);
+		
+		//	start update of video
+		if ( $Asset.GetType() == 'Video' )
+			this.OnNewVideoFrame($Asset);
 	}
 }
 
@@ -242,89 +357,48 @@ SoyPano.prototype.OnFailedAsset = function($Asset)
 
 SoyPano.prototype.OnLoadedMeta = function()
 {
-	return;
 	//	don't need to do anything else
 	if ( !this.mMeta.isVideo )
 		return;
 	
+	var $this = this;
+	var OnLoaded = function($Asset) { $this.OnLoadedAsset($Asset); }
+	var OnFailed = function($Asset) { $this.OnFailedAsset($Asset); }
+
 	//	gr: need to get video options from meta
 	var $Videos = new Array();
 //	$Videos.push( {'url': GetHost() + this.mName + '.256.webm', 'contentType':'video/webm', 'codec':'vp8' } );
-	$Videos.push( {'size': 256, 'type:':'webm','codec':'vp8' } );
-	
+	$Videos.push( new SoyVideoFormat( 256, 'webm', 'vp8' ) );
 
-	//	create video
-	this.mVideo = document.createElement('video');
-	//	video.width = 640;
-	//	video.height = 360;
-	//	video.type = ' video/ogg; codecs="theora, vorbis" ';
-	this.mVideo.autoplay = true;
-	this.mVideo.loop = true;
-	this.mVideo.crossOrigin = '';
-	this.mVideo.src = null;
-	
-	//	find format we support
-	for ( var $Format in $Videos )
+	var $Priority = 90;
+	for ( var $Key in $Videos )
 	{
-		var $Size = $Format.size;
-		var $Type = $Format.type;
-		var $Codec = $Format.codec;
-		var $Url = GetHost() + this.mName + '.' + $Size + '.' + $Type;
-		var $CanPlay = this.mVideo.canPlayType('video/' + $Type + ';codecs="' + $Codec + '"');
-		
-		if ( $CanPlay == "" )
-			continue;
-		
-		this.mVideo.src = $Url;
+		var $Format = $Videos[$Key];
+		$Priority = $Priority + 1;
+		this.mAssets.push( new SoyAsset_Video( this, $Format, $Priority, OnLoaded, OnFailed ) );
 	}
-	
-	//	if no url, we cannot do video...
-	if ( this.mVideo.src == null )
-		return;
-
-/*
-	this.mVideo.addEventListener('loadstart', function($Event) { OnVideoDataChanged( video, videoTexture, $Material, $Event); }, false );
-	this.mVideo.addEventListener('canplay', function($Event) { OnVideoDataChanged( video, videoTexture, $Material, $Event); }, false );
-	this.mVideo.addEventListener('progress', function($Event) { OnVideoDataChanged( video, videoTexture, $Material, $Event); }, false );
-	this.mVideo.addEventListener('canplaythrough', function($Event) { OnVideoDataChanged( video, videoTexture, $Material, $Event); }, false );
-	this.mVideo.addEventListener('loadeddata', function($Event) { OnVideoDataChanged( video, videoTexture, $Material, $Event); }, false );
-	this.mVideo.addEventListener('loadedmetadata', function($Event) { OnVideoDataChanged( video, videoTexture, $Material, $Event); }, false );
-	this.mVideo.addEventListener('timeupdate', function($Event) { OnVideoDataChanged( video, videoTexture, $Material, $Event); }, false );
-	this.mVideo.addEventListener('playing', function($Event) { OnVideoDataChanged( video, videoTexture, $Material, $Event); }, false );
-	this.mVideo.addEventListener('waiting', function($Event) { OnVideoDataChanged( video, videoTexture, $Material, $Event); }, false );
-	this.mVideo.addEventListener('error', function($Event) { OnVideoDataChanged( video, videoTexture, $Material, $Event); }, false );
-*/
-
-	this.mVideo.mError = null;
-	this.mVideo.load(); // must call after setting/changing source
-	this.mVideo.play();
-
-	//	keep checking video state
-	var $this = this;
-	this.UpdateVideo();	//	self updating
-	
-
-	//	videoTexture.needsUpdate = true;
 
 }
 
-SoyPano.prototype.UpdateVideo = function()
+						  
+SoyPano.prototype.OnNewVideoFrame = function($Asset)
 {
 	var $this = this;
+	var $Video = $Asset.mAsset;
 
-	if ( this.mVideo.mError != null )
+	if ( $Video.mError != null )
 	{
 		//	something gone wrong, don't update!
 		return;
 	}
-	
+
 	//	push texture
-	if ( this.mVideo.readyState >= HAVE_CURRENT_DATA )
+	if ( $Video.readyState >= HAVE_CURRENT_DATA )
 	{
 		//	first time
 		if ( !this.mVideoTexture )
 		{
-			this.mVideoTexture = new THREE.Texture( this.mVideo );
+			this.mVideoTexture = new THREE.Texture( $Video );
 			this.mVideoTexture.generateMipmaps = false;
 			this.mVideoTexture.minFilter = THREE.LinearFilter;
 			this.mVideoTexture.magFilter = THREE.LinearFilter;
@@ -335,16 +409,12 @@ SoyPano.prototype.UpdateVideo = function()
 		}
 		
 		//	grab new frame from video
-		this.OnNewVideoFrame();
+		this.mVideoTexture.needsUpdate = true;
+	//	this.OnNewVideoFrame();
 	}
 	
-	
-	setTimeout( function() { $this.UpdateVideo() }, 1000/60, false );
-}
-
-SoyPano.prototype.OnNewVideoFrame = function()
-{
-	this.mVideoTexture.needsUpdate = true;
+	//	fetch next frame
+	setTimeout( function() { $this.OnNewVideoFrame($Asset) }, 1000/60, false );
 }
 
 SoyPano.prototype.OnNewJpegFrame = function($Asset)

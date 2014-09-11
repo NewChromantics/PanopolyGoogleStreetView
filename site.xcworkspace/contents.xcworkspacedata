@@ -67,4 +67,7 @@
    <FileRef
       location = "group:site_static/Cubemap.css">
    </FileRef>
+   <FileRef
+      location = "group:site_static/js/SoyPano.js">
+   </FileRef>
 </Workspace>
