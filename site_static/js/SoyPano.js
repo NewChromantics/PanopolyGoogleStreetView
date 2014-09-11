@@ -328,8 +328,8 @@ SoyAsset_Video.prototype.Load = function()
 	$Video.addEventListener('error', $ErrorFunc, false );
 	$Video.addEventListener('loadedmetadata', $StartFunc, false );
 	$Video.addEventListener('loadstart', $StartFunc, false );
-	$Video.addEventListener('progress', $StartFunc, false );
-	$Video.addEventListener('playing', $StartFunc, false );
+	//$Video.addEventListener('progress', $StartFunc, false );
+	//$Video.addEventListener('playing', $StartFunc, false );
 
 	$Video.load(); // must call after setting/changing source
 	$Video.play();
