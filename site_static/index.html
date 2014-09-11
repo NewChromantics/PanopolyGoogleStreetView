@@ -77,6 +77,7 @@
 		<script src="js/SoyFileSelect.js"></script>
 		<script src="js/SoyMouse.js"></script>
 		<script src="js/SoyCss3d.js"></script>
+		<script src="js/SoyPano.js"></script>
 	
 		<div id="container"></div>
 
@@ -348,40 +349,21 @@ function OnClickedRiftMode()
 					OnFileUploadSupported(true);
 			}
 		
-		
+var $Pano = null;
 function LoadPano()
 {
 	var PanoName = GetPanoName();
 	if ( PanoName == false )
 		return false;
 
+
+
 	var Material = mesh.material;
 	if ( !Material )
 		return false;
-		
-	var $IsVideo = false;
-	
-	if ( $IsVideo )
-	{
-		//	0 is our magic "not loaded" res
-		var Url = "http://image.panopo.ly/" + PanoName + ".0.webm";
-		//	do initial load
-		Material.map.sourceFile = Url;
-		console.log("loading " + PanoName);
-		
-		//	replace
-		return LoadHigherVideo( Material );
-	}
-	
-		
-	//	0 is our magic "not loaded" res
-	var Url = "http://image.panopo.ly/" + PanoName + ".0.jpg";
-	//	do initial load
-	Material.map.sourceFile = Url;
-	console.log("loading " + PanoName);
-	
-	//	replace
-	return LoadHigher( Material );
+
+	var OnFailedMeta = function() { console.log("Failed to load pano " + PanoName); }
+	$Pano = new SoyPano( PanoName, Material, OnFailedMeta );
 }
 		
 	
@@ -414,7 +396,6 @@ function LoadPano()
 														   color: "white",
 														   wireframe: false
 										   } );
-				LoadHigher( material );
 				
 	
 				mesh = new THREE.Mesh( geometry, material );

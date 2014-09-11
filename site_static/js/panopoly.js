@@ -112,37 +112,6 @@ function GetNextResFilename(Filename)
 }
 
 
-function LoadHigher(Material)
-{
-	if ( !Material.map )
-		return false;
-	//console.log("LoadHigher - " + Material.map.sourceFile );
-	var NewFilename = GetNextResFilename( Material.map.sourceFile );
-	if ( NewFilename == null )
-	{
-		//console.log("no higher res");
-		return false;
-	}
-	console.log("loading higher res:" + NewFilename );
-	
-	//	enable cross-site loading
-	THREE.ImageUtils.crossOrigin = "";
-	
-	var HiTexture = THREE.ImageUtils.loadTexture( NewFilename,
-												 new THREE.UVMapping(),
-												 function(NewHiTexture)
-												 {
-												 Material.map = NewHiTexture;
-												 Material.needsUpdate = true;
-												 LoadHigher( Material );
-												 },
-												 function ()
-												 {
-												 //	error: maybe 404, just try next res up
-												 //LoadHigher( Material );
-												 }
-												 );
-}
 
 function OnVideoEvent($Video,$VideoTexture,$Material,$Event)
 {
