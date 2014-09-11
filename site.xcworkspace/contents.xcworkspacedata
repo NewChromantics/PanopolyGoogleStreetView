@@ -2,72 +2,21 @@
 <Workspace
    version = "1.0">
    <FileRef
-      location = "group:site_static/cubemap.html">
+      location = "group:post-receive">
    </FileRef>
    <FileRef
-      location = "container:site_static/js/ClearDefaultText.js">
+      location = "group:readme.txt">
    </FileRef>
    <FileRef
-      location = "group:site_static/js/SoyOculusBridge.js">
+      location = "group:push.sh">
    </FileRef>
    <FileRef
-      location = "group:site_static/js/SoyOculusRest.js">
+      location = "group:ssh.sh">
    </FileRef>
    <FileRef
-      location = "container:site_static/js/GoogleAnalytics.js">
+      location = "group:site_static">
    </FileRef>
    <FileRef
-      location = "container:site_static/js/panopoly.js">
-   </FileRef>
-   <FileRef
-      location = "group:site_static/js/SoyMouse.js">
-   </FileRef>
-   <FileRef
-      location = "container:site_static/js/soy.js">
-   </FileRef>
-   <FileRef
-      location = "group:site_static/js/CubeMap.js">
-   </FileRef>
-   <FileRef
-      location = "container:site_static/js/SoyFullscreen.js">
-   </FileRef>
-   <FileRef
-      location = "group:site_static/js/SoyFileSelect.js">
-   </FileRef>
-   <FileRef
-      location = "group:site_static/test.html">
-   </FileRef>
-   <FileRef
-      location = "group:site_static/panopoly.css">
-   </FileRef>
-   <FileRef
-      location = "group:site_static/js/SoyCss3d.js">
-   </FileRef>
-   <FileRef
-      location = "container:site_static/js/SoyGyro.js">
-   </FileRef>
-   <FileRef
-      location = "container:site_static/js/SoyShrink.js">
-   </FileRef>
-   <FileRef
-      location = "container:site_static/js/SoySplit.js">
-   </FileRef>
-   <FileRef
-      location = "container:site_static/js/SoySupport.js">
-   </FileRef>
-   <FileRef
-      location = "container:site_static/js/SoyWebsocket-1.0.js">
-   </FileRef>
-   <FileRef
-      location = "container:site_static/js/support.js">
-   </FileRef>
-   <FileRef
-      location = "group:../../../../Volumes/SHARED/NewChromantics/panopo.ly/site_static/index.html">
-   </FileRef>
-   <FileRef
-      location = "group:site_static/Cubemap.css">
-   </FileRef>
-   <FileRef
-      location = "group:site_static/js/SoyPano.js">
+      location = "group:site_upload">
    </FileRef>
 </Workspace>
