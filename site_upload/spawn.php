@@ -61,22 +61,56 @@
 		return OnError("failed to read image or video information from $TempFilename");
 	}
 	
-	//	upload meta
-	UploadMeta();
+	//	returns associative array
+	function TAsset($Width,$Height,$Format,$BitRate=false)
+	{
+		$Asset = [];
+		$Asset['Width'] = $Width;
+		$Asset['Height'] = $Height;
+		$Asset['Format'] = $Format;
+		if ( $BitRate !== false )
+			$Asset['BitRate'] = $BitRate;
+		return $Asset;
+	}
+		
+	//	assets we've created
+	$OutputAssets = [];
 
-	//	resize and upload different sizes (height will dictate filename)
-	if ( UploadResize( 256, 256, 'jpg' ) )		echo "created 256 jpg\n";
-	if ( UploadResize( 2048, 1024, 'jpg' ) )	echo "created 1024 jpg\n";
-	if ( UploadResize( 4096, 2048, 'jpg' ) )	echo "created 2048 jpg\n";
-	//	gr: jpeg has a limit of 4096x4096!
-	if ( UploadResize( 4096, 4096, 'jpg' ) )	echo "created 4096 jpg\n";
-	if ( UploadResize( 256, 256, 'webm' ) )		echo "created 256 webm\n";
+	//	upload initial meta
+	UploadMeta( $OutputAssets );
+
+	//	assets we want to try and create
+	$AssetParams = [];
+	$AssetParams[] = TAsset( 256, 256, 'jpg' );
+	$AssetParams[] = TAsset( 1024, 1024, 'jpg' );
+	$AssetParams[] = TAsset( 2048, 2048, 'jpg' );
+	$AssetParams[] = TAsset( 4096, 2048, 'jpg' );
+	$AssetParams[] = TAsset( 4096, 4096, 'jpg' );
+	$AssetParams[] = TAsset( 512, 256, 'webm', '500k' );
+	$AssetParams[] = TAsset( 1024, 512, 'webm', '2000k' );
+	$AssetParams[] = TAsset( 2048, 1024, 'webm', '4000k' );
+	
+	//	these take ages. Not needed?
+	//$AssetParams[] = TAsset( 4096, 2048, 'webm', '6000k' );
+	//$AssetParams[] = TAsset( 4096, 4096, 'webm', '8000k' );
+
+	foreach ( $AssetParams as $Asset )
+	{
+		$Asset = UploadResize( $Asset );
+		//	failed
+		if ( $Asset === false )
+			continue;
+		
+		//	add to & update meta
+		$OutputAssets[] = $Asset;
+		UploadMeta( $OutputAssets );
+	}
 
 	//	upload orig
 	UploadOrig();
 
 	
-	function UploadMeta()
+	function UploadMeta($Assets)
 	{
 		global $Panoname,$Image;
 		
@@ -86,6 +120,7 @@
 		$Meta['origHeight'] = $Image->GetHeight();
 		$Meta['origType'] = $Image->GetContentType();
 		$Meta['isVideo'] = $Image->IsVideo();
+		$Meta['assets'] = $Assets;
 		
 		$MetaJson = json_encode($Meta);
 		$RemoteFilename = "$Panoname.meta";
@@ -96,8 +131,13 @@
 		return true;
 	}
 	
-	function UploadResize($Width,$Height,$Format)
+	function UploadResize($Asset)
 	{
+		$Width = $Asset['Width'];
+		$Height = $Asset['Height'];
+		$Format = $Asset['Format'];
+		$BitRate = array_key_exists('BitRate',$Asset) ? $Asset['BitRate'] : false;
+
 		global $Panoname,$Image;
 		$w = $Image->GetWidth();
 		$h = $Image->GetHeight();
@@ -112,8 +152,8 @@
 		
 		//	gr: process parent should ensure these filenames won't clash beforehand so this script can assume these filenames are safe
 		//	make filename
-		$RemoteFilename = "$Panoname.$Height.$Format";
-		$ResizedTempFilename = GetPanoTempFilename($Panoname,$Height,$Format);
+		$RemoteFilename = "$Panoname.{$Width}x$Height.$Format";
+		$ResizedTempFilename = GetPanoTempFilename($Panoname,"{$Width}x$Height",$Format);
 		register_shutdown_function('DeleteTempFile',$ResizedTempFilename);
 		
 		//	resize with ffmpeg
@@ -134,13 +174,12 @@
 		{
 			if ( !$Image->IsVideo() )
 				return false;
-			
+
 			//https://www.virag.si/2012/01/webm-web-video-encoding-tutorial-with-ffmpeg-0-9/
-			define('FFMPEG_WEBM_QUALITY', 'realtime');
-			define('FFMPEG_WEBM_BITRATE', '500k' );
-			$Param_Quality = "-codec:v libvpx -quality " . FFMPEG_WEBM_QUALITY;
+			$FFMPEG_WEBM_QUALITY = 'realtime';
+			$Param_Quality = "-codec:v libvpx -quality " . $FFMPEG_WEBM_QUALITY;
 			$Param_OutputOther = " -cpu-used 1";
-			$Param_OutputOther .= " -b:v " . FFMPEG_WEBM_BITRATE;
+			$Param_OutputOther .= " -b:v $BitRate";
 			$Param_OutputOther .= " -qmin 10 -qmax 42";
 		}
 		
@@ -160,14 +199,16 @@
 		
 		//	upload
 		//	correct content type for easier online viewing
-		$ContentType = IsVideoFormat($Format) ? "video/$Format" : "image/$Format";
-		$Error = UploadFile( $ResizedTempFilename, $RemoteFilename, $ContentType );
+		$Error = UploadFile( $ResizedTempFilename, $RemoteFilename, $Format );
 		if ( $Error !== true )
 			OnError($Error);
 	
 		DeleteTempFile( $ResizedTempFilename );
 
-		return true;
+		//	return asset we created (in case params were changed)
+		$Asset = TAsset( $Width, $Height, $Format, $BitRate );
+		$Assset['Command'] = $ExecCmd;
+		return $Asset;
 	}
 	
 	function UploadOrig()
