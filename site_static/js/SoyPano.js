@@ -10,26 +10,58 @@ function GetHost()
 }
 
 
-function SoyAsset_Ajax($Pano,$FileExtension,$Priority,$OnLoaded,$OnFailed)
+function SoyAsset($Pano,$Meta,$FileExtension,$OnLoaded,$OnFailed)
 {
-	var $Host = GetHost();
+	if ( arguments.length <= 1 )
+	{
+		this.mType = arguments[0];
+		return;
+	}
 
+	var $Host = GetHost();
+	
 	this.mPano = $Pano;
-	this.mAsset = null;
-	this.mAssetType = null;
+	this.mAsset = null;			//	set once loaded
 	this.mUrl = $Host + $Pano.mName + $FileExtension;
 	this.mOnLoaded = $OnLoaded;
 	this.mOnFailed = $OnFailed;
-	this.mDesired = true;		//	when we don't want the
+	this.mDesired = true;		//	when we don't want the asset we mark it
+	this.mMeta = $Meta;
+}
+
+SoyAsset.prototype.GetType = function()
+{
+	return this.mType;
+}
+
+SoyAsset.prototype.OnError = function()
+{
+	//	not a failure if we cancelled
+	if ( !this.mDesired )
+		return;
+	this.mOnFailed( this );
+}
+
+SoyAsset.prototype.IsLoaded = function()
+{
+	return (this.mAsset != null);
+}
+
+
+
+
+SoyAsset_Ajax.prototype = new SoyAsset('Ajax');
+
+function SoyAsset_Ajax($Pano,$FileExtension,$OnLoaded,$OnFailed)
+{
+	//	call super
+	SoyAsset.apply( this, [$Pano,null,$FileExtension,$OnLoaded,$OnFailed] );
+
 	this.mAjax = null;
 
 	this.Load();
 }
 
-SoyAsset_Ajax.prototype.GetType = function()
-{
-	return 'Ajax';
-}
 
 SoyAsset_Ajax.prototype.Stop = function()
 {
@@ -39,6 +71,7 @@ SoyAsset_Ajax.prototype.Stop = function()
 		this.mAjax.abort();
 		this.mAjax = null;
 	}
+	assert( !this.IsLoaded(), "Loaded state wrong" );
 }
 
 SoyAsset_Ajax.prototype.Load = function()
@@ -72,45 +105,30 @@ SoyAsset_Ajax.prototype.OnLoad = function($Event)
 		this.OnError($Event);
 		return;
 	}
-	this.mAssetType = $Event.target.responseType;
+	//this.mAssetType = $Event.target.responseType;
+	assert( this.IsLoaded(), "Loaded state wrong" );
 	this.mOnLoaded( this );
 }
 
-SoyAsset_Ajax.prototype.OnError = function($Event)
+
+
+
+
+
+
+
+
+
+
+
+SoyAsset_Image.prototype = new SoyAsset('Image');
+
+function SoyAsset_Image($Pano,$Meta,$FileExtension,$OnLoaded,$OnFailed)
 {
-	//	not a failure if we cancelled
-	if ( !this.mDesired )
-		return;
-	this.mOnFailed( this );
-}
-
-
-
-
-
-
-
-
-
-
-function SoyAsset_Image($Pano,$FileExtension,$Priority,$OnLoaded,$OnFailed)
-{
-	var $Host = GetHost();
-	
-	this.mPano = $Pano;
-	this.mAsset = null;
-	this.mAssetType = null;
-	this.mUrl = $Host + $Pano.mName + $FileExtension;
-	this.mOnLoaded = $OnLoaded;
-	this.mOnFailed = $OnFailed;
-	this.mDesired = true;		//	when we don't want the
+	//	call super
+	SoyAsset.apply( this, [$Pano,$Meta,$FileExtension,$OnLoaded,$OnFailed] );
 	
 	this.Load();
-}
-
-SoyAsset_Image.prototype.GetType = function()
-{
-	return 'Image';
 }
 
 SoyAsset_Image.prototype.Stop = function()
@@ -119,6 +137,8 @@ SoyAsset_Image.prototype.Stop = function()
 	
 	//	stop loading of img
 	delete this.mAsset;
+
+	assert( !this.IsLoaded(), "Loaded state wrong" );
 }
 
 SoyAsset_Image.prototype.Load = function()
@@ -129,7 +149,7 @@ SoyAsset_Image.prototype.Load = function()
 	console.log("Loading " + this.mUrl );
 	
 	var $Image = document.createElement('img');
-	this.mAsset = $Image;
+	this.mImage = $Image;
 	$Image.addEventListener('load', function($Event){ $this.OnLoad($Event); }, false );
 //	$Image.addEventListener('progress', function($Event){ $this.OnLoad($Event); }, false );
 	$Image.addEventListener('error', function($Event){ $this.OnError($Event); }, false );
@@ -140,11 +160,17 @@ SoyAsset_Image.prototype.Load = function()
 
 SoyAsset_Image.prototype.OnLoad = function($Event)
 {
+	//	move ownership
+	this.mAsset = this.mImage;
+	this.mImage = null;
+	
+	assert( this.IsLoaded(), "Loaded state wrong" );
 	this.mOnLoaded( this );
 }
 
 SoyAsset_Image.prototype.OnError = function($Event)
 {
+	assert( !this.IsLoaded(), "Loaded state wrong" );
 	//	not a failure if we cancelled
 	if ( !this.mDesired )
 		return;
@@ -153,35 +179,93 @@ SoyAsset_Image.prototype.OnError = function($Event)
 
 
 
-function SoyVideoFormat($Size,$Type,$Codec)
+
+
+
+
+
+
+
+//	same as asset data in .meta so can construct from json
+function SoyAssetMeta($Width,$Height,$Format,$BitRate)
 {
-	this.mSize = $Size;
-	this.mType = $Type;
-	this.mCodec = $Codec;
+	//	if only one arg, we've supplied JSON
+	if ( arguments.length <= 1 )
+	{
+		var $Json = arguments[0];
+		this.Width = $Json.Width;
+		this.Height = $Json.Height;
+		this.Format = $Json.Format;
+		this.BitRate = $Json.BitRate;
+		return;
+	}
+	
+	this.Width = $Width;
+	this.Height = $Height;
+	this.Format = $Format;
+	this.BitRate = $BitRate;
+}
+
+SoyAssetMeta.prototype.IsBetter = function($that)
+{
+	//	video always better than image
+	if ( this.IsVideo() != $that.IsVideo() )
+		return this.IsVideo();
+	
+	//	compare width
+	if ( this.Width > $that.Width )
+		return true;
+	if ( this.Width < $that.Width )
+		return false;
+	
+	//	compare height
+	if ( this.Height > $that.Height )
+		return true;
+	if ( this.Height < $that.Height )
+		return false;
+	
+	if ( this.BitRate )
+	{
+		if ( this.BitRate > $that.BitRate )
+			return true;
+		if ( this.BitRate < $that.BitRate )
+			return false;
+	}
+	
+	//	not better, same
+	return false;
+}
+
+SoyAssetMeta.prototype.IsVideo = function()
+{
+	if ( this.BitRate )
+		return true;
+	return false;
+}
+
+SoyAssetMeta.prototype.IsSupported = function()
+{
+	//	test
+	if ( this.Width > 4000 || this.Height > 4000 )
+		return false;
+	//	do video codec test
+	return true;
 }
 
 
 
-function SoyAsset_Video($Pano,$VideoFormat,$Priority,$OnLoaded,$OnFailed)
-{
-	var $Host = GetHost();
-	
-	this.mPano = $Pano;
-	this.mAsset = null;
-	this.mAssetType = null;
-	this.mUrl = $Host + $Pano.mName + '.' + $VideoFormat.mSize + '.' + $VideoFormat.mType;
-	this.mOnLoaded = $OnLoaded;
-	this.mOnFailed = $OnFailed;
-	this.mDesired = true;		//	when we don't want the
 
-	this.mVideoFormat = $VideoFormat;
-	
+
+
+SoyAsset_Video.prototype = new SoyAsset('Video');
+
+function SoyAsset_Video($Pano,$Meta,$OnLoaded,$OnFailed)
+{
+	//	call super
+	var $FileExtension = '.' + $Meta.Width + 'x' + $Meta.Height + '.' + $Meta.Format;
+	SoyAsset.apply( this, [$Pano,$Meta,$FileExtension,$OnLoaded,$OnFailed] );
+
 	this.Load();
-}
-
-SoyAsset_Video.prototype.GetType = function()
-{
-	return 'Video';
 }
 
 SoyAsset_Video.prototype.Stop = function()
@@ -197,6 +281,7 @@ SoyAsset_Video.prototype.Stop = function()
 		delete this.mAsset;
 		this.mAsset = null;
 	}
+	assert( !this.IsLoaded(), "Loaded state wrong" );
 }
 
 SoyAsset_Video.prototype.Load = function()
@@ -207,14 +292,17 @@ SoyAsset_Video.prototype.Load = function()
 	console.log("Loading " + this.mUrl );
 	
 	var $Video = document.createElement('video');
-	this.mAsset = $Video;
+	this.mVideo = $Video;
 
-	var $Type = this.mVideoFormat.mType;
-	var $Codec = this.mVideoFormat.mCodec;
-	var $CanPlay = $Video.canPlayType('video/' + $Type + ';codecs="' + $Codec + '"');
+	var $Type = this.mMeta.Format;
+//	var $Codec = this.mMeta.Format;
+	var $Codec = 'vp8';
+	var $VideoTypeString = 'video/' + $Type + ';codecs="' + $Codec + '"';
+	var $CanPlay = $Video.canPlayType($VideoTypeString);
 	if ( $CanPlay == "" )
 	{
-		OnError();
+		console.log("Browser cannot play " + $VideoTypeString );
+		this.OnError();
 		return;
 	}
 	
@@ -239,6 +327,9 @@ SoyAsset_Video.prototype.Load = function()
 */
 	$Video.addEventListener('error', $ErrorFunc, false );
 	$Video.addEventListener('loadedmetadata', $StartFunc, false );
+	$Video.addEventListener('loadstart', $StartFunc, false );
+	$Video.addEventListener('progress', $StartFunc, false );
+	$Video.addEventListener('playing', $StartFunc, false );
 
 	$Video.load(); // must call after setting/changing source
 	$Video.play();
@@ -247,11 +338,15 @@ SoyAsset_Video.prototype.Load = function()
 
 SoyAsset_Video.prototype.OnLoad = function($Event)
 {
+	//	gr: swap ownership?
+	this.mAsset = this.mVideo;
+	assert( this.IsLoaded(), "Loaded state wrong" );
 	this.mOnLoaded( this );
 }
 
 SoyAsset_Video.prototype.OnError = function($Event)
 {
+	assert( !this.IsLoaded(), "Loaded state wrong" );
 	//	not a failure if we cancelled
 	if ( !this.mDesired )
 		return;
@@ -282,22 +377,36 @@ function SoyPano($PanoName,$Material,$OnMetaFailed)
 	this.mMeta = null;
 
 	//	load assets
-	this.mMetaAsset = new SoyAsset_Ajax( this, '.meta', null, OnLoaded, OnFailed );
+	this.mMetaAsset = new SoyAsset_Ajax( this, '.meta', OnLoaded, OnFailed );
+	
+	//	attempt to load some assets immediately for speed
 	this.mAssets = new Array(
-							new SoyAsset_Image( this, '.256.jpg', 1, OnLoaded, OnFailed ),
-							new SoyAsset_Image( this, '.512.jpg', 2, OnLoaded, OnFailed ),
-							new SoyAsset_Image( this, '.1024.jpg', 3, OnLoaded, OnFailed ),
-							new SoyAsset_Image( this, '.2048.jpg', 4, OnLoaded, OnFailed ),
-							new SoyAsset_Image( this, '.4096.jpg', 5, OnLoaded, OnFailed )
+							new SoyAsset_Image( this, new SoyAssetMeta(256,256,'jpg'), '.256.jpg', OnLoaded, OnFailed ),
+							new SoyAsset_Image( this, new SoyAssetMeta(512,512,'jpg'), '.512.jpg', OnLoaded, OnFailed ),
+							new SoyAsset_Image( this, new SoyAssetMeta(1024,1024,'jpg'), '.1024.jpg', OnLoaded, OnFailed ),
+							new SoyAsset_Image( this, new SoyAssetMeta(2048,2048,'jpg'), '.2048.jpg', OnLoaded, OnFailed ),
+							new SoyAsset_Image( this, new SoyAssetMeta(4096,4096,'jpg'), '.4096.jpg', OnLoaded, OnFailed ),
+							new SoyAsset_Image( this, new SoyAssetMeta(256,256,'jpg'), '.256x256.jpg', OnLoaded, OnFailed ),
+							new SoyAsset_Image( this, new SoyAssetMeta(512,512,'jpg'), '.512x512.jpg', OnLoaded, OnFailed ),
+							new SoyAsset_Image( this, new SoyAssetMeta(1024,1024,'jpg'), '.1024x1024.jpg', OnLoaded, OnFailed ),
+							new SoyAsset_Image( this, new SoyAssetMeta(2048,2048,'jpg'), '.2048x2048.jpg', OnLoaded, OnFailed ),
+							new SoyAsset_Image( this, new SoyAssetMeta(4096,4096,'jpg'), '.4096x4096.jpg', OnLoaded, OnFailed )
 							);
+
+	//	do a deffered load of an asset to prove priority works
+//	setTimeout( function() { $this.mAssets.push( new SoyAsset_Image( $this, '.256.jpg', 1, OnLoaded, OnFailed ) ); }, 2*1000 );
+	
 }
 
 
 SoyPano.prototype.OnLoadedAsset = function($Asset)
 {
+	assert( $Asset.IsLoaded(), "Asset isn't loaded" );
+	
 	//	do stuff
 	if ( $Asset == this.mMetaAsset )
 	{
+		assert( $Asset.GetType() == 'Ajax', "Meta is not ajax" );
 		this.mMeta = $Asset.mAsset;
 		this.OnLoadedMeta();
 	}
@@ -309,22 +418,22 @@ SoyPano.prototype.OnLoadedAsset = function($Asset)
 		for ( var $Key in this.mAssets )
 		{
 			var $OtherAsset = this.mAssets[$Key];
-			if ( !$OtherAsset.mPriority )
+			if ( $OtherAsset == $Asset )
 				continue;
-			if ( $OtherAsset.mPriority >= $Asset.mPriority )
+			if ( $OtherAsset.mMeta.IsBetter($Asset.mMeta) )
 			{
+				//console.log("other:" + $OtherAsset.mUrl + " pri: " + $OtherAsset.mPriority + " >= " + $Asset.mPriority );
 				//	if other higher-priority asset is loaded, ditch self
-				if ( $Other.mAsset )
+				if ( $OtherAsset.IsLoaded() )
 				{
-					OnFailedAsset( $Asset );
+					this.OnFailedAsset( $Asset );
 					return;
 				}
 				continue;
 			}
 			
-			//	abort
-			//console.log("aborting " + $OtherAsset.mUrl );
-			OnFailedAsset( $OtherAsset );
+			//	we're loaded, delete the other asset (gr: unneccessary?)
+			//this.OnFailedAsset( $OtherAsset );
 		}
 		
 		//	update texture
@@ -363,27 +472,50 @@ SoyPano.prototype.OnFailedAsset = function($Asset)
 
 SoyPano.prototype.OnLoadedMeta = function()
 {
-	//	don't need to do anything else
-	if ( !this.mMeta.isVideo )
+	var $CurrentMeta = this.mCurrentAsset ? this.mCurrentAsset.mMeta : null;
+	
+	//	load some better stuff compared to mAssets
+	var $BestRemoteMeta = null;
+	for ( var $Key in this.mMeta.assets )
+	{
+		var $RemoteMeta = new SoyAssetMeta( this.mMeta.assets[$Key] );
+
+		//	can client cope with this asset?
+		if ( !$RemoteMeta.IsSupported() )
+			continue;
+		
+		console.log($RemoteMeta);
+		if ( $CurrentMeta == null && $BestRemoteMeta == null )
+		{
+			$BestRemoteMeta = $RemoteMeta;
+			continue;
+		}
+		
+		//	compare
+		if ( $CurrentMeta && !$RemoteMeta.IsBetter($CurrentMeta) )
+			continue;
+		if ( $BestRemoteMeta && !$RemoteMeta.IsBetter($BestRemoteMeta) )
+			continue;
+		
+		$BestRemoteMeta = $RemoteMeta;
+	}
+	
+	if ( !$BestRemoteMeta )
+	{
+		console.log("No better assets");
 		return;
+	}
+
+	//	load this better asset
+	console.log("Load better asset: ");
+	console.log($BestRemoteMeta);
+
 	
 	var $this = this;
 	var OnLoaded = function($Asset) { $this.OnLoadedAsset($Asset); }
 	var OnFailed = function($Asset) { $this.OnFailedAsset($Asset); }
 
-	//	gr: need to get video options from meta
-	var $Videos = new Array();
-//	$Videos.push( {'url': GetHost() + this.mName + '.256.webm', 'contentType':'video/webm', 'codec':'vp8' } );
-	$Videos.push( new SoyVideoFormat( 256, 'webm', 'vp8' ) );
-
-	var $Priority = 90;
-	for ( var $Key in $Videos )
-	{
-		var $Format = $Videos[$Key];
-		$Priority = $Priority + 1;
-		this.mAssets.push( new SoyAsset_Video( this, $Format, $Priority, OnLoaded, OnFailed ) );
-	}
-
+	this.mAssets.push( new SoyAsset_Video( this, $BestRemoteMeta, OnLoaded, OnFailed ) );
 }
 
 						  
@@ -398,6 +530,8 @@ SoyPano.prototype.OnNewVideoFrame = function($Asset)
 		return;
 	}
 
+	this.mCurrentAsset = $Asset;
+	
 	//	push texture
 	if ( $Video.readyState >= HAVE_CURRENT_DATA )
 	{
@@ -425,6 +559,8 @@ SoyPano.prototype.OnNewVideoFrame = function($Asset)
 
 SoyPano.prototype.OnNewJpegFrame = function($Asset)
 {
+	this.mCurrentAsset = $Asset;
+	
 	//	update texture
 	console.log("New frame: " + $Asset.mUrl );
 
