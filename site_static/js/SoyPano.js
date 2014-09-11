@@ -385,13 +385,13 @@ function SoyPano($PanoName,$Material,$OnMetaFailed)
 							new SoyAsset_Image( this, new SoyAssetMeta(256,256,'jpg'), '.256.jpg', OnLoaded, OnFailed ),
 							new SoyAsset_Image( this, new SoyAssetMeta(512,512,'jpg'), '.512.jpg', OnLoaded, OnFailed ),
 							new SoyAsset_Image( this, new SoyAssetMeta(1024,1024,'jpg'), '.1024.jpg', OnLoaded, OnFailed ),
-							new SoyAsset_Image( this, new SoyAssetMeta(2048,2048,'jpg'), '.2048.jpg', OnLoaded, OnFailed ),
-							new SoyAsset_Image( this, new SoyAssetMeta(4096,4096,'jpg'), '.4096.jpg', OnLoaded, OnFailed ),
+						//	new SoyAsset_Image( this, new SoyAssetMeta(2048,2048,'jpg'), '.2048.jpg', OnLoaded, OnFailed ),
+						//	new SoyAsset_Image( this, new SoyAssetMeta(4096,4096,'jpg'), '.4096.jpg', OnLoaded, OnFailed ),
 							new SoyAsset_Image( this, new SoyAssetMeta(256,256,'jpg'), '.256x256.jpg', OnLoaded, OnFailed ),
 							new SoyAsset_Image( this, new SoyAssetMeta(512,512,'jpg'), '.512x512.jpg', OnLoaded, OnFailed ),
-							new SoyAsset_Image( this, new SoyAssetMeta(1024,1024,'jpg'), '.1024x1024.jpg', OnLoaded, OnFailed ),
-							new SoyAsset_Image( this, new SoyAssetMeta(2048,2048,'jpg'), '.2048x2048.jpg', OnLoaded, OnFailed ),
-							new SoyAsset_Image( this, new SoyAssetMeta(4096,4096,'jpg'), '.4096x4096.jpg', OnLoaded, OnFailed )
+							new SoyAsset_Image( this, new SoyAssetMeta(1024,1024,'jpg'), '.1024x1024.jpg', OnLoaded, OnFailed )
+						//	new SoyAsset_Image( this, new SoyAssetMeta(2048,2048,'jpg'), '.2048x2048.jpg', OnLoaded, OnFailed )
+						//	new SoyAsset_Image( this, new SoyAssetMeta(4096,4096,'jpg'), '.4096x4096.jpg', OnLoaded, OnFailed )
 							);
 
 	//	do a deffered load of an asset to prove priority works
