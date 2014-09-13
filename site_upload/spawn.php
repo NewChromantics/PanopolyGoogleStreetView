@@ -95,6 +95,8 @@
 	//$AssetParams[] = SoyAssetMeta( 4096, 4096, 'webm', 'vp8', '10000k' );
 	$AssetParams[] = SoyAssetMeta( 512, 256, 'mp4', 'h264', '1000k' );
 	$AssetParams[] = SoyAssetMeta( 2048, 1024, 'mp4', 'h264', '5000k' );
+	$AssetParams[] = SoyAssetMeta( 512, 256, 'gif', 'gif', '5000k' );
+//	$AssetParams[] = SoyAssetMeta( 2048, 1024, 'gif', 'gif', '5000k' );
 
 	foreach ( $AssetParams as $Asset )
 	{
@@ -166,13 +168,15 @@
 		$Param_FrameSet = '';
 		$Param_CpuUsage = '';
 		$Param_OutputOther = '';
+		$Param_Quality = '';
+		$Param_TimeLimit = '';
 		
 		if ( $Format == 'jpg' )
 		{
 			$Param_Quality = "-qscale:v " . FFMPEG_JPEG_QUALITY;
 			$Param_FrameSet = "-vframes 1";
 		}
-		else if ( $Format == 'webm' || $Format == 'mp4' )
+		else if ( $Format == 'webm' || $Format == 'mp4' || $Format == 'gif' )
 		{
 			if ( !$Image->IsVideo() )
 				return false;
@@ -197,6 +201,10 @@
 				$Param_OutputOther .= " -codec:v libx264";
 				$Param_OutputOther .= " -b:v $BitRate";
 			}
+			else if ( $Codec == 'gif' )
+			{
+				
+			}
 			else
 			{
 				echo "Unsupported mix: $Format/$Codec";
@@ -213,7 +221,7 @@
 		$Param_Scale = "-vf scale=$Width:$Height";
 		$Param_Input = "-i {$Image->mFilename}";
 		$Param_Output = "$ResizedTempFilename";
-		$ExecCmd = FFMPEG_BIN . " $Param_Quiet $Param_Overwrite $Param_Input $Param_Scale $Param_Quality $Param_FrameSet $Param_OutputOther $Param_Output $Param_CatchStdErr";
+		$ExecCmd = FFMPEG_BIN . " $Param_Quiet $Param_Overwrite $Param_Input $Param_Scale $Param_Quality $Param_FrameSet $Param_OutputOther $Param_TimeLimit $Param_Output $Param_CatchStdErr";
 		exec( $ExecCmd, $ExecOut, $ExitCode );
 		$ExecOut = join("\n", $ExecOut );
 		if ( $ExitCode != 0 )
