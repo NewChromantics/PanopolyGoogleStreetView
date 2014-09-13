@@ -369,9 +369,9 @@ function LoadPano()
 	
 	
 
-			function init($Container) {
+			function init($Container,$Config) {
 		
-				var fov = 75;
+				var fov = $Config.mFov;
 				camera = new THREE.PerspectiveCamera( fov, 1, 1, 1000 );
 				camera.target = new THREE.Vector3( 0, 0, 0 );
 			
@@ -472,20 +472,20 @@ function LoadPano()
 		AddDefaultSupportAutoSwitch();
 		InitSupport();
 		
+		var $Config = { 'mFov':75, 'mFaceResolution':1000 };
 		
 		
 		var Container = GetElement("container");
 		if ( UseCanvasMode() )
 		{
-			init( Container );
+			init( Container, $Config );
 
 			//	load user's required pano
 			LoadPano();
 		}
 		else if ( UseCubemapMode() )
 		{
-			var $FaceResolution = 1000;
-			InitCubemap( Container, $FaceResolution );
+			InitCubemap( Container, $Config );
 			SetCubemapBackground();
 			CubemapUpdate();
 		}

@@ -12,11 +12,6 @@
 	transition: transform 0s linear;
 }
 
-#CubeMap
-{
-	position: relative;
-	margin: 100px auto;	/* might want to work this out from screen height? */
-}
 
 
 .face {
@@ -27,3 +22,17 @@
 	line-height: 1em;
 	color: #fff;
 }
+
+
+#Container
+{
+	position: absolute;
+	left: 50px;
+	top: 50px;
+	right: 80px;
+	bottom: 90px;
+	transform-style: preserve-3d;
+	background: red;
+	overflow: hidden;
+}
+

@@ -52,8 +52,9 @@ PushMode();
 AddDefaultSupportAutoSwitch();
 InitSupport();
 
+var $Config = { 'mFov':75, 'mFaceResolution':500 };
 
-InitCubemap( GetElement('Container'), 1000 );
+InitCubemap( GetElement('Container'), $Config );
 SetCubemapBackground();
 CubemapUpdate();
 

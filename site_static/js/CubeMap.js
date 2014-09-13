@@ -26,29 +26,43 @@ function CreateCubeFace($Parent,$FaceName,$FaceSize,$RotationTransform,$Colour)
 	$Element.style.backgroundColor = $Colour;
 }
 
-function InitCubemap($Container,$FaceSize)
+function InitCubemap($Container,$Config)
 {
 	if ( !$Container )
 		return false;
 	
+	//	world = parent
+	//	container = viewport
 	var $CubeParent = document.createElement('div');
 	$CubeParent.className = 'ThreeD';
-	$CubeParent.id = 'CubeMap';
+	$CubeParent.id = 'CubeMapParent';
 	$Container.appendChild($CubeParent);
-	var $ParentTransform = "translateZ(780px)";
-	SetElementTransform3d( $CubeParent, $ParentTransform );
 	
 	var $Cube = document.createElement('div');
 	$Cube.className = 'ThreeD';
+	$Cube.id = 'CubeMap';
 	$CubeParent.appendChild($Cube);
 	
 	var $Viewport = $Container;
-	//	fov -> perspective
-	var $Perspective = parseInt( $FaceSize * 0.80 );
-	SetElementPerspective3d( $Viewport, $Perspective + 'px' );
-	SetElementPerspectiveOrigin3d( $Viewport, '50% ' + ($FaceSize/2) + 'px' );
+
+	//var $FaceSize = $Config.mFaceResolution;
+	//var hfov = $Config.mFov ;
+	var $FaceSize = 500;
+	var hfov = 90;
+	var focal = 1 / Math.max( 0.001, Math.tan(hfov / 2) );
+	var CanvasWidth = $Container.offsetWidth;
+	var zoom = focal * CanvasWidth / 2 + 'px';
+		
+	var $ParentTransform = "translateZ(" + zoom + ")";
+	SetElementTransform3d( $CubeParent, $ParentTransform );
+	SetElementPerspective3d( $Viewport, zoom );
+	SetElementPerspectiveOrigin3d( $Viewport, '0 0 0' );
 	
-	
+	//	need width & margin to center 3D around 2D center
+	$CubeParent.style.width = $FaceSize + 'px';
+	$CubeParent.style.height = $FaceSize + 'px';
+	$CubeParent.style.margin = 'auto';
+	//	gr: need this so we rotate around the center... not sure why
 	$Cube.style.width = $FaceSize + 'px';
 	$Cube.style.height = $FaceSize + 'px';
 	$Cube.mFaces = {};
@@ -130,14 +144,9 @@ function SetFaceBackground($Element,$ImageOffset,$Layout)
 function GetElementCubeMap()
 {
 	var $Parent = GetElement('CubeMap');
-	if ( !$Parent )
-		return null;
-	return $Parent.children[0];
+	return $Parent;
 }
-function GetElementCubeMapParent()
-{
-	return GetElement('CubeMap');
-}
+
 
 function SetCameraRotation($RotateX,$RotateY,$RotateZ)
 {
@@ -150,7 +159,7 @@ function SetCameraQuaternion($Quaternion)
 {
 	//	convert quaternion to matrix
 	var $CssMatrix = GetCssMatrixFromQuaternion( $Quaternion );
-	
+
 	//	convert Quaternion to eular
 	var $Transform = $CssMatrix;
 	SetElementTransform3d( GetElementCubeMap(), $Transform );
