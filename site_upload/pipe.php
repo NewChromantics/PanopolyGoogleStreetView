@@ -26,7 +26,71 @@
 			}
 		}
 	}
+
+	define('kPiF', 3.14159265358979323846264338327950288 );
+	#define kDegToRad		(kPiF / 180.0f)
+	#define kRadToDeg		(180.0f / kPiF)
 	
+	
+	function VectorFromCoordsRad($latlon)
+	{
+		$latitude = $latlon->x;
+		$longitude = $latlon->y;
+		$las = sin($latitude);
+		$lac = cos($latitude);
+		$los = sin($longitude);
+		$loc = cos($longitude);
+		
+		$result = new Vector3( $los * $lac, $las, $loc * $lac );
+		//assert(fabsf(result.Length() - 1.0f) < 0.01f);
+		
+		return $result;
+	}
+
+	
+	
+	
+	
+	
+	function GetLatLong($x,$y,$Width,$Height)
+	{
+		$xmul = 2.0;
+		$xsub = 1.0;
+		$xfract = $x / $Width;
+		$xfract *= $xmul;
+		
+		$ysub = 0.5;
+		$ymul = 1.0;
+		$yfract = ($Height - $y) / $Height;
+		$yfract *= $ymul;
+		
+		$lon = ( $xfract - $xsub) * kPiF;
+		$lat = ( $yfract - $ysub) * kPiF;
+		return new Vector2( $lat, $lon );
+	}
+
+	function CubemapToEquirect(&$Image,$Cubemap)
+	{
+		//	make equirect image to fill
+		$InWidth = imagesx( $Image );
+		$InHeight = imagesy( $Image );
+		$OutWidth = $InWidth;
+		$OutHeight = $InHeight;
+		$EquiImage = imagecreatetruecolor($OutWidth,$OutHeight);
+		$Cubemap->Resize( $OutWidth, $OutHeight);
+		
+		//	render each pixel
+		for ( $y=0; $y<$OutHeight; $y++ )
+		for ( $x=0;	$x<$OutWidth; $x++ )
+		{
+			$latlon = GetLatLong( $x, $y, $OutWidth, $OutHeight );
+			$Sample = $Cubemap->ReadPixel_LatLon( $latlon, $Image );
+			imagesetpixel( $EquiImage, $x, $y, $Sample );
+		}
+		
+		$Image = $EquiImage;
+	}
+
 	
 		
 	//	create an image and display it
@@ -56,7 +120,7 @@
 		return OnError("Invalid cubemap spec");
 	
 	//	output size
-	$OutputWidth = 512;
+	$OutputWidth = 1024;
 	$OutputHeight = 512;
 	
 	$InputFilename = $_GET['in'];
@@ -68,8 +132,8 @@
 		return OnError("Error reading file");
 	
 	//	modify image
-	//CubemapToEquirect( $Image, $Cubemap );
-	CycleComponents( $Image );
+	CubemapToEquirect( $Image, $Cubemap );
+	//CycleComponents( $Image );
 
 	$Png = ImageToPng($Image);
 	if ( $Png === false )

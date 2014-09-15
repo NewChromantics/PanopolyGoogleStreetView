@@ -28,6 +28,17 @@
 			$rgb = ($r << 16) | ($g << 8) | ($b << 0);
 		return $rgb;
 	}
+	
+	function ReadPixel_Clamped($Image,$x,$y)
+	{
+		$w = imagesx( $Image );
+		$h = imagesy( $Image );
+		//assert($x < $w, $x.'<'.$w );
+		//assert($y < $h, $y.'<'.$h );
+		$x = max( 0, min( $x, $w-1 ) );
+		$y = max( 0, min( $y, $h-1 ) );
+		return imagecolorat( $Image, $x, $y );
+	}
 		
 	//	returns an image or false
 	function LoadImage($InputFilename,$Width,$Height)

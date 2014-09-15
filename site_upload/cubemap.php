@@ -11,6 +11,20 @@
 		}
 	};
 	
+	class Vector3
+	{
+		var $x;
+		var $y;
+		var $z;
+		
+		function Vector3($x,$y,$z)
+		{
+			$this->x = $x;
+			$this->y = $y;
+			$this->z = $z;
+		}
+	};
+	
 	class SoyCubemap
 	{
 		var $mRatio;	//	w/h vector2
@@ -75,8 +89,103 @@
 		function Resize($Width,$Height)
 		{
 			//	all we need to do is change tile size
-			$this->mTileSize->x *= $Width;
-			$this->mTileSize->y *= $Width;
+			$this->mTileSize->x = $Width / $this->mRatio->x;
+			$this->mTileSize->y = $Height / $this->mRatio->y;
+		}
+		
+		function GetFaceOffset($Face)
+		{
+			if ( !array_key_exists( $Face, $this->mFaceMap ) )
+				return new Vector2(0,0);
+			
+			return $this->mFaceMap[$Face];
+		}
+
+		function ReadPixel_LatLon($Coords,$Image)
+		{
+			/*
+			 // debug
+			 $x = $Coords->x + kPiF;
+			 $x /= kPiF * 2.0;
+			 $y = $Coords->y + kPiF;
+			 $y /= kPiF * 2.0;
+			 return GetRgb( $x*255, 0, $y*255 );
+			 */
+			
+			// The largest coordinate component determines which face we’re looking at.
+			//	coords = pixel (camera) normal
+			$coords = VectorFromCoordsRad($Coords);
+			$ax = abs($coords->x);
+			$ay = abs($coords->y);
+			$az = abs($coords->z);
+			$faceOffset;
+			$x;
+			$y;	//	offset from center of face
+			
+			//assert(ax != 0.0f || ay != 0.0f || az != 0.0f);
+			
+			if ($ax > $ay && $ax > $az)
+			{//	facing x
+				$x = $coords->z / $ax;
+				$y = -$coords->y / $ax;
+				if (0 < $coords->x)
+				{
+					$x = -$x;
+					$faceOffset = $this->GetFaceOffset('R');
+				}
+				else
+				{
+					$faceOffset = $this->GetFaceOffset('L');
+				}
+			}
+			else if ($ay > $ax && $ay > $az)
+			{//	facing y
+				$x = $coords->x / $ay;
+				$y = $coords->z / $ay;
+				if (0 < $coords->y)
+				{
+					$faceOffset = $this->GetFaceOffset('D');
+				}
+				else
+				{
+					$y = -$y;
+					$faceOffset = $this->GetFaceOffset('U');
+				}
+			}
+			else
+			{//	must be facing z
+				$x = $coords->x / $az;
+				$y = -$coords->y / $az;
+				if (0 < $coords->z)
+				{
+					$faceOffset = $this->GetFaceOffset('F');
+				}
+				else
+				{
+					$x = -$x;
+					$faceOffset = $this->GetFaceOffset('B');
+				}
+			}
+			
+			$FaceSize = $this->mTileSize;
+			$HalfSize = new Vector2( $FaceSize->x/2.0, $FaceSize->y/2.0 );
+			
+			$x = ($x * $HalfSize->x) + $HalfSize->x;
+			$y = ($y * $HalfSize->y) + $HalfSize->y;
+			assert( $x >= 0 && $x <= $FaceSize->x );
+			assert( $y >= 0 && $y <= $FaceSize->y );
+
+			$x += $faceOffset->x * $FaceSize->x;
+			$y += $faceOffset->y * $FaceSize->y;
+	
+			/*
+			var_dump($faceOffset);	echo "<p>";
+			var_dump($FaceSize);	echo "<p>";
+			var_dump($x);	echo "<p>";
+			var_dump($y);	echo "<p>";
+			exit(0);
+			*/
+			return ReadPixel_Clamped($Image, $x, $y );
 		}
 	};
 	
