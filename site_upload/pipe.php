@@ -69,13 +69,14 @@
 		return new Vector2( $lat, $lon );
 	}
 
-	function CubemapToEquirect(&$Image,$Cubemap)
+	function CubemapToEquirect(&$CubeImage,$Cubemap)
 	{
 		//	make equirect image to fill
-		$InWidth = imagesx( $Image );
-		$InHeight = imagesy( $Image );
+		$InWidth = imagesx( $CubeImage );
+		$InHeight = imagesy( $CubeImage );
 		$OutWidth = $InWidth;
 		$OutHeight = $InHeight;
+	
 		$EquiImage = imagecreatetruecolor($OutWidth,$OutHeight);
 		$Cubemap->Resize( $OutWidth, $OutHeight);
 		
@@ -84,14 +85,65 @@
 		for ( $x=0;	$x<$OutWidth; $x++ )
 		{
 			$latlon = GetLatLong( $x, $y, $OutWidth, $OutHeight );
-			$Sample = $Cubemap->ReadPixel_LatLon( $latlon, $Image );
+			$Sample = $Cubemap->ReadPixel_LatLon( $latlon, $CubeImage );
 			imagesetpixel( $EquiImage, $x, $y, $Sample );
 		}
 		
-		$Image = $EquiImage;
+		$CubeImage = $EquiImage;
 	}
 
+	function GetFaceColour($Face)
+	{
+		switch ( $Face )
+		{
+			case 'U':	return GetRgb(255,0,0);
+			case 'L':	return GetRgb(0,255,0);
+			case 'F':	return GetRgb(0,0,255);
+			case 'R':	return GetRgb(255,255,0);
+			case 'B':	return GetRgb(0,255,255);
+			case 'D':	return GetRgb(255,0,255);
+			default:	return GetRgb(255,255,255);
+		}
+	}
 	
+	function EquirectToCubemap(&$EquiImage,$Cubemap)
+	{
+		//	make cubemap image to fill
+		$InWidth = imagesx( $EquiImage );
+		$InHeight = imagesy( $EquiImage );
+		$OutWidth = $InWidth;
+		$OutHeight = $InHeight;
+
+		$CubeImage = imagecreatetruecolor($OutWidth,$OutHeight);
+		
+		//	go through each tile, convert pixel to lat long, then read
+		foreach ( $Cubemap->mFaceMap as $Face => $FaceOffset )
+		{
+			$Colour = GetFaceColour( $Face );
+			
+			for ( $fy=0;	$fy<$Cubemap->mTileSize->y;	$fy++ )
+			for ( $fx=0;	$fx<$Cubemap->mTileSize->x;	$fx++ )
+			{
+				$x = $fx + ($FaceOffset->x * $Cubemap->mTileSize->x);
+				$y = $fy + ($FaceOffset->y * $Cubemap->mTileSize->y);
+				imagesetpixel( $CubeImage, $x, $y, $Colour );
+			}
+		}
+			/*
+		
+		//	render each pixel
+		for ( $y=0; $y<$OutHeight; $y++ )
+			for ( $x=0;	$x<$OutWidth; $x++ )
+			{
+				$latlon = GetLatLong( $x, $y, $OutWidth, $OutHeight );
+				$Sample = $Cubemap->ReadPixel_LatLon( $latlon, $EquiImage );
+				imagesetpixel( $CubeImage, $x, $y, $Sample );
+			}
+		*/
+		$EquiImage = $CubeImage;
+	}
+	
+
 		
 	//	create an image and display it
 	function CreateTestImage($Width,$Height)
@@ -113,16 +165,15 @@
 	
 		
 	//	orig size (needed for cubemap)
-	$OrigWidth = 400;
-	$OrigHeight = 300;
-	$Cubemap = new SoyCubemap( $OrigWidth, $OrigHeight, 'XUXXLFRBXDXX' );
-	if ( !$Cubemap->IsValid() )
-		return OnError("Invalid cubemap spec");
+	$CubemapLayout = false;
+	if ( array_key_exists('cubemap',$_GET) )
+		$CubemapLayout = $_GET['cubemap'];
+	
 	
 	//	output size
 	$OutputWidth = 1024;
 	$OutputHeight = 512;
-	
+
 	$InputFilename = $_GET['in'];
 	if ( !file_exists($InputFilename) )
 		return OnError("404");
@@ -130,9 +181,30 @@
 	$Image = LoadImage( $InputFilename, $OutputWidth, $OutputHeight );
 	if ( $Image === false )
 		return OnError("Error reading file");
+
+	
+	
+	//	if cubemap specified then cubemap -> equirect
+	if ( $CubemapLayout !== false )
+	{
+		//	need to grab this!
+		$OrigWidth = 400;
+		$OrigHeight = 300;
+		$Cubemap = new SoyCubemap( $OrigWidth, $OrigHeight, $CubemapLayout );
+		if ( !$Cubemap->IsValid() )
+			return OnError("Invalid cubemap spec");
+		CubemapToEquirect( $Image, $Cubemap );
+	}
+	else
+	{
+		//	equirect to cubemap
+		$Cubemap = new SoyCubemap( 400, 300, 'XUXXLFRBXDXX' );
+		$Cubemap->Resize( $OutputWidth, $OutputHeight );
+		EquirectToCubemap( $Image, $Cubemap );
+	}
+	
 	
 	//	modify image
-	CubemapToEquirect( $Image, $Cubemap );
 	//CycleComponents( $Image );
 
 	$Png = ImageToPng($Image);
