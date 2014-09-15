@@ -101,16 +101,30 @@
 			return $this->mFaceMap[$Face];
 		}
 
+		function ScreenToWorld($Face,$ScreenPos)
+		{
+			//	0..1 -> -1..1
+			$ScreenPos->x *= 2.0;
+			$ScreenPos->y *= 2.0;
+			$ScreenPos->x -= 1.0;
+			$ScreenPos->y -= 1.0;
+			
+			switch ( $Face )
+			{
+				case 'L':	return new Vector3( -1,				-$ScreenPos->y,	$ScreenPos->x );
+				case 'R':	return new Vector3(  1,				-$ScreenPos->y,	-$ScreenPos->x );
+				case 'U':	return new Vector3( -$ScreenPos->x,	 1,				-$ScreenPos->y );
+				case 'D':	return new Vector3( -$ScreenPos->x,	-1,				$ScreenPos->y );
+				case 'F':	return new Vector3( $ScreenPos->x,	-$ScreenPos->y,	1 );
+				case 'B':	return new Vector3( -$ScreenPos->x,	-$ScreenPos->y,	-1);
+			}
+			
+			return false;
+		}
+
+		
 		function ReadPixel_LatLon($Coords,$Image)
 		{
-			/*
-			 // debug
-			 $x = $Coords->x + kPiF;
-			 $x /= kPiF * 2.0;
-			 $y = $Coords->y + kPiF;
-			 $y /= kPiF * 2.0;
-			 return GetRgb( $x*255, 0, $y*255 );
-			 */
 			
 			// The largest coordinate component determines which face we’re looking at.
 			//	coords = pixel (camera) normal

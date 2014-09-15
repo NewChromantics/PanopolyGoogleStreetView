@@ -22,6 +22,10 @@
 	
 	function GetRgb($r,$g,$b,$Image=false)
 	{
+		$r = intval($r) & 0xFF;
+		$g = intval($g) & 0xFF;
+		$b = intval($b) & 0xFF;
+		
 		if ( $Image )
 			$rgb = imagecolorallocate( $Image, $r, $g, $b );
 		else

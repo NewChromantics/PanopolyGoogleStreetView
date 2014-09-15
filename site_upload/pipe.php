@@ -32,8 +32,10 @@
 	#define kRadToDeg		(180.0f / kPiF)
 	
 	
+	//	LatLonToView
 	function VectorFromCoordsRad($latlon)
 	{
+		//	http://en.wikipedia.org/wiki/N-vector#Converting_latitude.2Flongitude_to_n-vector
 		$latitude = $latlon->x;
 		$longitude = $latlon->y;
 		$las = sin($latitude);
@@ -46,21 +48,66 @@
 		
 		return $result;
 	}
+	
+	function ViewToLatLon($View3)
+	{
+		//	http://en.wikipedia.org/wiki/N-vector#Converting_n-vector_to_latitude.2Flongitude
+		$x = $View3->x;
+		$y = $View3->y;
+		$z = $View3->z;
+		
+		/*
+		$lat = atan( $z / sqrt( ($x*$x) + ($y*$y) ) );
+		//$lat = asin( $z );
+		$lon = 0;
+		if ( $x != 0 )
+			$lon = atan( $y / $x );
+		 */
+		
+		$lat = atan2( $x, $z );
+		
+		//	normalise y
+		$xz = sqrt( ($x*$x) + ($z*$z) );
+		$normy = $y / sqrt( ($y*$y) + ($xz*$xz) );
+		$lon = asin( $normy );
+		//$lon = atan2( $y, $xz );
 
+		 
+		return new Vector2( $lat, $lon );
+	}
 	
+	function GetVector3Colour($Vector3)
+	{
+		$vx = $Vector3->x;
+		$vy = $Vector3->y;
+		$vz = $Vector3->z;
+		return GetRgb( ($vx+1.0)/2.0*255, ($vy+1.0)/2.0*255, ($vz+1.0)/2.0*255 );
+	}
 	
-	
-	
+	function GetLatLonColour($LatLon)
+	{
+		if ( $LatLon->x < -1 )
+			return GetRgb( 0,255,0 );
+		if ( $LatLon->x > 1 )
+			return GetRgb( 255,255,0 );
+		
+		$x = $LatLon->x + kPiF;
+		$x /= kPiF * 2.0;
+		$y = $LatLon->y + kPiF;
+		$y /= kPiF * 2.0;
+		return GetRgb( $x*255, 0, $y*255 );
+	}
 	
 	function GetLatLong($x,$y,$Width,$Height)
 	{
 		$xmul = 2.0;
 		$xsub = 1.0;
+		$ysub = 0.5;
+		$ymul = 1.0;
+
 		$xfract = $x / $Width;
 		$xfract *= $xmul;
 		
-		$ysub = 0.5;
-		$ymul = 1.0;
 		$yfract = ($Height - $y) / $Height;
 		$yfract *= $ymul;
 		
@@ -68,7 +115,28 @@
 		$lat = ( $yfract - $ysub) * kPiF;
 		return new Vector2( $lat, $lon );
 	}
+	
+	function GetLatLongInverse($lat,$lon,$Width,$Height)
+	{
+		//	-pi...pi -> -1...1
+		$lat /= kPiF;
+		$lon /= kPiF;
 
+		//	-1..1 -> 0..2
+		$lat += 1.0;
+		$lon += 1.0;
+		
+		//	0..2 -> 0..1
+		$lat /= 2.0;
+		$lon /= 2.0;
+		
+		$lon = 1.0 - $lon;
+		$lat *= $Width;
+		$lon *= $Height;
+
+		return new Vector2( $lat, $lon );
+	}
+	
 	function CubemapToEquirect(&$CubeImage,$Cubemap)
 	{
 		//	make equirect image to fill
@@ -126,20 +194,32 @@
 			{
 				$x = $fx + ($FaceOffset->x * $Cubemap->mTileSize->x);
 				$y = $fy + ($FaceOffset->y * $Cubemap->mTileSize->y);
+				
+				$vx = $fx / $Cubemap->mTileSize->x;
+				$vy = $fy / $Cubemap->mTileSize->y;
+				
+				$ViewVector = $Cubemap->ScreenToWorld( $Face, new Vector2($vx, $vy) );
+				if ( $ViewVector === false )
+				{
+					$Colour = GetRgb( 255, 0, 255 );
+				}
+				else
+				{
+					$Colour = GetVector3Colour( $ViewVector );
+
+					$LatLon = ViewToLatLon( $ViewVector );
+					$Colour = GetLatLonColour( $LatLon );
+						
+					$SphereImagePos = GetLatLongInverse( $LatLon->x, $LatLon->y, $InWidth, $InHeight );
+					$Colour = ReadPixel_Clamped( $EquiImage, $SphereImagePos->x, $SphereImagePos->y );
+					
+					
+				}
+				 
 				imagesetpixel( $CubeImage, $x, $y, $Colour );
 			}
 		}
-			/*
 		
-		//	render each pixel
-		for ( $y=0; $y<$OutHeight; $y++ )
-			for ( $x=0;	$x<$OutWidth; $x++ )
-			{
-				$latlon = GetLatLong( $x, $y, $OutWidth, $OutHeight );
-				$Sample = $Cubemap->ReadPixel_LatLon( $latlon, $EquiImage );
-				imagesetpixel( $CubeImage, $x, $y, $Sample );
-			}
-		*/
 		$EquiImage = $CubeImage;
 	}
 	
@@ -171,8 +251,8 @@
 	
 	
 	//	output size
-	$OutputWidth = 1024;
-	$OutputHeight = 512;
+	$OutputWidth = 2048;
+	$OutputHeight = 2048;
 
 	$InputFilename = $_GET['in'];
 	if ( !file_exists($InputFilename) )
@@ -201,6 +281,7 @@
 		$Cubemap = new SoyCubemap( 400, 300, 'XUXXLFRBXDXX' );
 		$Cubemap->Resize( $OutputWidth, $OutputHeight );
 		EquirectToCubemap( $Image, $Cubemap );
+		//CubemapToEquirect( $Image, $Cubemap );
 	}
 	
 	
