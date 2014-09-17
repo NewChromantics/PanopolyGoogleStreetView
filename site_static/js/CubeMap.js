@@ -84,7 +84,10 @@ function SetCubemapBackground()
 	var $Cube = GetElementCubeMap();
 	if ( !$Cube )
 		return false;
-	var $Layout = new CubemapLayout('cubemap.jpg',400,300);
+	
+	//	gr: oddly, wrong resolution here still works...
+	var $Layout = new CubemapLayout('banks.cubemap.1024x512.png',1024,512);
+	//var $Layout = new CubemapLayout('cubemap.jpg',400,300);
 	//	var $Layout = new CubemapLayout('cubemap2x.jpg',800,600);
 	//	var $Layout = new CubemapLayout('stormycubemap.jpg',4096,3072);
 	/*
@@ -123,6 +126,11 @@ function SetFaceBackground($Element,$ImageOffset,$Layout)
 	var $w = ($ImageSize.x/$CssScale.x) + 'px ';
 	var $h = ($ImageSize.y/$CssScale.y) + 'px ';
 	
+	var $ElementChildImg = document.createElement('img');
+	$ElementChildImg.style.width = '100%';
+	$ElementChildImg.style.height = '100%';
+	LoadMJpeg( 'http://image.panopo.ly/banks.mjpeg', $ElementChildImg, 25 );
+	$Element.appendChild( $ElementChildImg );
 	
 	$Element.style.background = 'url(' + $ImageUrl + ') ' + $x + $y;
 	$Element.style.backgroundSize = $w + $h;
