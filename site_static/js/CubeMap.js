@@ -129,7 +129,8 @@ function SetFaceBackground($Element,$ImageOffset,$Layout)
 	var $ElementChildImg = document.createElement('img');
 	$ElementChildImg.style.width = '100%';
 	$ElementChildImg.style.height = '100%';
-	LoadMJpeg( 'http://image.panopo.ly/banks.mjpeg', $ElementChildImg, 25 );
+	var $MJpeg = new SoyMJpeg( 'http://image.panopo.ly/banks.mjpeg', $ElementChildImg, 25  );
+
 	$Element.appendChild( $ElementChildImg );
 	
 	$Element.style.background = 'url(' + $ImageUrl + ') ' + $x + $y;

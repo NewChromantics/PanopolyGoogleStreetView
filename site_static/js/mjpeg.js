@@ -1,63 +1,74 @@
+function SoyMJpeg($Url,$Element,$FrameRate)
+{
+	var $this = this;
 
-var $LastJpegStart = -1;
-var $LastReadPos = -1;
-var $Jpegs = new Array();
-var $JpegHeader = null;
-var $MJpegAjax = null;
-
-
-function ab2str(buf) {
-	return String.fromCharCode.apply(null, new Uint8Array(buf));
+	this.mLastJpegStart = -1;
+	this.mLastReadPos = -1;
+	this.mJpegs = new Array();
+	this.mJpegHeader = null;
+	this.mMJpegAjax = null;
+	this.mUrl = $Url;
+	this.mElement = $Element;
+	this.mFrameRate = $FrameRate;
+	
+	
+	var ajax = new XMLHttpRequest();
+	this.mMJpegAjax = ajax;
+	ajax.addEventListener("progress", function($Event) { $this.OnMJpegData($Event); }, false );
+	//	ajax.addEventListener("load", function($Event){ $this.OnReply($Event); }, false);
+	//	ajax.addEventListener("error", function($Event){ $this.OnError($Event); }, false);
+	//	ajax.addEventListener("abort", function($Event){ $this.OnError($Event); }, false);
+	ajax.open("GET", this.mUrl, true );
+	//ajax.setRequestHeader('Content-Type', 'multipart/form-data;');
+	ajax.withCredentials = false;
+	ajax.responseType = 'arraybuffer';
+	ajax.send( null );
+	
+	//	gr: on first success start the auto-update
+	this.UpdateJpegToElement();
 }
 
-function str2ab(str) {
-	var buf = new ArrayBuffer(str.length*2); // 2 bytes for each char
-	var bufView = new Uint8Array(buf);
-	for (var i=0, strLen=str.length; i<strLen; i++) {
-		bufView[i] = str.charCodeAt(i);
-	}
-	return buf;
-}
 
-
-function PopJpeg($Element)
+SoyMJpeg.prototype.PopJpeg = function()
 {
 	//	time for another frame
-	if ( $Jpegs.length == 0 )
+	if ( this.mJpegs.length == 0 )
+		return false;
+	if ( !this.mElement )
 		return false;
 	
 	//	encode to datauri for html
-	$JpegData = $Jpegs[0];
-	$Jpegs.splice(0,1);
+	var $JpegData = this.mJpegs[0];
+	this.mJpegs.splice(0,1);
 	
 	var $Blob = $JpegData;
 	console.log("$Blob:");
 	console.log($Blob);
 	var $DataUrl = URL.createObjectURL( $Blob );
 	console.log("new jpeg" + $DataUrl );
-	$Element.src = $DataUrl;
+	this.mElement.src = $DataUrl;
 	
 	return true;
 }
 
-function UpdateJpegToElement($Element,$FrameRate)
+SoyMJpeg.prototype.UpdateJpegToElement = function()
 {
-	PopJpeg( $Element );
+	this.PopJpeg();
 	
-	var $UpdateRateMs = 1000/parseFloat($FrameRate);
-	console.log($UpdateRateMs);
-	setTimeout( function(){ UpdateJpegToElement($Element,$FrameRate); }, $UpdateRateMs );
+	var $UpdateRateMs = 1000/parseFloat(this.mFrameRate);
+	var $this = this;
+	setTimeout( function(){ $this.UpdateJpegToElement(); }, $UpdateRateMs );
 }
 
-function OnJpeg($JpegData)
+SoyMJpeg.prototype.OnJpeg = function($JpegData)
 {
 	console.log("Found jpeg");
 	var $JpegDataView = new DataView($JpegData);
 	var $Blob = new Blob([$JpegDataView], {type: "image/jpeg"});
-	$Jpegs.push( $Blob );
+	this.mJpegs.push( $Blob );
 }
 
-function OnMJpegData($Event)
+SoyMJpeg.prototype.OnMJpegData = function($Event)
 {
 	var $Data = $Event.target.response;
 	if ( $Data == null )
@@ -69,27 +80,27 @@ function OnMJpegData($Event)
 	console.log( typeof $Data );
 	
 	//	first case
-	if ( $LastReadPos < 0 )
+	if ( this.mHeader == null )
 	{
 		//	calc header
 		if ( $DataLength < 5 )
 			return;
-		$Header = $Data.slice(0,10);
+		this.mHeader = $Data.slice(0,10);
 		console.log("jpeg header is ");
-		console.log(ab2str($Header) );
-		console.log( $Header.byteLength );
-		$LastReadPos = $Header.byteLength;
-		$LastJpegStart = 0;
+		console.log(ab2str(this.mHeader) );
+		console.log( this.mHeader.byteLength );
+		this.mLastReadPos = this.mHeader.byteLength;
+		this.mLastJpegStart = 0;
 	}
 	
 	//	look for next header
 	var $DataView = new DataView($Data);
-	var $HeaderView = new DataView($Header);
+	var $HeaderView = new DataView(this.mHeader);
 	
-	for ( var $i=$LastReadPos;	$i<$DataLength;	$i++ )
+	for ( var $i=this.mLastReadPos;	$i<$DataLength;	$i++ )
 	{
 		var $Match = true;
-		for ( var $h=0;	$Match && $h<$Header.byteLength;	$h++ )
+		for ( var $h=0;	$Match && $h<this.mHeader.byteLength;	$h++ )
 		{
 			var $dd = $DataView.getInt8($i+$h);
 			var $hd = $HeaderView.getInt8($h);
@@ -98,43 +109,19 @@ function OnMJpegData($Event)
 		}
 		if ( !$Match )
 		{
-			$LastReadPos = $i;
+			this.mLastReadPos = $i;
 			continue;
 		}
 		
-		console.log("found jpeg from " + $LastJpegStart + " to " + $i );
+		console.log("found jpeg from " + this.mLastJpegStart + " to " + $i );
 		
 		//	found next jpeg
-		var $JpegData = $Data.slice($LastJpegStart,$i);
-		OnJpeg( $JpegData );
+		var $JpegData = $Data.slice(this.mLastJpegStart,$i);
+		this.OnJpeg( $JpegData );
 		
-		$LastJpegStart = $i;
-		$LastReadPos = $LastJpegStart;
-		//return;
+		this.mLastJpegStart = $i;
+		this.mLastReadPos = this.mLastJpegStart;
 	}
 	
 }
-
-function LoadMJpeg($Url,$Element,$FrameRate)
-{
-	if ( !$Element )
-		return;
-	
-	var $this = this;
-	var ajax = new XMLHttpRequest();
-	$MJpegAjax = ajax;
-	ajax.addEventListener("progress", OnMJpegData, false );
-	//	ajax.addEventListener("load", function($Event){ $this.OnReply($Event); }, false);
-	//	ajax.addEventListener("error", function($Event){ $this.OnError($Event); }, false);
-	//	ajax.addEventListener("abort", function($Event){ $this.OnError($Event); }, false);
-	ajax.open("GET", $Url, true );
-	//ajax.setRequestHeader('Content-Type', 'multipart/form-data;');
-	ajax.withCredentials = false;
-	ajax.responseType = 'arraybuffer';
-	ajax.send( null );
-	
-	//	gr: on first success start the auto-update
-	UpdateJpegToElement( $Element, $FrameRate );
-}
-
 
