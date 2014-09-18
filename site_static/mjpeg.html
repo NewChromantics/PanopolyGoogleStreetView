@@ -12,11 +12,12 @@
 		
 		<img id="sink" src="">
 			
+			<script src="js/soy.js"></script>
 			<script src="js/mjpeg.js"></script>
 	
 			
 <script>
-	LoadMJpeg( 'http://image.panopo.ly/banks.mjpeg', document.getElementById('sink') );
+	var $mjpeg = new SoyMJpeg('http://image.panopo.ly/banks.mjpeg', document.getElementById('sink'), 25 );
 </script>
 			
 	</body>
