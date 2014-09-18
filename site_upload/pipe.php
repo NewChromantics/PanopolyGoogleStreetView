@@ -179,8 +179,8 @@
 		//	make cubemap image to fill
 		$InWidth = imagesx( $EquiImage );
 		$InHeight = imagesy( $EquiImage );
-		$OutWidth = $InWidth;
-		$OutHeight = $InHeight;
+		$OutWidth = $Cubemap->GetImageWidth();
+		$OutHeight = $Cubemap->GetImageHeight();
 
 		$CubeImage = imagecreatetruecolor($OutWidth,$OutHeight);
 		
@@ -250,15 +250,15 @@
 		$CubemapLayout = $_GET['cubemap'];
 	
 	
-	//	output size
-	$OutputWidth = 2048;
-	$OutputHeight = 2048;
-
+	//	max-out source size for best-quality sample (fast)
+	$SourceWidth = 4096;
+	$SourceHeight = 4096;
+	
 	$InputFilename = $_GET['in'];
 	if ( !file_exists($InputFilename) )
 		return OnError("404");
 	
-	$Image = LoadImage( $InputFilename, $OutputWidth, $OutputHeight );
+	$Image = LoadImage( $InputFilename, $SourceWidth, $SourceHeight );
 	if ( $Image === false )
 		return OnError("Error reading file");
 
@@ -277,8 +277,12 @@
 	}
 	else
 	{
+		//	output size
+		$OutputWidth = 2048;
+		$OutputHeight = 2048;
+		
 		//	equirect to cubemap
-		$Cubemap = new SoyCubemap( 400, 300, 'XUXXLFRBXDXX' );
+		$Cubemap = new SoyCubemap( 2, 3, 'ULFRBD' );
 		$Cubemap->Resize( $OutputWidth, $OutputHeight );
 		EquirectToCubemap( $Image, $Cubemap );
 		//CubemapToEquirect( $Image, $Cubemap );

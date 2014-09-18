@@ -70,11 +70,11 @@
 			}
 			
 			//	make up 2d map
-			for ( $x=0;	$x<$this->GetWidth();	$x++ )
+			for ( $x=0;	$x<$this->GetTileWidth();	$x++ )
 			{
-				for ( $y=0;	$y<$this->GetHeight();	$y++ )
+				for ( $y=0;	$y<$this->GetTileHeight();	$y++ )
 				{
-					$i = ($y*$this->GetWidth()) + $x;
+					$i = ($y*$this->GetTileWidth()) + $x;
 					$this->mTileMap[$x][$y] = $Layout[$i];
 					$this->mFaceMap[$Layout[$i]] = new Vector2($x,$y);
 				}
@@ -82,8 +82,10 @@
 		}
 		
 		function IsValid()		{	return $this->mRatio !== false;	}
-		function GetWidth()		{	return $this->mRatio->x;	}
-		function GetHeight()	{	return $this->mRatio->y;	}
+		function GetTileWidth()		{	return $this->mRatio->x;	}
+		function GetTileHeight()	{	return $this->mRatio->y;	}
+		function GetImageWidth()	{	return $this->mRatio->x * $this->mTileSize->x;	}
+		function GetImageHeight()	{	return $this->mRatio->y * $this->mTileSize->y;	}
 		
 		//	apply map to a different image
 		function Resize($Width,$Height)
