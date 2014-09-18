@@ -43,7 +43,79 @@
 		$y = max( 0, min( $y, $h-1 ) );
 		return imagecolorat( $Image, $x, $y );
 	}
+	function GetVector3Colour($Vector3)
+	{
+		$vx = $Vector3->x;
+		$vy = $Vector3->y;
+		$vz = $Vector3->z;
+		return GetRgb( ($vx+1.0)/2.0*255, ($vy+1.0)/2.0*255, ($vz+1.0)/2.0*255 );
+	}
+	
+	function GetLatLonColour($LatLon)
+	{
+		if ( $LatLon->x < -1 )
+			return GetRgb( 0,255,0 );
+		if ( $LatLon->x > 1 )
+			return GetRgb( 255,255,0 );
 		
+		$x = $LatLon->x + kPiF;
+		$x /= kPiF * 2.0;
+		$y = $LatLon->y + kPiF;
+		$y /= kPiF * 2.0;
+		return GetRgb( $x*255, 0, $y*255 );
+	}
+	
+	function GetFaceColour($Face)
+	{
+		switch ( $Face )
+		{
+			case 'U':	return GetRgb(255,0,0);
+			case 'L':	return GetRgb(0,255,0);
+			case 'F':	return GetRgb(0,0,255);
+			case 'R':	return GetRgb(255,255,0);
+			case 'B':	return GetRgb(0,255,255);
+			case 'D':	return GetRgb(255,0,255);
+			default:	return GetRgb(255,255,255);
+		}
+	}
+	
+	//	create an image and display it
+	function CreateTestImage($Width,$Height)
+	{
+		$Image = imagecreatetruecolor($Width,$Height);
+		
+		//	set all pixels
+		for ( $y=0; $y<$Height; $y++ )
+			for ( $x=0;	$x<$Width; $x++ )
+			{
+				$r = $x % 255;
+				$g = $y % 255;
+				$b = 0 % 255;
+				$rgb = GetRgb( $r, $g, $b );
+				imagesetpixel( $Image, $x, $y, $rgb );
+			}
+		return $Image;
+	}
+	
+	function CycleComponents(&$Image)
+	{
+		$w = imagesx( $Image );
+		$h = imagesy( $Image );
+		
+		//	change components
+		for ( $y=0; $y<$h; $y++ )
+		{
+			for ( $x=0;	$x<$w; $x++ )
+			{
+				$rgb = imagecolorat( $Image, $x, $y );
+				GetComponents( $r, $g, $b, $rgb );
+				$rgb = GetRgb( $g, $b, $r );
+				imagesetpixel( $Image, $x, $y, $rgb );
+			}
+		}
+	}
+	
+	
 	//	returns an image or false
 	function LoadImage($InputFilename,$Width,$Height)
 	{

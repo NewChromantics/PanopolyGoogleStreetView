@@ -1,4 +1,9 @@
 <?php
+	
+	define('kPiF', 3.14159265358979323846264338327950288 );
+	#define kDegToRad		(kPiF / 180.0f)
+	#define kRadToDeg		(180.0f / kPiF)
+
 	class Vector2
 	{
 		var $x;
@@ -24,6 +29,89 @@
 			$this->z = $z;
 		}
 	};
+
+	//	LatLonToView
+	function VectorFromCoordsRad($latlon)
+	{
+		//	http://en.wikipedia.org/wiki/N-vector#Converting_latitude.2Flongitude_to_n-vector
+		$latitude = $latlon->x;
+		$longitude = $latlon->y;
+		$las = sin($latitude);
+		$lac = cos($latitude);
+		$los = sin($longitude);
+		$loc = cos($longitude);
+		
+		$result = new Vector3( $los * $lac, $las, $loc * $lac );
+		//assert(fabsf(result.Length() - 1.0f) < 0.01f);
+		
+		return $result;
+	}
+	
+	function ViewToLatLon($View3)
+	{
+		//	http://en.wikipedia.org/wiki/N-vector#Converting_n-vector_to_latitude.2Flongitude
+		$x = $View3->x;
+		$y = $View3->y;
+		$z = $View3->z;
+		
+		/*
+		 $lat = atan( $z / sqrt( ($x*$x) + ($y*$y) ) );
+		 //$lat = asin( $z );
+		 $lon = 0;
+		 if ( $x != 0 )
+		 $lon = atan( $y / $x );
+		 */
+		
+		$lat = atan2( $x, $z );
+		
+		//	normalise y
+		$xz = sqrt( ($x*$x) + ($z*$z) );
+		$normy = $y / sqrt( ($y*$y) + ($xz*$xz) );
+		$lon = asin( $normy );
+		//$lon = atan2( $y, $xz );
+		
+		
+		return new Vector2( $lat, $lon );
+	}
+
+	function GetLatLong($x,$y,$Width,$Height)
+	{
+		$xmul = 2.0;
+		$xsub = 1.0;
+		$ysub = 0.5;
+		$ymul = 1.0;
+		
+		$xfract = $x / $Width;
+		$xfract *= $xmul;
+		
+		$yfract = ($Height - $y) / $Height;
+		$yfract *= $ymul;
+		
+		$lon = ( $xfract - $xsub) * kPiF;
+		$lat = ( $yfract - $ysub) * kPiF;
+		return new Vector2( $lat, $lon );
+	}
+	
+	function GetLatLongInverse($lat,$lon,$Width,$Height)
+	{
+		//	-pi...pi -> -1...1
+		$lat /= kPiF;
+		$lon /= kPiF;
+		
+		//	-1..1 -> 0..2
+		$lat += 1.0;
+		$lon += 1.0;
+		
+		//	0..2 -> 0..1
+		$lat /= 2.0;
+		$lon /= 2.0;
+		
+		$lon = 1.0 - $lon;
+		$lat *= $Width;
+		$lon *= $Height;
+		
+		return new Vector2( $lat, $lon );
+	}
 	
 	class SoyCubemap
 	{
