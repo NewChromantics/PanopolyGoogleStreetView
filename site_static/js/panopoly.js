@@ -246,17 +246,24 @@ function GetCameraQuaternion()
 
 
 
-function CubemapLayout($ImageUrl,$ImageWidth,$ImageHeight)
+function CubemapLayout($ImageUrl,$ImageWidth,$ImageHeight,$Layout)
 {
-	this.mFront = new THREE.Vector2(3,1);
-	this.mBack = new THREE.Vector2(1,1);
-	this.mLeft = new THREE.Vector2(0,1);
-	this.mRight = new THREE.Vector2(2,1);
-	this.mUp = new THREE.Vector2(1,0);
-	this.mDown = new THREE.Vector2(1,2);
-	this.mBlockCount = new THREE.Vector2( 4, 3 );
+	this.mFaces = {};
+	
+	//	layout should be WH<FACES>
+	var $TileWidth = $Layout[0];
+	var $TileHeight = $Layout[1];
+	for ( var $t=2;	$t<$Layout.length;	$t++ )
+	{
+		var $Face = $Layout[$t];
+		var $x = ($t-2) % $TileWidth;
+		var $y = ($t-2) / $TileWidth;
+		this.mFaces[$Face] = new THREE.Vector2($x,$y);
+	}
+	
+	this.mFaceCount = new THREE.Vector2( $TileWidth, $TileHeight );
 	this.mImageUrl = $ImageUrl;
-	this.mImageSize = new THREE.Vector2( $ImageWidth, $ImageHeight );
+	this.mImageSize = new THREE.Vector2( $ImageWidth/$TileWidth, $ImageHeight/$TileHeight );
 }
 
 function ScaleVectors($a,$b)
@@ -269,12 +276,12 @@ function DivideVectors($a,$b)
 	return new THREE.Vector2( $a.x / $b.x, $a.y / $b.y );
 }
 
-CubemapLayout.prototype.GetFaceSize = function()	{	return DivideVectors( this.mImageSize, this.mBlockCount );	}
-CubemapLayout.prototype.GetFront = function()	{	return ScaleVectors( this.mFront, this.GetFaceSize() );	}
-CubemapLayout.prototype.GetBack = function()	{	return ScaleVectors( this.mBack, this.GetFaceSize() );	}
-CubemapLayout.prototype.GetLeft = function()	{	return ScaleVectors( this.mLeft, this.GetFaceSize() );	}
-CubemapLayout.prototype.GetRight = function()	{	return ScaleVectors( this.mRight, this.GetFaceSize() );	}
-CubemapLayout.prototype.GetUp = function()		{	return ScaleVectors( this.mUp, this.GetFaceSize() );	}
-CubemapLayout.prototype.GetDown = function()	{	return ScaleVectors( this.mDown, this.GetFaceSize() );	}
+CubemapLayout.prototype.GetFaceSize = function()	{	return DivideVectors( this.mImageSize, this.mFaceCount );	}
+CubemapLayout.prototype.GetFront = function()	{	return ScaleVectors( this.mFaces['F'], this.GetFaceSize() );	}
+CubemapLayout.prototype.GetBack = function()	{	return ScaleVectors( this.mFaces['B'], this.GetFaceSize() );	}
+CubemapLayout.prototype.GetLeft = function()	{	return ScaleVectors( this.mFaces['L'], this.GetFaceSize() );	}
+CubemapLayout.prototype.GetRight = function()	{	return ScaleVectors( this.mFaces['R'], this.GetFaceSize() );	}
+CubemapLayout.prototype.GetUp = function()		{	return ScaleVectors( this.mFaces['U'], this.GetFaceSize() );	}
+CubemapLayout.prototype.GetDown = function()	{	return ScaleVectors( this.mFaces['D'], this.GetFaceSize() );	}
 
 

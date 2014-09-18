@@ -67,12 +67,13 @@ function InitCubemap($Container,$Config)
 	$Cube.style.height = $FaceSize + 'px';
 	$Cube.mFaces = {};
 	
-	CreateCubeFace( $Cube, 'Up', $FaceSize, 'rotateX(90deg)', 'red' );
+	//	gr: have swapped L and R here because of cubemap.php output.... one of these is wrong...
+	CreateCubeFace( $Cube, 'Up', $FaceSize, 'rotateX(90deg) rotate(180deg)', 'red' );
 	CreateCubeFace( $Cube, 'Front', $FaceSize, '', 'lime' );
-	CreateCubeFace( $Cube, 'Left', $FaceSize, 'rotateY(90deg)', 'blue' );
+	CreateCubeFace( $Cube, 'Left', $FaceSize, 'rotateY(-90deg)', 'blue' );
 	CreateCubeFace( $Cube, 'Back', $FaceSize, 'rotateY(180deg)', 'yellow' );
-	CreateCubeFace( $Cube, 'Right', $FaceSize, 'rotateY(-90deg)', 'cyan' );
-	CreateCubeFace( $Cube, 'Down', $FaceSize, 'rotateX(-90deg)', 'magenta' );
+	CreateCubeFace( $Cube, 'Right', $FaceSize, 'rotateY(90deg)', 'cyan' );
+	CreateCubeFace( $Cube, 'Down', $FaceSize, 'rotateX(-90deg) rotate(180deg)', 'magenta' );
 }
 
 
@@ -86,7 +87,8 @@ function SetCubemapBackground()
 		return false;
 	
 	//	gr: oddly, wrong resolution here still works...
-	var $Layout = new CubemapLayout('banks.cubemap.1024x512.png',1024,512);
+	//	var $Layout = new CubemapLayout('banks.cubemap.1024x512.png',1024,512);
+	var $Layout = new CubemapLayout('banks.cubemap.16ULFRBD.1024x1024.png',1024,1024,'16ULFRBD');
 	//var $Layout = new CubemapLayout('cubemap.jpg',400,300);
 	//	var $Layout = new CubemapLayout('cubemap2x.jpg',800,600);
 	//	var $Layout = new CubemapLayout('stormycubemap.jpg',4096,3072);
@@ -126,12 +128,13 @@ function SetFaceBackground($Element,$ImageOffset,$Layout)
 	var $w = ($ImageSize.x/$CssScale.x) + 'px ';
 	var $h = ($ImageSize.y/$CssScale.y) + 'px ';
 	
+	/*
 	var $ElementChildImg = document.createElement('img');
 	$ElementChildImg.style.width = '100%';
 	$ElementChildImg.style.height = '100%';
 	var $MJpeg = new SoyMJpeg( 'http://image.panopo.ly/banks.mjpeg', $ElementChildImg, 25  );
-
 	$Element.appendChild( $ElementChildImg );
+*/
 	
 	$Element.style.background = 'url(' + $ImageUrl + ') ' + $x + $y;
 	$Element.style.backgroundSize = $w + $h;
