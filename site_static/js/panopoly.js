@@ -257,8 +257,9 @@ function CubemapLayout($ImageUrl,$ImageWidth,$ImageHeight,$Layout)
 	{
 		var $Face = $Layout[$t];
 		var $x = ($t-2) % $TileWidth;
-		var $y = ($t-2) / $TileWidth;
+		var $y = Math.floor(($t-2) / $TileWidth);
 		this.mFaces[$Face] = new THREE.Vector2($x,$y);
+		//console.log($Face + " = " + $x + "," + $y );
 	}
 	
 	this.mFaceCount = new THREE.Vector2( $TileWidth, $TileHeight );
