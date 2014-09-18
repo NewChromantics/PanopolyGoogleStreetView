@@ -5,10 +5,27 @@
 	define('AWS_SECRET','OP5gbapC3xlXo1kbO73cJ8T8GkZyZLKyzxjjelPT');
 	define('DEBUG_VAR', 'debug' );
 	define('FAKE_UPLOAD_VAR', 'fakeupload' );
+	
 	define('FFMPEG_BIN', './ffmpeg' );
 	define('FFPROBE_BIN', './ffprobe' );
+	
+	/*
+	 gr: need a better localhost solution
+	if ( array_key_exists('panoname', $_GET ) )
+	{
+		define('FFMPEG_BIN', '../apps/ffmpeg' );
+		define('FFPROBE_BIN', '../apps/ffprobe' );
+	}
+	 */
 	define('FFMPEG_JPEG_QUALITY', 2 );	//	1(best)...31(worst)
 	define('VIDEO_FORMATS', 'vp8 webm mp4 h264' );
+
+	function IsCli()
+	{
+		//	todo: auto argc/v to _GET
+		return (PHP_SAPI == "cli");
+	}
+
 	
 	function Init()
 	{
@@ -300,4 +317,7 @@
 		}
 		
 	};
+	
+
+
 ?>
