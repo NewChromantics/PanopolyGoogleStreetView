@@ -63,6 +63,19 @@ if ( IsDevice('iPad') || IsDevice('iPhone') )
 		var Debug = file + "(" + line + "): " + error;
 		alert(Debug);
 	};
+	
+}
+
+//	hijack console.log
+var $console = document.getElementById('console');
+if ( $console )
+{
+	var oldLog = console.log;
+	console.log = function (message)
+	{
+		$console.innerText += message + "\n";
+		oldLog.apply(console, arguments);
+	};
 }
 
 
