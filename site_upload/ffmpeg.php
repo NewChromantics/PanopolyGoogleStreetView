@@ -1,13 +1,25 @@
 <?php
-	//	limit to 1 min processing
-	set_time_limit( 60 );
-	
-	
-	//	not an ffmpeg function!
-	function ImageToPng($Image)
+	define('PHP_JPEG_QUALITY', 75 );	//	100(best)...0(worst)
+
+	function ImageToPng($Image,$Filename=false)
 	{
+		if ( $Filename !== false )
+			return imagepng($Image,$Filename);
+
 		ob_start();
 		imagepng($Image);
+		$Png = ob_get_contents();
+		ob_end_clean();
+		return $Png;
+	}
+	
+	function ImageToJpeg($Image,$Filename=false,$Quality=PHP_JPEG_QUALITY)
+	{
+		if ( $Filename !== false )
+			return imagejpeg($Image,$Filename,$Quality);
+		
+		ob_start();
+		imagejpeg($Image,NULL,$Quality);
 		$Png = ob_get_contents();
 		ob_end_clean();
 		return $Png;
