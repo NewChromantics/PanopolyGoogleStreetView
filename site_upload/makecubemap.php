@@ -3,46 +3,51 @@
 	require('panopoly.php');
 	require('cubemap.php');
 	require('ffmpeg.php');
-	
-	//	get params
-	if ( $argc > 1 )
-	{
-		
-	}
-	
 
 	//	limit to X min processing
-	set_time_limit( 3*60 );
-	
-	
-	
+	set_time_limit( 10*60 );
 
-	
-	function CubemapToEquirect(&$CubeImage,$Cubemap)
+	function GetArgDefault($Name,$Default)
 	{
-		//	make equirect image to fill
-		$InWidth = imagesx( $CubeImage );
-		$InHeight = imagesy( $CubeImage );
-		$OutWidth = $InWidth;
-		$OutHeight = $InHeight;
-	
-		$EquiImage = imagecreatetruecolor($OutWidth,$OutHeight);
-		$Cubemap->Resize( $OutWidth, $OutHeight);
-		
-		//	render each pixel
-		for ( $y=0; $y<$OutHeight; $y++ )
-		for ( $x=0;	$x<$OutWidth; $x++ )
-		{
-			$latlon = GetLatLong( $x, $y, $OutWidth, $OutHeight );
-			$Sample = $Cubemap->ReadPixel_LatLon( $latlon, $CubeImage );
-			imagesetpixel( $EquiImage, $x, $y, $Sample );
-		}
-		
-		$CubeImage = $EquiImage;
+		if ( array_key_exists( $Name, $_GET ) )
+			return $_GET[$Name];
+		return $Default;
 	}
 
+	$InputFilename = GetArgDefault('arg',false);
+	$SampleWidth = 4096;
+	$SampleHeight = 4096;
+	
+	$OutputFilename = false;		//	false = output to browser
+	$OutputLayout = GetArgDefault('cubemap','ULFRBD');
+	$OutputTileWidth = 2;
+	$OutputTileHeight = 3;
+	$OutputWidth = 2048;
+	$OutputHeight = 2048;
+	
+	//	get params
+	if ( IsCli() )
+	{
+		$a = 1;
+		$InputFilename = $argv[$a++];
+		$SampleWidth = $argv[$a++];
+		$SampleHeight = $argv[$a++];
+
+		$OutputFilename = $argv[$a++];
+		$OutputLayout = $argv[$a++];
+		$OutputTileWidth = $argv[$a++];
+		$OutputTileHeight = $argv[$a++];
+		$OutputWidth = $argv[$a++];
+		$OutputHeight = $argv[$a++];
+		
+		if ( $argc != $a )
+		{
+			return OnError("Wrong number of args ($argc != $a)");
+		}
+	}
 
 	
+
 	function EquirectToCubemap(&$EquiImage,$Cubemap)
 	{
 		//	make cubemap image to fill
@@ -93,63 +98,44 @@
 	}
 	
 
-		
-		
-	//	orig size (needed for cubemap)
-	$CubemapLayout = false;
-	if ( array_key_exists('cubemap',$_GET) )
-		$CubemapLayout = $_GET['cubemap'];
-	
-	
-	//	max-out source size for best-quality sample (fast)
-	$SourceWidth = 4096;
-	$SourceHeight = 4096;
-	
-	$InputFilename = $_GET['in'];
 	if ( !file_exists($InputFilename) )
-		return OnError("404");
-	
-	$Image = LoadImage( $InputFilename, $SourceWidth, $SourceHeight );
+	{
+		var_dump($argv);
+		return OnError("404 ($InputFilename)");
+	}
+
+	$Image = LoadImage( $InputFilename, $SampleWidth, $SampleHeight );
 	if ( $Image === false )
 		return OnError("Error reading file");
 
 	
-	
-	//	if cubemap specified then cubemap -> equirect
-	if ( $CubemapLayout !== false )
-	{
-		//	need to grab this!
-		$OrigWidth = 400;
-		$OrigHeight = 300;
-		$Cubemap = new SoyCubemap( $OrigWidth, $OrigHeight, $CubemapLayout );
-		if ( !$Cubemap->IsValid() )
-			return OnError("Invalid cubemap spec");
-		CubemapToEquirect( $Image, $Cubemap );
-	}
-	else
-	{
-		//	output size
-		$OutputWidth = 2048;
-		$OutputHeight = 2048;
 		
-		//	equirect to cubemap
-		$Cubemap = new SoyCubemap( 2, 3, 'ULFRBD' );
-		$Cubemap->Resize( $OutputWidth, $OutputHeight );
-		EquirectToCubemap( $Image, $Cubemap );
-		//CubemapToEquirect( $Image, $Cubemap );
+	//	equirect to cubemap
+	$Cubemap = new SoyCubemap( $OutputTileWidth, $OutputTileHeight, $OutputLayout );
+	$Cubemap->Resize( $OutputWidth, $OutputHeight );
+	EquirectToCubemap( $Image, $Cubemap );
+
+
+	if ( $OutputFilename !== false )
+	{
+		$ext = substr( $OutputFilename, -3 );
+		if ( $ext == 'png' )
+			$Result = ImageToJpeg($Image,$OutputFilename);
+		else if ( $ext == 'jpg' )
+			$Result = ImageToJpeg($Image,$OutputFilename);
+		else
+			return OnError("Failed to create image: " + $ext );
+		
+		if ( !$Result )
+			return OnError('failed to create image');
+		exit(0);
 	}
 	
-	
-	//	modify image
-	//CycleComponents( $Image );
-
+	//	output to browser
 	$Png = ImageToPng($Image);
 	if ( $Png === false )
 		return OnError('failed to create image');
 
 	header('Content-Type: image/png');
 	echo $Png;
-	
-	
-	
 ?>
