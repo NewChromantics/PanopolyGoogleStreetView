@@ -47,7 +47,7 @@
 		return $result;
 	}
 	
-	function ViewToLatLon($View3)
+	function ViewToLatLon($View3,&$LatLon)
 	{
 		//	http://en.wikipedia.org/wiki/N-vector#Converting_n-vector_to_latitude.2Flongitude
 		$x = $View3->x;
@@ -73,7 +73,8 @@
 		//	stretch longitude...
 		$lon *= 2.0;
 		
-		return new Vector2( $lat, $lon );
+		$LatLon->x = $lat;
+		$LatLon->y = $lon;
 	}
 
 	function GetLatLong($x,$y,$Width,$Height)
@@ -94,7 +95,7 @@
 		return new Vector2( $lat, $lon );
 	}
 	
-	function GetLatLongInverse($lat,$lon,$Width,$Height)
+	function GetScreenFromLatLong($lat,$lon,$Width,$Height,&$ScreenPos)
 	{
 		//	-pi...pi -> -1...1
 		$lat /= kPiF;
@@ -112,7 +113,8 @@
 		$lat *= $Width;
 		$lon *= $Height;
 		
-		return new Vector2( $lat, $lon );
+		$ScreenPos->x = $lat;
+		$ScreenPos->y = $lon;
 	}
 	
 	class SoyCubemap
@@ -193,22 +195,22 @@
 			return $this->mFaceMap[$Face];
 		}
 
-		function ScreenToWorld($Face,$ScreenPos)
+		function ScreenToWorld($Face,$ScreenPosX,$ScreenPosY,&$View3)
 		{
 			//	0..1 -> -1..1
-			$ScreenPos->x *= 2.0;
-			$ScreenPos->y *= 2.0;
-			$ScreenPos->x -= 1.0;
-			$ScreenPos->y -= 1.0;
+			$ScreenPosX *= 2.0;
+			$ScreenPosY *= 2.0;
+			$ScreenPosX -= 1.0;
+			$ScreenPosY -= 1.0;
 			
 			switch ( $Face )
 			{
-				case 'L':	return new Vector3( -1,				-$ScreenPos->y,	$ScreenPos->x );
-				case 'R':	return new Vector3(  1,				-$ScreenPos->y,	-$ScreenPos->x );
-				case 'U':	return new Vector3( -$ScreenPos->x,	 1,				-$ScreenPos->y );
-				case 'D':	return new Vector3( -$ScreenPos->x,	-1,				$ScreenPos->y );
-				case 'F':	return new Vector3( $ScreenPos->x,	-$ScreenPos->y,	1 );
-				case 'B':	return new Vector3( -$ScreenPos->x,	-$ScreenPos->y,	-1);
+				case 'L':	{	$View3->x = -1;					$View3->y = -$ScreenPosY;	$View3->z = $ScreenPosX;	return true;}
+				case 'R':	{	$View3->x =  1;					$View3->y = -$ScreenPosY;	$View3->z = -$ScreenPosX;	return true;}
+				case 'U':	{	$View3->x = -$ScreenPosX;		$View3->y =  1;				$View3->z = -$ScreenPosY;	return true;}
+				case 'D':	{	$View3->x = -$ScreenPosX;		$View3->y = -1;				$View3->z = $ScreenPosY;	return true;}
+				case 'F':	{	$View3->x =  $ScreenPosX;		$View3->y = -$ScreenPosY;	$View3->z =  1;				return true;}
+				case 'B':	{	$View3->x = -$ScreenPosX;		$View3->y = -$ScreenPosY;	$View3->z = -1;				return true;}
 			}
 			
 			return false;

@@ -71,10 +71,17 @@
 		$MinViewY = 9999;
 		$MaxViewY = -9999;
 		
+		//	re-using class objects saves cpu time in massive loops
+		$ViewVector = new Vector3(0,0,0);
+		$LatLon = new Vector2(0,0);
+		$SphereImagePos = new Vector2(0,0);
+		
+		$debugminmax = array_key_exists('debugsample',$_GET);
+		
 		//	go through each tile, convert pixel to lat long, then read
 		foreach ( $Cubemap->mFaceMap as $Face => $FaceOffset )
 		{
-			//$Colour = GetFaceColour( $Face );
+			$Colour = GetFaceColour( $Face );
 			
 			for ( $fy=0;	$fy<$Cubemap->mTileSize->y;	$fy++ )
 			for ( $fx=0;	$fx<$Cubemap->mTileSize->x;	$fx++ )
@@ -85,39 +92,42 @@
 				$vx = $fx / $Cubemap->mTileSize->x;
 				$vy = $fy / $Cubemap->mTileSize->y;
 				
-				$ViewVector = $Cubemap->ScreenToWorld( $Face, new Vector2($vx, $vy) );
-				if ( $ViewVector === false )
+				if ( !$Cubemap->ScreenToWorld( $Face, $vx, $vy, $ViewVector ) )//	0.9s
 				{
 					$Colour = GetRgb( 255, 0, 255 );
 				}
 				else
 				{
 				//	$Colour = GetVector3Colour( $ViewVector );
-					$MinViewY = min( $MinViewY, $ViewVector->y );
-					$MaxViewY = max( $MaxViewY, $ViewVector->y );
+					ViewToLatLon( $ViewVector, $LatLon );	//	 0.9s
 					
-					$LatLon = ViewToLatLon( $ViewVector );
 				//	$Colour = GetLatLonColour( $LatLon );
-					$MinLon = min( $MinLon, $LatLon->y );
-					$MaxLon = max( $MaxLon, $LatLon->y );
-					$MinLat = min( $MinLat, $LatLon->x );
-					$MaxLat = max( $MaxLat, $LatLon->x );
-						
-					$SphereImagePos = GetLatLongInverse( $LatLon->x, $LatLon->y, $InWidth, $InHeight );
+					GetScreenFromLatLong( $LatLon->x, $LatLon->y, $InWidth, $InHeight, $SphereImagePos );	//	0.41
+
 				//	$Colour = GetVector2Colour( $SphereImagePos );
-					$Colour = ReadPixel_Clamped( $EquiImage, $SphereImagePos->x, $SphereImagePos->y );
-					
-					$MinSampleX = min( $MinSampleX, $SphereImagePos->x );
-					$MaxSampleX = max( $MaxSampleX, $SphereImagePos->x );
-					$MinSampleY = min( $MinSampleY, $SphereImagePos->y );
-					$MaxSampleY = max( $MaxSampleY, $SphereImagePos->y );
+					$Colour = ReadPixel_Clamped( $EquiImage, $SphereImagePos->x, $SphereImagePos->y, $InWidth, $InHeight );	//	 1.77
+				
+					//	saves ~2 secs
+					if ( $debugminmax )
+					{
+						$MinViewY = min( $MinViewY, $ViewVector->y );
+						$MaxViewY = max( $MaxViewY, $ViewVector->y );
+						$MinLon = min( $MinLon, $LatLon->y );
+						$MaxLon = max( $MaxLon, $LatLon->y );
+						$MinLat = min( $MinLat, $LatLon->x );
+						$MaxLat = max( $MaxLat, $LatLon->x );
+						$MinSampleX = min( $MinSampleX, $SphereImagePos->x );
+						$MaxSampleX = max( $MaxSampleX, $SphereImagePos->x );
+						$MinSampleY = min( $MinSampleY, $SphereImagePos->y );
+						$MaxSampleY = max( $MaxSampleY, $SphereImagePos->y );
+					}
 				}
 				 
 				imagesetpixel( $CubeImage, $x, $y, $Colour );
 			}
 		}
 		
-		if ( array_key_exists('debugsample',$_GET) )
+		if ( $debugminmax )
 			OnError("MinSampleX=$MinSampleX; MaxSampleX=$MaxSampleX; MinSampleY=$MinSampleY; MaxSampleY=$MaxSampleY; MinLon=$MinLon; MaxLon=$MaxLon; MinLat=$MinLat; MaxLat=$MaxLat; MinViewY=$MinViewY; MaxViewY=$MaxViewY; ");
 		
 		$EquiImage = $CubeImage;
@@ -140,7 +150,12 @@
 		//	equirect to cubemap
 		$Cubemap = new SoyCubemap( $OutputTileWidth, $OutputTileHeight, $OutputLayout );
 		$Cubemap->Resize( $OutputWidth, $OutputHeight );
+		
+		$start = microtime(true);
 		EquirectToCubemap( $Image, $Cubemap );
+		$time_elapsed_us = microtime(true) - $start;
+		if ( array_key_exists('debugtimer',$_GET) )
+			OnError("EquirectToCubemap took $time_elapsed_us secs");
 	}
 
 	if ( $OutputFilename !== false )

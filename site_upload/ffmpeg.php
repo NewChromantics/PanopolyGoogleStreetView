@@ -45,10 +45,11 @@
 		return $rgb;
 	}
 	
-	function ReadPixel_Clamped($Image,$x,$y)
+	//	on 512x512 providing w/h saved 0.2sec
+	function ReadPixel_Clamped($Image,$x,$y,$w=false,$h=false)
 	{
-		$w = imagesx( $Image );
-		$h = imagesy( $Image );
+		if ( $w === false )	$w = imagesx( $Image );
+		if ( $h === false )	$h = imagesy( $Image );
 		//assert($x < $w, $x.'<'.$w );
 		//assert($y < $h, $y.'<'.$h );
 		$x = max( 0, min( $x, $w-1 ) );
