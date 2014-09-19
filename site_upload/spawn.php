@@ -274,7 +274,7 @@
 			else if ( $Codec == 'h264' )
 			{
 				//	https://trac.ffmpeg.org/wiki/Encode/H.264
-				$FFMPEG_WEBM_QUALITY = 'medium';
+				$FFMPEG_H264_QUALITY = 'medium';
 				$Param_Quality = " -preset " . $FFMPEG_H264_QUALITY;
 				$Param_OutputOther .= " -codec:v libx264";
 			}
