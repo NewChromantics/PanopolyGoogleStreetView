@@ -55,11 +55,20 @@
 		$y = max( 0, min( $y, $h-1 ) );
 		return imagecolorat( $Image, $x, $y );
 	}
+	
 	function GetVector3Colour($Vector3)
 	{
 		$vx = $Vector3->x;
 		$vy = $Vector3->y;
 		$vz = $Vector3->z;
+		return GetRgb( ($vx+1.0)/2.0*255, ($vy+1.0)/2.0*255, ($vz+1.0)/2.0*255 );
+	}
+	
+	function GetVector2Colour($Vector2)
+	{
+		$vx = $Vector2->x;
+		$vy = $Vector2->y;
+		$vz = 0;
 		return GetRgb( ($vx+1.0)/2.0*255, ($vy+1.0)/2.0*255, ($vz+1.0)/2.0*255 );
 	}
 	
@@ -129,7 +138,7 @@
 	
 	
 	//	returns an image or false
-	function LoadImage($InputFilename,$Width,$Height)
+	function LoadImage($InputFilename,$Width,$Height,$TimeOffset=0)
 	{
 		$OutputFilename = 'pipe:1';
 		//	output to png
@@ -153,12 +162,14 @@
 		//$Param_OutputOther .= " -codec:v libx264";
 		//$Param_OutputOther .= " -b:v $BitRate";
 
+		$Param_SeekPos = " -ss $TimeOffset";
+		
 		$Param_CatchStdErr = "2>&1";
 		$Param_Scale = "-vf scale=$Width:$Height";
 		$Param_Input = "-i $InputFilename";
 		$Param_Output = "$OutputFilename";
 		
-		$ExecCmd = FFMPEG_BIN . " $Param_Quiet $Param_Overwrite $Param_Input $Param_Scale $Param_Quality $Param_FrameSet $Param_OutputOther $Param_TimeLimit $Param_Codec $Param_Output $Param_CatchStdErr";
+		$ExecCmd = FFMPEG_BIN . " $Param_Quiet $Param_Overwrite $Param_SeekPos $Param_Input $Param_Scale $Param_Quality $Param_FrameSet $Param_OutputOther $Param_TimeLimit $Param_Codec $Param_Output $Param_CatchStdErr";
 		
 		if ( false )
 		{

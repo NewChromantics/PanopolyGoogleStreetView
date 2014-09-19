@@ -6,17 +6,18 @@
 	define('DEBUG_VAR', 'debug' );
 	define('FAKE_UPLOAD_VAR', 'fakeupload' );
 	
-	define('FFMPEG_BIN', './ffmpeg' );
-	define('FFPROBE_BIN', './ffprobe' );
-	
-	/*
-	 gr: need a better localhost solution
-	if ( array_key_exists('panoname', $_GET ) )
+	//	gr: need a better localhost solution
+	if ( file_exists('./ffmpeg') )
+	{
+		define('FFMPEG_BIN', './ffmpeg' );
+		define('FFPROBE_BIN', './ffprobe' );
+	}
+	else
 	{
 		define('FFMPEG_BIN', '../apps/ffmpeg' );
 		define('FFPROBE_BIN', '../apps/ffprobe' );
 	}
-	 */
+
 	define('FFMPEG_JPEG_QUALITY', 2 );	//	1(best)...31(worst)
 	define('VIDEO_FORMATS', 'vp8 webm mp4 h264' );
 
@@ -40,8 +41,11 @@
 			ini_set('display_errors', 1);
 		}
 
-		$FakeUpload = array_key_exists( FAKE_UPLOAD_VAR, $_GET );
-		define( 'FAKE_UPLOAD', $FakeUpload );
+		if ( !defined('FAKE_UPLOAD') )
+		{
+			$FakeUpload = array_key_exists( FAKE_UPLOAD_VAR, $_GET );
+			define( 'FAKE_UPLOAD', $FakeUpload );
+		}
 		
 		set_error_handler("ErrorHandler");
 		ob_start();

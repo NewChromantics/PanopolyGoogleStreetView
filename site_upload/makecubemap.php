@@ -17,13 +17,14 @@
 	$InputFilename = GetArgDefault('arg',false);
 	$SampleWidth = 4096;
 	$SampleHeight = 4096;
+	$SampleTime = GetArgDefault('SampleTime',0);
 	
 	$OutputFilename = false;		//	false = output to browser
 	$OutputLayout = GetArgDefault('cubemap','ULFRBD');
 	$OutputTileWidth = 2;
 	$OutputTileHeight = 3;
-	$OutputWidth = 2048;
-	$OutputHeight = 2048;
+	$OutputWidth = GetArgDefault('Width',2048);
+	$OutputHeight = GetArgDefault('Height',2048);
 	
 	//	get params
 	if ( IsCli() )
@@ -32,6 +33,7 @@
 		$InputFilename = $argv[$a++];
 		$SampleWidth = $argv[$a++];
 		$SampleHeight = $argv[$a++];
+		$SampleTime = $argv[$a++];
 
 		$OutputFilename = $argv[$a++];
 		$OutputLayout = $argv[$a++];
@@ -61,7 +63,7 @@
 		//	go through each tile, convert pixel to lat long, then read
 		foreach ( $Cubemap->mFaceMap as $Face => $FaceOffset )
 		{
-			$Colour = GetFaceColour( $Face );
+			//$Colour = GetFaceColour( $Face );
 			
 			for ( $fy=0;	$fy<$Cubemap->mTileSize->y;	$fy++ )
 			for ( $fx=0;	$fx<$Cubemap->mTileSize->x;	$fx++ )
@@ -79,15 +81,14 @@
 				}
 				else
 				{
-					$Colour = GetVector3Colour( $ViewVector );
+				//	$Colour = GetVector3Colour( $ViewVector );
 
 					$LatLon = ViewToLatLon( $ViewVector );
-					$Colour = GetLatLonColour( $LatLon );
+				//	$Colour = GetLatLonColour( $LatLon );
 						
 					$SphereImagePos = GetLatLongInverse( $LatLon->x, $LatLon->y, $InWidth, $InHeight );
+				//	$Colour = GetVector2Colour( $SphereImagePos );
 					$Colour = ReadPixel_Clamped( $EquiImage, $SphereImagePos->x, $SphereImagePos->y );
-					
-					
 				}
 				 
 				imagesetpixel( $CubeImage, $x, $y, $Colour );
@@ -100,21 +101,22 @@
 
 	if ( !file_exists($InputFilename) )
 	{
-		var_dump($argv);
+		if ( IsCli() )
+			var_dump($argv);
 		return OnError("404 ($InputFilename)");
 	}
 
-	$Image = LoadImage( $InputFilename, $SampleWidth, $SampleHeight );
+	$Image = LoadImage( $InputFilename, $SampleWidth, $SampleHeight, $SampleTime );
 	if ( $Image === false )
 		return OnError("Error reading file");
 
-	
-		
-	//	equirect to cubemap
-	$Cubemap = new SoyCubemap( $OutputTileWidth, $OutputTileHeight, $OutputLayout );
-	$Cubemap->Resize( $OutputWidth, $OutputHeight );
-	EquirectToCubemap( $Image, $Cubemap );
-
+	if ( $OutputLayout != false )
+	{
+		//	equirect to cubemap
+		$Cubemap = new SoyCubemap( $OutputTileWidth, $OutputTileHeight, $OutputLayout );
+		$Cubemap->Resize( $OutputWidth, $OutputHeight );
+		EquirectToCubemap( $Image, $Cubemap );
+	}
 
 	if ( $OutputFilename !== false )
 	{

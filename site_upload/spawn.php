@@ -167,6 +167,7 @@
 		$Params[] = $OutputTileHeight;
 		$Params[] = $Asset['Width'];
 		$Params[] = $Asset['Height'];
+		$Params[] = '1';		//	sample time
 		
 		$ExitCode = -1;
 		$ExecOut = array();
