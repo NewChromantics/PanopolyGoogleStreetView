@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>panopo.ly</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<link rel="Stylesheet" href="panopoly.css" type="text/css">
+	<link rel="Stylesheet" href="Cubemap.css" type="text/css">
+</head>
+
+	<body>
+		<div id="info">
+			panopo.ly
+			<div id="Uptime" class="Button">0</div>
+
+			<div id="ImageSelector" class="FileInput">
+				Select Image
+				<form id="uploaderform" enctype="multipart/form-data" method="POST">
+					<input id="image_selector" name="image" type="file" />
+				</form>
+			</div>
+			
+			<div id="ImageUploader" class="FileInput">
+				Upload Image<br />
+				<input type="text" id="ImageUploader_CustomName" name="CustomName" class="cleardefault" value="custom url" />
+				<input type="button" value="Upload File"  onclick="UploadImage()"/>
+				<progress id="progressBar" value="0" max="100" style="width:300px;"></progress>
+				<h3 id="status"></h3>
+				<p id="loaded_n_total"></p>
+			</div>
+			
+					
+		</div>
+
+		<script src="js/soy.js"></script>
+		<script src="threejs/three.min.js"></script>
+		<script src="js/GoogleAnalytics.js"></script>
+		<script src="js/panopoly.js"></script>
+		<script src="js/support.js"></script>
+		<script src="js/SoySupport.js"></script>
+		<script src="js/SoyFileSelect.js"></script>
+	
+		<div id="container"></div>
+
+
+<script>
+	
+	
+//	turn on debug stuff
+if ( window.location.hash == '#debug' )
+{
+	//alert('debug mode');
+	ShowElement('QuatDebug');
+	
+	function UpdateUptime()
+	{
+		ShowElement("Uptime");
+		var Container = GetElement("Uptime");
+		if ( !Container )
+		return;
+		Container.innerText = parseInt( Container.innerText ) + 1;
+		setTimeout( UpdateUptime, 1000 );
+	}
+	UpdateUptime();
+}
+
+
+
+function OnFileSelectSupportChanged()
+{
+	var $Supported = IsSupported('FileSelect');
+	var Uploader = GetElement("image_selector");
+	if ( Uploader )
+	{
+		ShowElement("ImageSelector", $Supported );
+		if ( $Supported )
+			Uploader.addEventListener('change', OnFileSelect, false);
+		else
+			Uploader.removeEventListener('change', OnFileSelect, false);
+	}
+}
+
+
+
+AddOnSupportedChangedListener('FileSelect', OnFileSelectSupportChanged );
+
+
+		function OnFileUploadSupported($Enable)
+		{
+			//	image binary loaded okay, enable upload
+			ShowElement("ImageUploader", $Enable );
+		}
+		
+		function UploadImage()
+		{
+			GetElement("progressBar").value = 0;
+			GetElement("status").innerHTML = "";
+
+			var formdata = new FormData();
+			var file = GetElement("image_selector").files[0];
+			//alert(file.name+" | "+file.size+" | "+file.type);
+			formdata.append("image", file);
+			var defaultcustomname = GetElement("ImageUploader_CustomName").defaultText;
+			var customname = GetElement("ImageUploader_CustomName").value;
+			if ( customname != defaultcustomname )
+				formdata.append("customname", customname );
+			var ajax = new XMLHttpRequest();
+			ajax.upload.addEventListener("progress", OnUploadProgress, false);
+			ajax.addEventListener("load", OnUploadComplete, false);
+			ajax.addEventListener("error", OnUploadError, false);
+			ajax.addEventListener("abort", OnUploadAbort, false);
+			ajax.open("POST", GetUploadUrl() );
+			//ajax.setRequestHeader('Content-Type', 'multipart/form-data;');
+			ajax.send(formdata);
+		}
+
+		function OnUploadProgress(event)
+		{
+			GetElement("loaded_n_total").innerHTML = "Uploaded "+event.loaded+" bytes of "+event.total;
+			var percent = (event.loaded / event.total) * 100;
+			GetElement("progressBar").value = Math.round(percent);
+			GetElement("status").innerHTML = Math.round(percent)+"% uploaded... please wait";
+		}
+
+		function OnUploadError($Event)
+		{
+			var $Error = "Unknown error";
+			if ( $Event.error != undefined )
+				$Error = $Event.error;
+			GetElement("status").innerHTML = "Upload Failed: " + $Error;
+		}
+
+		function OnUploadAbort(event)
+		{
+			var $Event = {};
+			$Event.error = "Upload Aborted";
+			OnUploadError($Event);
+		}
+		
+		function OnUploadComplete($Event)
+		{
+			//	decode response
+			var $Json = {};
+			try
+			{
+				$Json = JSON.parse(event.target.responseText);
+			}
+			catch ( e )
+			{
+				$Json.error = "Error parsing response from server: " + e.message + "..." + event.target.responseText;
+			}
+			
+			if ( $Json.error )
+			{
+				var $Event = {};
+				$Event.error = $Json.error;
+				OnUploadError($Event);
+				return;
+			}
+			var $Url = window.location + "#" + $Json.panoname;
+			GetElement("status").innerHTML = 'Your new url is <a href="' + $Url + '">' + $Url + '</a>';
+		}
+
+
+
+			function OnFileSelect($Event)
+			{
+				var files = $Event.target.files; // FileList object
+				
+				var File = files[0];
+				if ( !File )
+					return;
+
+/*
+				//	get image as datauri for texture
+				var DataUriReader = new FileReader();
+				DataUriReader.onload = SetTexture;
+				DataUriReader.readAsDataURL(File);
+ */
+				OnFileUploadSupported(true);
+			}
+		
+			function SetTextureFromData($Data)
+			{
+				var Material = mesh.material;
+				if ( !Material )
+					return false;
+				
+				var image = document.createElement( 'img' );
+				image.src = $Data;
+				Material.map = new THREE.Texture( image );
+				Material.map.needsUpdate = true;
+				Material.needsUpdate = true;
+				return true;
+			}
+		
+			
+		</script>
+		
+		
+		<script>
+		
+
+
+		InitSupport();
+
+			</script>
+
+	</body>
+</html>
