@@ -60,6 +60,17 @@
 
 		$CubeImage = imagecreatetruecolor($OutWidth,$OutHeight);
 		
+		$MinSampleX = 9999;
+		$MaxSampleX = -9999;
+		$MinSampleY = 9999;
+		$MaxSampleY = -9999;
+		$MinLon = 9999;
+		$MaxLon = -9999;
+		$MinLat = 9999;
+		$MaxLat = -9999;
+		$MinViewY = 9999;
+		$MaxViewY = -9999;
+		
 		//	go through each tile, convert pixel to lat long, then read
 		foreach ( $Cubemap->mFaceMap as $Face => $FaceOffset )
 		{
@@ -82,18 +93,32 @@
 				else
 				{
 				//	$Colour = GetVector3Colour( $ViewVector );
-
+					$MinViewY = min( $MinViewY, $ViewVector->y );
+					$MaxViewY = max( $MaxViewY, $ViewVector->y );
+					
 					$LatLon = ViewToLatLon( $ViewVector );
 				//	$Colour = GetLatLonColour( $LatLon );
+					$MinLon = min( $MinLon, $LatLon->y );
+					$MaxLon = max( $MaxLon, $LatLon->y );
+					$MinLat = min( $MinLat, $LatLon->x );
+					$MaxLat = max( $MaxLat, $LatLon->x );
 						
 					$SphereImagePos = GetLatLongInverse( $LatLon->x, $LatLon->y, $InWidth, $InHeight );
 				//	$Colour = GetVector2Colour( $SphereImagePos );
 					$Colour = ReadPixel_Clamped( $EquiImage, $SphereImagePos->x, $SphereImagePos->y );
+					
+					$MinSampleX = min( $MinSampleX, $SphereImagePos->x );
+					$MaxSampleX = max( $MaxSampleX, $SphereImagePos->x );
+					$MinSampleY = min( $MinSampleY, $SphereImagePos->y );
+					$MaxSampleY = max( $MaxSampleY, $SphereImagePos->y );
 				}
 				 
 				imagesetpixel( $CubeImage, $x, $y, $Colour );
 			}
 		}
+		
+		if ( array_key_exists('debugsample',$_GET) )
+			OnError("MinSampleX=$MinSampleX; MaxSampleX=$MaxSampleX; MinSampleY=$MinSampleY; MaxSampleY=$MaxSampleY; MinLon=$MinLon; MaxLon=$MaxLon; MinLat=$MinLat; MaxLat=$MaxLat; MinViewY=$MinViewY; MaxViewY=$MaxViewY; ");
 		
 		$EquiImage = $CubeImage;
 	}
@@ -110,7 +135,7 @@
 	if ( $Image === false )
 		return OnError("Error reading file");
 
-	if ( $OutputLayout != false )
+	if ( $OutputLayout != false && $OutputLayout != 'false' )
 	{
 		//	equirect to cubemap
 		$Cubemap = new SoyCubemap( $OutputTileWidth, $OutputTileHeight, $OutputLayout );
