@@ -94,7 +94,7 @@
 				
 				if ( !$Cubemap->ScreenToWorld( $Face, $vx, $vy, $ViewVector ) )//	0.9s
 				{
-					$Colour = GetRgb( 255, 0, 255 );
+					//$Colour = GetRgb( 255, 0, 255 );
 				}
 				else
 				{
