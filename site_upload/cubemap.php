@@ -70,6 +70,8 @@
 		$lon = asin( $normy );
 		//$lon = atan2( $y, $xz );
 		
+		//	stretch longitude...
+		$lon *= 2.0;
 		
 		return new Vector2( $lat, $lon );
 	}
