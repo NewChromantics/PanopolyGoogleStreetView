@@ -1,6 +1,7 @@
 <?php
 	echo "<div><h1>Memory limit</h1>" . ini_get('memory_limit') . "</div>";
 	echo "<div><h1>Upload limit</h1>" . ini_get('upload_max_filesize') . "</div>";
+	echo "<div><h1>POST content limit</h1>" . ini_get('post_max_size') . "</div>";
 
 	define('FFMPEG_BIN', './ffmpeg' );
 	define('FFPROBE_BIN', './ffprobe' );
