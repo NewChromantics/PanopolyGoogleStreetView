@@ -1,4 +1,6 @@
 <?php
+//	define('FAKE_UPLOAD','/Users/grahamr/Desktop/upload');
+	
 	//define('UPLOAD_META',false);
 	//define('UPLOAD_ORIG',false);
 	define('ALLOW_SCALE_UP', true );
@@ -95,10 +97,10 @@
 	$AssetParams[] = SoyAssetMeta( 4096, 4096, 'jpg' );
 //	$AssetParams[] = SoyAssetMeta( 512, 256, 'webm', 'vp8', '1000k' );
 	$AssetParams[] = SoyAssetMeta( 2048, 2048, 'jpg', 'cubemap_23ULFRBD' );
-	//$AssetParams[] = SoyAssetMeta( 1024, 512, 'webm', 'vp8', '2000k' );
+//	$AssetParams[] = SoyAssetMeta( 1024, 512, 'webm', 'vp8', '2000k' );
 	$AssetParams[] = SoyAssetMeta( 2048, 1024, 'webm', 'vp8', '5000k' );
 //	$AssetParams[] = SoyAssetMeta( 4096, 2048, 'webm', 'vp8', '8000k' );
-	//$AssetParams[] = SoyAssetMeta( 4096, 4096, 'webm', 'vp8', '10000k' );
+//	$AssetParams[] = SoyAssetMeta( 4096, 4096, 'webm', 'vp8', '10000k' );
 //	$AssetParams[] = SoyAssetMeta( 512, 256, 'mp4', 'h264', '1000k' );
 	$AssetParams[] = SoyAssetMeta( 2048, 1024, 'mp4', 'h264', '5000k' );
 //	$AssetParams[] = SoyAssetMeta( 512, 256, 'gif', 'gif', '5000k' );
@@ -108,7 +110,7 @@
 	
 	foreach ( $AssetParams as $Asset )
 	{
-		$Asset = UploadResize( $Asset );
+		$Asset = UploadResize( $Asset, $TempFilename, $Panoname );
 		//	failed
 		if ( $Asset === false )
 			continue;
@@ -146,152 +148,104 @@
 		return true;
 	}
 	
-	function UploadCubemap($Asset,$RemoteFilename,$TempFilename,$CubemapLayout)
-	{
-		global $Image;
-		
-		//	parse cubemap layout
-		$OutputTileWidth = intval($CubemapLayout[0]);
-		$OutputTileHeight = intval($CubemapLayout[1]);
-		$OutputLayout = substr($CubemapLayout,2);
-		$Format = $Asset['Format'];
-		
-		$Params = array();
-		$Params[] = $Image->mFilename;
-		$Params[] = $Image->GetWidth();
-		$Params[] = $Image->GetHeight();
-		
-		$Params[] = $TempFilename;
-		$Params[] = $OutputLayout;
-		$Params[] = $OutputTileWidth;
-		$Params[] = $OutputTileHeight;
-		$Params[] = $Asset['Width'];
-		$Params[] = $Asset['Height'];
-		$Params[] = '1';		//	sample time
-		
-		$ExitCode = -1;
-		$ExecOut = array();
-		$ExecCmd = "php makecubemap.php ";
-		foreach ( $Params as $Param )
-			$ExecCmd .= "$Param ";
-		exec( $ExecCmd, $ExecOut, $ExitCode );
-		$ExecOut = join("\n", $ExecOut );
-		if ( $ExitCode != 0 )
-		{
-			echo "failed to make cubemap: [$ExitCode] $ExecOut\n";
-			DeleteTempFile( $TempFilename );
-			return false;
-		}
 	
-		//	upload
-		//	correct content type for easier online viewing
-		$Error = UploadFile( $TempFilename, $RemoteFilename, $Format );
-		if ( $Error !== true )
-			OnError($Error);
-
-		$Asset['Command'] = $ExecCmd;
-		return $Asset;
-	}
 	
-	function UploadResize($Asset)
+	function UploadResize($Asset,$InputFilename,$Panoname)
 	{
-		global $Panoname,$Image;
-
 		$Width = $Asset['Width'];
 		$Height = $Asset['Height'];
 		$Format = $Asset['Format'];
 		$BitRate = array_key_exists('BitRate',$Asset) ? $Asset['BitRate'] : false;
 		$Codec = array_key_exists('Codec',$Asset) ? $Asset['Codec'] : false;
 
-		$w = $Image->GetWidth();
-		$h = $Image->GetHeight();
-
-		//	gr: don't scale up
-		if ( !ALLOW_SCALE_UP )
-			if ( $w < $Width && $h < $Height )
-				return false;
-
-		//	if original width is less <= height then make a square image
-		if ( $w <= $Height )
-			$Width = $Height;
-		
 		//	return asset we created (in case params were changed)
 		$Asset['Width'] = $Width;
 		$Asset['Height'] = $Height;
 	
 		//	gr: process parent should ensure these filenames won't clash beforehand so this script can assume these filenames are safe
 		//	make filename
-		$Suffix = "{$Width}x$Height.";
+		$Suffix = "{$Width}x$Height";
 		if ( $Codec !== false )
-			$Suffix .= "$Codec";
+			$Suffix .= ".$Codec";
 		$RemoteFilename = "$Panoname.$Suffix.$Format";
 		$ResizedTempFilename = GetPanoTempFilename($Panoname,$Suffix,$Format);
 		register_shutdown_function('DeleteTempFile',$ResizedTempFilename);
-		$Asset['Filename'] = $RemoteFilename;
 		
 		//	resize with ffmpeg
 		$ExitCode = -1;
-		$Param_Quiet = "-loglevel error";
-		$Param_Overwrite = "-y";
-		$Param_FrameSet = '';
-		$Param_CpuUsage = '';
-		$Param_OutputOther = '';
-		$Param_Quality = '';
-		$Param_TimeLimit = '';
-		
-		if ( $Format == 'jpg' )
+		$ExecCmd = '';
+	
+		if ( $Format == 'jpg' && $Codec !== false && strpos($Codec,'cubemap_')==0 )
 		{
-			if ( $Codec !== false && strpos($Codec,'cubemap_')==0 )
-			{
-				//	cubemap generator
-				return UploadCubemap($Asset,$RemoteFilename,$ResizedTempFilename,substr($Codec,strlen('cubemap_')) );
-			}
-			else if ( $Codec !== false )
-			{
-				echo "Unsupported mix: $Format/$Codec";
-				return false;
-			}
-
-			$Param_Quality = "-qscale:v " . FFMPEG_JPEG_QUALITY;
-			$Param_FrameSet = "-vframes 1";
+			$CubemapLayout = substr($Codec,strlen('cubemap_'));
+		
+			//	parse cubemap layout
+			$OutputTileWidth = intval($CubemapLayout[0]);
+			$OutputTileHeight = intval($CubemapLayout[1]);
+			$OutputLayout = substr($CubemapLayout,2);
+			
+			$Params = array();
+			$Params[] = $InputFilename;
+			$Params[] = 4096;//$Image->GetWidth();
+			$Params[] = 4096;//$Image->GetHeight();
+			$Params[] = '1';		//	sample time
+			
+			$Params[] = $ResizedTempFilename;
+			$Params[] = $OutputLayout;
+			$Params[] = $OutputTileWidth;
+			$Params[] = $OutputTileHeight;
+			$Params[] = $Asset['Width'];
+			$Params[] = $Asset['Height'];
+		
+			$ExecCmd = "php makecubemap.php ";
+			foreach ( $Params as $Param )
+				$ExecCmd .= "$Param ";
+		}
+		else if ( $Format == 'jpg' && $Codec === false )
+		{
+			$ExecCmd .= FFMPEG_BIN;
+			$ExecCmd .= " -loglevel error";
+			$ExecCmd .= " -y";
+			$ExecCmd .= " -i $InputFilename";
+			$ExecCmd .= " -vf scale=$Width:$Height";
+			
+			$ExecCmd .= " -qscale:v " . FFMPEG_JPEG_QUALITY;
+			$ExecCmd .= " -vframes 1";
+			
+			$ExecCmd .= " $ResizedTempFilename";
 		}
 		else if ( $Format == 'webm' || $Format == 'mp4' || $Format == 'gif' || $Format == 'mjpeg' )
 		{
-			if ( !$Image->IsVideo() )
-				return false;
-			
-			$Param_OutputOther .= " -b:v $BitRate";
-
-			//	configure video
+			$ExecCmd .= FFMPEG_BIN;
+			$ExecCmd .= " -loglevel error";
+			$ExecCmd .= " -y";
+			$ExecCmd .= " -i $InputFilename";
+			$ExecCmd .= " -vf scale=$Width:$Height";
+			$ExecCmd .= " -b:v $BitRate";
+	
 			if ( $Codec == 'vp8' )
 			{
 				//https://www.virag.si/2012/01/webm-web-video-encoding-tutorial-with-ffmpeg-0-9/
 				$FFMPEG_WEBM_QUALITY = 'realtime';
-				$Param_Quality = " -quality " . $FFMPEG_WEBM_QUALITY;
-				$Param_OutputOther .= " -codec:v libvpx";
-				$Param_OutputOther .= " -cpu-used 1";
-				$Param_OutputOther .= " -qmin 10 -qmax 42";
+				$ExecCmd .= " -quality " . $FFMPEG_WEBM_QUALITY;
+				$ExecCmd .= " -codec:v libvpx";
+				$ExecCmd .= " -cpu-used 1";
+				$ExecCmd .= " -qmin 10 -qmax 42";
 			}
 			else if ( $Codec == 'h264' )
 			{
 				//	https://trac.ffmpeg.org/wiki/Encode/H.264
 				$FFMPEG_H264_QUALITY = 'medium';
-				$Param_Quality = " -preset " . $FFMPEG_H264_QUALITY;
-				$Param_OutputOther .= " -codec:v libx264";
-			}
-			else if ( $Codec == 'gif' )
-			{
-				
+				$ExecCmd .= " -preset " . $FFMPEG_H264_QUALITY;
+				$ExecCmd .= " -codec:v libx264";
 			}
 			else if ( $Codec == 'mjpeg' )
 			{
-				$Param_OutputOther .= " -f mjpeg -codec:v mjpeg";
+				$ExecCmd .= " -f mjpeg";
+				$ExecCmd .= " -codec:v mjpeg";
 			}
-			else
-			{
-				echo "Unsupported mix: $Format/$Codec";
-				return false;
-			}
+			
+			$ExecCmd .= " $ResizedTempFilename";
 		}
 		else
 		{
@@ -299,29 +253,30 @@
 			return false;
 		}
 		
-		$Param_CatchStdErr = "2>&1";
-		$Param_Scale = "-vf scale=$Width:$Height";
-		$Param_Input = "-i {$Image->mFilename}";
-		$Param_Output = "$ResizedTempFilename";
-		$ExecCmd = FFMPEG_BIN . " $Param_Quiet $Param_Overwrite $Param_Input $Param_Scale $Param_Quality $Param_FrameSet $Param_OutputOther $Param_TimeLimit $Param_Output $Param_CatchStdErr";
+		//	stderr -> stdout
+		$ExecCmd .= " 2>&1";
+		
+		$Asset['Command'] = $ExecCmd;
+		
+		//	execute
 		exec( $ExecCmd, $ExecOut, $ExitCode );
 		$ExecOut = join("\n", $ExecOut );
 		if ( $ExitCode != 0 )
 		{
-			echo "failed to resize $Width $Height $Format $Codec: [$ExitCode] $ExecOut\n";
-			DeleteTempFile( $ResizedTempFilename );
-			return false;
+			$Asset['Error'] = "spawn error [$ExitCode] [$ExecOut] [$ExecCmd]";
+			return $Asset;
 		}
-		
+
 		//	upload
-		//	correct content type for easier online viewing
 		$Error = UploadFile( $ResizedTempFilename, $RemoteFilename, $Format );
 		if ( $Error !== true )
-			OnError($Error);
-	
-		DeleteTempFile( $ResizedTempFilename );
+		{
+			$Asset['Error'] = "upload error [$Error]";
+			return $Asset;
+		}
 
-		$Assset['Command'] = $ExecCmd;
+		//	save uploaded filename
+		$Asset['Filename'] = $RemoteFilename;
 		return $Asset;
 	}
 	
