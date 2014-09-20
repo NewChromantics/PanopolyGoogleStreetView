@@ -139,7 +139,7 @@
 	
 	
 	//	returns an image or false
-	function LoadImage($InputFilename,$Width,$Height,$TimeOffset=0)
+	function LoadImage($InputFilename,$Width,$Height,$TimeOffset,&$Error)
 	{
 		$OutputFilename = 'pipe:1';
 		//	output to png
@@ -186,9 +186,16 @@
 		}
 		
 		if ( $ExitCode != 0 )
+		{
+			$Error = "ffmpeg error [$ExitCode] [$ExecOut] [$ExecCmd]";
 			return false;
+		}
 		
 		$Image = imagecreatefromstring( $ExecOut );
+		if ( $Image === false )
+		{
+			$Error = "imagecreatefromstring() failed";
+		}
 		return $Image;
 	}
 

@@ -27,6 +27,14 @@
 		return (PHP_SAPI == "cli");
 	}
 
+	function dir_exists($Dir)
+	{
+		if ( !file_exists($Dir) )
+			return false;
+		if ( is_file($Dir) )
+			return false;
+		return true;
+	}
 	
 	function Init()
 	{
@@ -112,8 +120,15 @@
 			return false;
 		}
 
-		if ( FAKE_UPLOAD )
+		if ( FAKE_UPLOAD !== false )
+		{
+			if ( dir_exists(FAKE_UPLOAD) )
+			{
+				if ( !copy( $localfilename, FAKE_UPLOAD . '/' . $remotefilename ) )
+					return "Error copying to " . FAKE_UPLOAD . '/' . $remotefilename;
+			}
 			return true;
+		}
 		
 		try
 		{
@@ -130,8 +145,15 @@
 	//	returns TRUE or error string
 	function UploadContent($Content,$remotefilename,$ContentType)
 	{
-		if ( FAKE_UPLOAD )
+		if ( FAKE_UPLOAD !== false )
+		{
+			if ( dir_exists(FAKE_UPLOAD) )
+			{
+				if ( !file_put_contents( FAKE_UPLOAD . '/' . $remotefilename, $Content ) )
+					return "Error copying to " . FAKE_UPLOAD . '/' . $remotefilename;
+			}
 			return true;
+		}
 		
 		try
 		{
@@ -172,24 +194,60 @@
 		public $mWidth;
 		public $mHeight;
 	};
-
+	
 	//	returns associate array of data
 	function ProbeVideo($Filename)
 	{
-		$ExitCode = -1;
-		$Param_Quiet = "-v quiet";
-		$Param_FormatJson = "-show_streams -print_format json";
-		$Param_CatchStdErr = "2>&1";
-		$Param_Input = "$Filename";
-		$ExecCmd = FFPROBE_BIN . " $Param_Input $Param_Quiet $Param_FormatJson $Param_CatchStdErr";
-		exec( $ExecCmd, $ExecOut, $ExitCode );
-		$ExecOut = join("\n", $ExecOut );
-		if ( $ExitCode != 0 )
+		if ( !file_exists($Filename) )
 		{
-			echo "failed to execute ffprobe: [$ExitCode][$ExecCmd] $ExecOut\n";
+			echo "ffprobe aborted [$Filename] doesn't exist";
 			return false;
 		}
+		$ExitCode = -1;
+		
+		$Formats[] = false;		//	auto-detect type
+		//	probe for specific formats
+		$Formats[] = 'jpeg';
+		$Formats[] = 'png';
+		$Formats[] = 'mjpeg';	//	works for jpeg
+		
+		$Error = false;
+		
+		foreach ( $Formats as $Format )
+		{
+			if ( $Format == false )
+				$Param_TestFormat = '';
+			else
+				$Param_TestFormat = "-f $Format";
 
+			$Param_Quiet = "-v quiet";
+			$Param_FormatJson = "-show_streams -print_format json";
+			$Param_CatchStdErr = "2>&1";
+			$Param_Input = "$Filename";
+			$ExecCmd = FFPROBE_BIN . " $Param_TestFormat $Param_Input $Param_Quiet $Param_FormatJson $Param_CatchStdErr";
+			exec( $ExecCmd, $ExecOut, $ExitCode );
+			$ExecOut = join("\n", $ExecOut );
+		
+			if ( $ExitCode != 0 )
+			{
+				$Error = "failed to execute ffprobe: [$ExitCode][$ExecCmd][$ExecOut]\n";
+				if ( $ExitCode > 0 )
+					$Error .= "Not recognised as media type";
+				continue;
+			}
+			
+			//	success
+			$Error = false;
+			break;
+		}
+		
+		//	didn't manage success
+		if ( $Error )
+		{
+			echo $Error;
+			return false;
+		}
+		
 		//	decode json output
 		$Json = $ExecOut;
 		//$Json = '{"hello":"world"}';

@@ -46,6 +46,10 @@
 		{
 			return OnError("Wrong number of args ($argc != $a)");
 		}
+		
+		//	when being executed from command line the htaccess settings aren't used...
+		//	ideally read this from htaccess.txt
+		ini_set('memory_limit','1024M');
 	}
 
 	
@@ -141,9 +145,9 @@
 		return OnError("404 ($InputFilename)");
 	}
 
-	$Image = LoadImage( $InputFilename, $SampleWidth, $SampleHeight, $SampleTime );
+	$Image = LoadImage( $InputFilename, $SampleWidth, $SampleHeight, $SampleTime, $Error );
 	if ( $Image === false )
-		return OnError("Error reading file");
+		return OnError("Error reading file: $Error");
 
 	if ( $OutputLayout != false && $OutputLayout != 'false' )
 	{
