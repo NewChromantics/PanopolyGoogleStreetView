@@ -2,6 +2,7 @@
 	require('panopoly.php');
 	require('s3.php');
 
+	
 	define('UPLOADFILE_VAR','image');
 	define('CUSTONNAME_VAR','customname');
 	
@@ -34,13 +35,18 @@
 		
 		if ( $error != 0 )
 			return OnError("upload error $error");
-		
+	
 		$SpawnTempFilename = GetPanoTempFilename($Panoname);
 		if ( !move_uploaded_file( $tmpfilename, $SpawnTempFilename ) )
 			return OnError("Error with uploaded temp file ($tmpfilename,$SpawnTempFilename)");
 		
-		echo "move( $tmpfilename, $SpawnTempFilename )";
-
+		//	test if is a video format
+		$Image = new TVideo($SpawnTempFilename);
+		if ( !$Image->IsValid() )
+		{
+			return OnError("failed to read image or video information from $SpawnTempFilename");
+		}
+		
 		//	spawn
 		$blocking = false;
 		if ( !ExecPhp("spawn.php", $Panoname, "spawn.log", $blocking ) )
