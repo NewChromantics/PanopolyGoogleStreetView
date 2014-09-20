@@ -115,6 +115,10 @@
 		if ( $Asset === false )
 			continue;
 		
+		//	echo out errors
+		if ( array_key_exists('Error',$Asset) )
+			echo $Asset['Error'] . "\n";
+		
 		//	add to & update meta
 		$OutputAssets[] = $Asset;
 		UploadMeta( $OutputAssets );
