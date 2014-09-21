@@ -476,11 +476,10 @@ function LoadPano($Config,$UpdateTextureFunction)
 		
 		//	setup config
 		var $RenderMode = RENDERMODE_NONE;
-		/*
+		
 		if ( UseCanvasMode() )
 			$RenderMode = RENDERMODE_WEBGL;
 		else if ( UseCubemapMode() )
-		*/
 			$RenderMode = RENDERMODE_CUBEMAP;
 			
 		var $Config = new SoyConfig( $RenderMode );
