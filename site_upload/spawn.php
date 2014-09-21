@@ -97,7 +97,6 @@
 	$AssetParams[] = SoyAssetMeta( 4096, 4096, 'jpg' );
 //	$AssetParams[] = SoyAssetMeta( 512, 256, 'webm', 'vp8', '1000k' );
 	$AssetParams[] = SoyAssetMeta( 2048, 2048, 'jpg', 'cubemap_23ULFRBD' );
-/*
 	
 //	$AssetParams[] = SoyAssetMeta( 1024, 512, 'webm', 'vp8', '2000k' );
 	$AssetParams[] = SoyAssetMeta( 2048, 1024, 'webm', 'vp8', '5000k' );
@@ -108,7 +107,7 @@
 //	$AssetParams[] = SoyAssetMeta( 512, 256, 'gif', 'gif', '5000k' );
 //	$AssetParams[] = SoyAssetMeta( 2048, 1024, 'gif', 'gif', '5000k' );
 	$AssetParams[] = SoyAssetMeta( 2048, 1024, 'mjpeg', 'mjpeg', '5000k' );
-*/
+
 	
 	foreach ( $AssetParams as $Asset )
 	{
@@ -226,6 +225,9 @@
 		}
 		else if ( $Format == 'webm' || $Format == 'mp4' || $Format == 'gif' || $Format == 'mjpeg' )
 		{
+			if ( $Image->IsVideo() )
+				return false;
+			
 			$ExecCmd .= FFMPEG_BIN;
 			$ExecCmd .= " -loglevel error";
 			$ExecCmd .= " -y";
