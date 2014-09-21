@@ -1,14 +1,4 @@
 
-function CubemapUpdate()
-{
-	//	update camera
-	var Quaternion = GetCameraQuaternion();
-	SetCameraQuaternion( Quaternion );
-	
-	var $UpdateRateMs = 1000/40;
-	setTimeout( CubemapUpdate, $UpdateRateMs );
-}
-
 function CreateCubeFace($Parent,$FaceName,$FaceSize,$RotationTransform,$Colour)
 {
 	var $Element = document.createElement('div');
@@ -37,42 +27,20 @@ function CreateCubeFace($Parent,$FaceName,$FaceSize,$RotationTransform,$Colour)
 	$Element.style.overflow = 'hidden';
 }
 
-function InitCubemap($Container,$Config)
+var epsilon = function ( value ) {
+	
+	return Math.abs( value ) < 0.000001 ? 0 : value;
+	
+};
+
+
+function CreateCube($Parent,$FaceSize)
 {
-	if ( !$Container )
-		return false;
-	
-	//	world = parent
-	//	container = viewport
-	var $CubeParent = document.createElement('div');
-	$CubeParent.className = 'ThreeD';
-	$CubeParent.id = 'CubeMapParent';
-	$Container.appendChild($CubeParent);
-	
 	var $Cube = document.createElement('div');
 	$Cube.className = 'ThreeD';
 	$Cube.id = 'CubeMap';
-	$CubeParent.appendChild($Cube);
+	$Parent.appendChild($Cube);
 	
-	var $Viewport = $Container;
-
-	//var $FaceSize = $Config.mFaceResolution;
-	//var hfov = $Config.mFov ;
-	var $FaceSize = 500;
-	var hfov = 90;
-	var focal = 1 / Math.max( 0.001, Math.tan(hfov / 2) );
-	var CanvasWidth = $Container.offsetWidth;
-	var zoom = focal * CanvasWidth / 2 + 'px';
-		
-	var $ParentTransform = "translateZ(" + zoom + ")";
-	SetElementTransform3d( $CubeParent, $ParentTransform );
-	SetElementPerspective3d( $Viewport, zoom );
-	SetElementPerspectiveOrigin3d( $Viewport, '0 0 0' );
-	
-	//	need width & margin to center 3D around 2D center
-	$CubeParent.style.width = $FaceSize + 'px';
-	$CubeParent.style.height = $FaceSize + 'px';
-	$CubeParent.style.margin = 'auto';
 	//	gr: need this so we rotate around the center... not sure why
 	$Cube.style.width = $FaceSize + 'px';
 	$Cube.style.height = $FaceSize + 'px';
@@ -85,8 +53,8 @@ function InitCubemap($Container,$Config)
 	CreateCubeFace( $Cube, 'Back', $FaceSize, 'rotateY(180deg)', 'yellow' );
 	CreateCubeFace( $Cube, 'Right', $FaceSize, 'rotateY(90deg)', 'cyan' );
 	CreateCubeFace( $Cube, 'Down', $FaceSize, 'rotateX(-90deg) rotate(180deg)', 'magenta' );
-}
 
+}
 
 
 
@@ -156,17 +124,6 @@ function SetFaceBackground($Element,$ImageOffset,$Layout)
 	}
 		
 		
-		
-	/*
-	 gr: setting these individually just didn't work...
-	 $Element.style.backgroundImage = 'url(' + $ImageUrl + ')';
-	 $Element.style.backgroundAttachment = "fixed";
-	 $Element.style.backgroundPosition = '-100px -0px';
-	 //$Element.style.backgroundSize = '' + $ImageSize.x + 'px ' + $ImageSize.y + 'px';
-	 //$Element.style.backgroundPosition = '' + $x + 'px ' + $y + 'px';
-	 //$Element.style.backgroundSize = '' + $ImageSize.x + 'px ' + $ImageSize.y + 'px';
-	 $Element.style.backgroundSize = '400px 300px';
-	 */
 }
 
 
@@ -177,23 +134,3 @@ function GetElementCubeMap()
 	var $Parent = GetElement('CubeMap');
 	return $Parent;
 }
-
-
-function SetCameraRotation($RotateX,$RotateY,$RotateZ)
-{
-	var $Transform = "rotateX("+$RotateX+"deg) rotateY("+$RotateY+"deg) rotateZ("+$RotateZ+"deg)";
-	SetElementTransform3d( GetElementCubeMap(), $Transform );
-}
-
-
-function SetCameraQuaternion($Quaternion)
-{
-	//	convert quaternion to matrix
-	var $CssMatrix = GetCssMatrixFromQuaternion( $Quaternion );
-
-	//	convert Quaternion to eular
-	var $Transform = $CssMatrix;
-	SetElementTransform3d( GetElementCubeMap(), $Transform );
-}
-
-

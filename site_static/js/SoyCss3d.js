@@ -118,3 +118,4 @@ SoyCss3d.prototype.IsSupported = function()
 	
     return (has3d !== undefined && has3d.length > 0 && has3d !== "none");
 }
+

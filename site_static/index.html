@@ -63,6 +63,7 @@
 
 		<script src="js/soy.js"></script>
 		<script src="threejs/three.min.js"></script>
+		<script src="threejs/renderers/CSS3DRenderer.js"></script>
 		<script src="threejs/effects/StereoEffect.js"></script>
 		<script src="js/GoogleAnalytics.js"></script>
 		<script src="js/ClearDefaultText.js"></script>
@@ -88,7 +89,8 @@
 
 <script>
 	
-	
+	ShowElement('QuatDebug');
+
 //	turn on debug stuff
 if ( window.location.hash == '#debug' )
 {
@@ -372,41 +374,62 @@ function LoadPano($Config,$UpdateTextureFunction)
 		
 				var fov = $Config.mFov;
 				camera = new THREE.PerspectiveCamera( fov, 1, 1, 1000 );
-				camera.target = new THREE.Vector3( 0, 0, 0 );
-			
+				camera.target = new THREE.Vector3( 0, 0, 1 );
+				camera.position.set( 0.001, 0.001, 0.001 );
+		
 				scene = new THREE.Scene();
 
-				var WidthSegments = 60;
-				var HeightSegments = 40;
-				if ( IsMobile() )
-				{
-					WidthSegments /= 2;
-					HeightSegments /= 2;
-				}
-				var Size = 5;
-				var geometry = new THREE.SphereGeometry( Size, WidthSegments, HeightSegments );
-				//var geometry = new THREE.BoxGeometry( Size, Size, Size );
-				geometry.applyMatrix( new THREE.Matrix4().makeScale( -1, 1, 1 ) );
-
-				//	load default texture
-				var Texture = THREE.ImageUtils.loadTexture( GetDefaultPanoFilename(), new THREE.UVMapping() );
-				var material = new THREE.MeshBasicMaterial( {
-														   map: Texture,
-														   color: "white",
-														   wireframe: false
-										   } );
-				
-	
-				mesh = new THREE.Mesh( geometry, material );
-				scene.add( mesh );
-			
-			
-				if ( HasWebGl() )
+				if ( $Config.mRenderMode == RENDERMODE_CUBEMAP )
+					renderer = new THREE.CSS3DRenderer();
+				else if ( $Config.mRenderMode == RENDERMODE_WEBGL )
 					renderer = new THREE.WebGLRenderer();
-				else
+				else if ( $Config.mRenderMode == RENDERMODE_CANVAS )
 					renderer = new THREE.CanvasRenderer();
+				
 				renderer.setClearColor( 0xFF0000, 1);
 				$Container.appendChild( renderer.domElement );
+
+
+				if ( $Config.mRenderMode != RENDERMODE_CUBEMAP )
+				{
+					var WidthSegments = 60;
+					var HeightSegments = 40;
+					if ( IsMobile() )
+					{
+						WidthSegments /= 2;
+						HeightSegments /= 2;
+					}
+					var Size = 5;
+					var geometry = new THREE.SphereGeometry( Size, WidthSegments, HeightSegments );
+					//var geometry = new THREE.BoxGeometry( Size, Size, Size );
+					geometry.applyMatrix( new THREE.Matrix4().makeScale( -1, 1, 1 ) );
+
+					//	load default texture
+					var Texture = THREE.ImageUtils.loadTexture( GetDefaultPanoFilename(), new THREE.UVMapping() );
+					var material = new THREE.MeshBasicMaterial( {
+															   map: Texture,
+															   color: "white",
+															   wireframe: false
+											   } );
+					
+		
+					mesh = new THREE.Mesh( geometry, material );
+					scene.add( mesh );
+				}
+				else
+				{
+					 var $CubeParent = document.createElement('div');
+					 var $FaceSize = $Config.mFaceResolution;
+					 
+					 //	need width & margin to center 3D around 2D center
+					 $CubeParent.style.width = $FaceSize + 'px';
+					 $CubeParent.style.height = $FaceSize + 'px';
+				//	 $CubeParent.style.margin = 'auto';
+					 $CubeParent.className = 'ThreeD';
+					 $CubeParent.style.transform = 'translate3d(-50%,-50%,0) rotateZ(180deg)';
+					 renderer.domElement.firstChild.appendChild($CubeParent);
+					 CreateCube( $CubeParent,$FaceSize);
+				}
 
 				onContainerResize();
 				window.addEventListener( 'resize', onContainerResize, false );
@@ -485,35 +508,28 @@ function LoadPano($Config,$UpdateTextureFunction)
 		var $Config = new SoyConfig( $RenderMode );
 		var Container = GetElement("container");
 	
-		if ( $Config.mRenderMode == RENDERMODE_WEBGL || $Config.mRenderMode == RENDERMODE_CANVAS )
+		if ( $Config.mRenderMode != RENDERMODE_NONE )
 		{
 			InitWebgl( Container, $Config );
 
 			var $UpdateTextureFunction = function($Asset)
 			{
-				var $Texture = new THREE.Texture( $Asset.mAsset, new THREE.UVMapping() );
-				$Texture.needsUpdate = true;
+				if ( $Config.mRenderMode == RENDERMODE_CUBEMAP )
+				{
+					SetCubemapBackground($Asset);
+				}
+				else
+				{
+					var $Texture = new THREE.Texture( $Asset.mAsset, new THREE.UVMapping() );
+					$Texture.needsUpdate = true;
 
-				var $Material = mesh.material;
-				$Material.map = $Texture;
-				$Material.needsUpdate = true;
+					var $Material = mesh.material;
+					$Material.map = $Texture;
+					$Material.needsUpdate = true;
+				}
 			};
-			
 			//	load user's required pano
 			LoadPano( $Config, $UpdateTextureFunction );
-		}
-		else if ( $Config.mRenderMode == RENDERMODE_CUBEMAP )
-		{
-			InitCubemap( Container, $Config );
-
-			var $UpdateTextureFunction = function($Asset)
-			{
-				SetCubemapBackground($Asset);
-			};
-			
-			//	load user's required pano
-			LoadPano( $Config, $UpdateTextureFunction );
-			CubemapUpdate();
 		}
 		else
 		{

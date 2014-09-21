@@ -2,7 +2,10 @@
 <Workspace
    version = "1.0">
    <FileRef
-      location = "group:post-receive">
+      location = "group:init.sh">
+   </FileRef>
+   <FileRef
+      location = "group:post-receive.txt">
    </FileRef>
    <FileRef
       location = "group:readme.txt">

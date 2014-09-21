@@ -5,7 +5,7 @@ var RENDERMODE_NONE = null;
 
 function SoyConfig($RenderMode)
 {
-	this.mFov = 75;
+	this.mFov = 45;
 	this.mFaceResolution = 1000;
 	
 	this.mRenderMode = $RenderMode;
