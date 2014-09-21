@@ -90,12 +90,13 @@
 	//	assets we want to try and create
 	$AssetParams = [];
 
-//	$AssetParams[] = SoyAssetMeta( 256, 256, 'jpg' );
-	$AssetParams[] = SoyAssetMeta( 1024, 1024, 'jpg' );
+	$AssetParams[] = SoyAssetMeta( 256, 256, 'jpg' );
+//	$AssetParams[] = SoyAssetMeta( 1024, 1024, 'jpg' );
 	$AssetParams[] = SoyAssetMeta( 2048, 2048, 'jpg' );
 //	$AssetParams[] = SoyAssetMeta( 4096, 2048, 'jpg' );
 	$AssetParams[] = SoyAssetMeta( 4096, 4096, 'jpg' );
 //	$AssetParams[] = SoyAssetMeta( 512, 256, 'webm', 'vp8', '1000k' );
+	$AssetParams[] = SoyAssetMeta( 256, 256, 'jpg', 'cubemap_23ULFRBD' );
 	$AssetParams[] = SoyAssetMeta( 2048, 2048, 'jpg', 'cubemap_23ULFRBD' );
 	
 //	$AssetParams[] = SoyAssetMeta( 1024, 512, 'webm', 'vp8', '2000k' );
