@@ -35,4 +35,5 @@ if [ -d "$CLONE_DIR" ]; then
 	echo "updating hook"
 	cp $CLONE_DIR/post-receive.txt $REPOS_DIR/hooks/post-receive
 	chmod +x $REPOS_DIR/hooks/post-receive
+	sudo chmod o+w /var/app/current
 fi
