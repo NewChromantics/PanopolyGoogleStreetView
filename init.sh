@@ -1,3 +1,10 @@
+#!/bin/bash
+
+CLONE_DIR=~/clone
+FFMPEG_DIR=~/ffmpeg
+REPOS_DIR=~/panopoly.git
+branch="master"
+
 cd ~/
 if [ ! -d "ffmpeg" ]; then
 	echo "updating ffmpeg"
@@ -8,7 +15,7 @@ if [ ! -d "ffmpeg" ]; then
 fi
 
 cd ~/
-if [ ! -d "panopoly.git" ]; then
+if [ ! -d "$REPOS_DIR" ]; then
 	echo "making git repos"
 	mkdir panopoly.git
 	cd panopoly.git
@@ -16,7 +23,15 @@ if [ ! -d "panopoly.git" ]; then
 fi
 
 cd ~/
-if [ -d "clone" ]; then
+if [ ! -d "$CLONE_DIR" ] && [ -d "$REPOS_DIR" ]; then
+	echo "initial checkout"
+	mkdir $CLONE_DIR
+	cd $REPOS_DIR
+	git --work-tree=$CLONE_DIR checkout -f $branch
+fi	
+
+cd ~/
+if [ -d "$CLONE_DIR" ]; then
 	echo "updating hook"
-	cp clone/post-recieve.txt panopoly.git/hooks/post-recieve
+	cp $CLONE_DIR/post-receive.txt $REPOS_DIR/hooks/post-receive
 fi
