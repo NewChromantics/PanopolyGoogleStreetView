@@ -90,7 +90,8 @@
 
 <script>
 	
-
+	ShowElement('debug_console',false);
+	
 //	turn on debug stuff
 if ( window.location.hash == '#debug' )
 {
@@ -98,6 +99,7 @@ if ( window.location.hash == '#debug' )
 	ShowElement('QuatDebug');
 	
 	BindConsole('debug_console');
+	ShowElement('debug_console');
 	
 	function UpdateUptime()
 	{
