@@ -436,7 +436,10 @@ function LoadPano($Config,$UpdateTextureFunction)
 					$CubeParent.style.height = $FaceSize + 'px';
 					//	 $CubeParent.style.margin = 'auto';
 					$CubeParent.className = 'ThreeD';
+					
 					$CubeParent.style.transform = 'translate3d(-50%,-50%,0)';
+					if ( IsMobile() )
+						$CubeParent.style.transform = 'translate3d(-' + ($FaceSize/2) + 'px,-' + ($FaceSize/2) + 'px,0)';
 					$CubeParent.style.transform += ' rotateZ(180deg)';
 					renderer.domElement.firstChild.appendChild($CubeParent);
 					CreateCube( $CubeParent,$FaceSize);
