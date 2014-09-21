@@ -51,8 +51,10 @@ function IsMobile()
 		return true;
 	if ( IsDevice('iPhone') )
 		return true;
-	//return true;
-	return !HasWebGl();
+	
+	//	desktop safari != mobile..
+	return false;
+	//return !HasWebGl();
 }
 
 

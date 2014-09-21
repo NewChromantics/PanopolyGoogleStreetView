@@ -434,15 +434,15 @@ function LoadPano($Config,$UpdateTextureFunction)
 					//	need width & margin to center 3D around 2D center
 					$CubeParent.style.width = $FaceSize + 'px';
 					$CubeParent.style.height = $FaceSize + 'px';
-					if ( IsMobile() )
-						 $CubeParent.style.margin = 'auto';
+					//	 $CubeParent.style.margin = 'auto';
 					$CubeParent.className = 'ThreeD';
 					
 					//	% or px, no difference
-					$CubeParent.style.transform = 'translate3d(-50%,-50%,0)';
-					//$CubeParent.style.transform = 'translate3d(-' + ($FaceSize/2) + 'px,-' + ($FaceSize/2) + 'px,0)';
-					
-					$CubeParent.style.transform += ' rotateZ(180deg)';
+					$Transform = 'translate3d(-50%,-50%,0)';
+					//$Transform = 'translate3d(-' + ($FaceSize/2) + 'px,-' + ($FaceSize/2) + 'px,0)';
+					$Transform += ' rotateZ(180deg)';
+					SetElementTransform3d( $CubeParent, $Transform );
+
 					renderer.domElement.firstChild.appendChild($CubeParent);
 					CreateCube( $CubeParent,$FaceSize);
 				}
