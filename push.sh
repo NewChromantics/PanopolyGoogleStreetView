@@ -1,1 +1,1 @@
-ssh-agent bash -c 'ssh-add ~/panopo.ly/graham_aws.pem; git push ec2-user@ec2-50-112-174-2.us-west-2.compute.amazonaws.com:/home/ec2-user/panopoly.git master'
+ssh-agent bash -c 'ssh-add ~/panopo.ly/graham_aws.pem; git push ec2-user@instance.panopo.ly:/home/ec2-user/panopoly.git master'
