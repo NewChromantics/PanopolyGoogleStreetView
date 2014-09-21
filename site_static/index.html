@@ -60,6 +60,15 @@
 
 <!-- needs to be before any support that wants to bind to container -->
 		<div id="container"></div>
+		<div id="console" style="overflow:scroll;height:200px;z-index:999;position:absolute;left:0;top:20px;opacity:0.5;background:white;"></div>
+		<script>
+			if ( window.location.hash != '#debug' )
+			{
+				var $Console = document.GetElementById('console');
+				HideElement($Console);
+				$Console.id = '';
+			}
+		</script>
 
 		<script src="js/soy.js"></script>
 		<script src="threejs/three.min.js"></script>
@@ -307,6 +316,8 @@ function OnClickedRiftMode()
 				//	extract from url;
 				//	panopo.ly/#name
 				var Name = window.location.hash;
+				if ( Name == '#debug' || Name == 'debug' )
+					Name = null;
 				if ( !Name )
 					Name = "Apartment11";
 				
@@ -417,19 +428,18 @@ function LoadPano($Config,$UpdateTextureFunction)
 				}
 				else
 				{
-					 var $CubeParent = document.createElement('div');
-					 var $FaceSize = $Config.mFaceResolution;
-					 
-					 //	need width & margin to center 3D around 2D center
-					 $CubeParent.style.width = $FaceSize + 'px';
-					 $CubeParent.style.height = $FaceSize + 'px';
-				//	 $CubeParent.style.margin = 'auto';
-					 $CubeParent.className = 'ThreeD';
-					 $CubeParent.style.transform = 'translate3d(-50%,-50%,0)';
-					 if ( !IsMobile() )
-						$CubeParent.style.transform += ' rotateZ(180deg)';
-					 renderer.domElement.firstChild.appendChild($CubeParent);
-					 CreateCube( $CubeParent,$FaceSize);
+					var $CubeParent = document.createElement('div');
+					var $FaceSize = $Config.mFaceResolution;
+
+					//	need width & margin to center 3D around 2D center
+					$CubeParent.style.width = $FaceSize + 'px';
+					$CubeParent.style.height = $FaceSize + 'px';
+					//	 $CubeParent.style.margin = 'auto';
+					$CubeParent.className = 'ThreeD';
+					$CubeParent.style.transform = 'translate3d(-50%,-50%,0)';
+					$CubeParent.style.transform += ' rotateZ(180deg)';
+					renderer.domElement.firstChild.appendChild($CubeParent);
+					CreateCube( $CubeParent,$FaceSize);
 				}
 
 				onContainerResize();
