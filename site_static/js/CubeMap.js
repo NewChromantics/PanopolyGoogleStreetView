@@ -14,9 +14,19 @@ function CreateCubeFace($Parent,$FaceName,$FaceSize,$RotationTransform,$Colour)
 	var $Element = document.createElement('div');
 	$Parent.mFaces[$FaceName] = $Element;	//	for easy access without id's later
 	$Parent.appendChild( $Element );
-	$Element.className = 'face';
+	$Element.className = 'Face';
 	$Element.id = 'cubemap_' + $FaceName;	//	just for debug
-	$Element.innerText = $FaceName;			//	just for debug
+	
+	var $FaceContentElement = document.createElement('div');
+	$FaceContentElement.className = 'FaceContent';
+	$Element.appendChild( $FaceContentElement );
+	
+	var $Thing = document.createElement('span');
+	$Thing.style.position = 'fixed';
+	$Thing.style.top = '50%';
+	$Thing.style.left = '50%';
+	$Thing.innerText = $FaceName;
+	$FaceContentElement.appendChild($Thing);
 	
 	$Element.style.width = $FaceSize + 'px';
 	$Element.style.height = $FaceSize + 'px';
@@ -24,6 +34,7 @@ function CreateCubeFace($Parent,$FaceName,$FaceSize,$RotationTransform,$Colour)
 	var $Transform = $RotationTransform + ' ' + $ZTransform;
 	SetElementTransform3d( $Element, $Transform );
 	$Element.style.backgroundColor = $Colour;
+	$Element.style.overflow = 'hidden';
 }
 
 function InitCubemap($Container,$Config)
@@ -80,29 +91,18 @@ function InitCubemap($Container,$Config)
 
 
 //	intialise cube faces
-function SetCubemapBackground()
+function SetCubemapBackground($Asset)
 {
 	var $Cube = GetElementCubeMap();
 	if ( !$Cube )
 		return false;
+
+	var $Meta = $Asset.mMeta;
+	var $CubemapLayout = $Meta.GetCubemapLayout();
+	if ( !$CubemapLayout )
+		return false;
 	
-	//	gr: oddly, wrong resolution here still works...
-	//	var $Layout = new CubemapLayout('banks.cubemap.1024x512.png',1024,512);
-	var $Layout = new CubemapLayout('banks.cubemap.16ULFRBD.1024x1024.png',1024,1024,'16ULFRBD');
-	//var $Layout = new CubemapLayout('cubemap.jpg',400,300);
-	//	var $Layout = new CubemapLayout('cubemap2x.jpg',800,600);
-	//	var $Layout = new CubemapLayout('stormycubemap.jpg',4096,3072);
-	/*
-	 var $Layout = new CubemapLayout('churchcubemap.jpg',8192, 2048);
-	 $Layout.mFront = new THREE.Vector2(2,0);
-	 $Layout.mBack = new THREE.Vector2(4,0);
-	 $Layout.mLeft = new THREE.Vector2(3,0);
-	 $Layout.mRight = new THREE.Vector2(1,0);
-	 $Layout.mUp = new THREE.Vector2(0,0);
-	 $Layout.mDown = new THREE.Vector2(5,0);
-	 $Layout.mBlockCount = new THREE.Vector2( 6, 1 );
-	 */
-	
+	var $Layout = new CubemapLayout( $Asset.mAsset, $Meta.Width, $Meta.Height, $CubemapLayout );
 	
 	SetFaceBackground( $Cube.mFaces['Front'], $Layout.GetFront(), $Layout );
 	SetFaceBackground( $Cube.mFaces['Back'], $Layout.GetBack(), $Layout );
@@ -128,6 +128,21 @@ function SetFaceBackground($Element,$ImageOffset,$Layout)
 	var $w = ($ImageSize.x/$CssScale.x) + 'px ';
 	var $h = ($ImageSize.y/$CssScale.y) + 'px ';
 	
+	if ( typeof $ImageUrl == 'object' )
+	{
+		var $ElementChildImg = $ImageUrl.cloneNode(false);
+		$ElementChildImg.style.position = 'fixed';
+		$ElementChildImg.style.left = $x;
+		$ElementChildImg.style.top = $y;
+		$ElementChildImg.style.width = $w;
+		$ElementChildImg.style.height = $h;
+		$ElementChildImg.style.zIndex = -900;	//	doesn't work just setting the content's Z index :/
+		$Element.appendChild($ElementChildImg);
+	}
+	else
+	{
+		//	check is string?
+		//console.log( typeof $ImageUrl);
 	/*
 	var $ElementChildImg = document.createElement('img');
 	$ElementChildImg.style.width = '100%';
@@ -135,9 +150,13 @@ function SetFaceBackground($Element,$ImageOffset,$Layout)
 	var $MJpeg = new SoyMJpeg( 'http://image.panopo.ly/banks.mjpeg', $ElementChildImg, 25  );
 	$Element.appendChild( $ElementChildImg );
 */
-	
-	$Element.style.background = 'url(' + $ImageUrl + ') ' + $x + $y;
-	$Element.style.backgroundSize = $w + $h;
+		//	old CSS background method with proper alignment (working)
+		$Element.style.background = 'url(' + $ImageUrl + ') ' + $x + $y;
+		$Element.style.backgroundSize = $w + $h;
+	}
+		
+		
+		
 	/*
 	 gr: setting these individually just didn't work...
 	 $Element.style.backgroundImage = 'url(' + $ImageUrl + ')';

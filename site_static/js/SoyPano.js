@@ -1,7 +1,6 @@
 
 
-
-function SoyPano($PanoName,$Material,$OnMetaFailed)
+function SoyPano($PanoName,$Config,$OnNewImage,$OnMetaFailed)
 {
 	//	default
 	if ( typeof $OnMetaFailed == 'undefined' )
@@ -13,12 +12,12 @@ function SoyPano($PanoName,$Material,$OnMetaFailed)
 	var OnLoaded = function($Asset) { $this.OnLoadedAsset($Asset); }
 	var OnFailed = function($Asset) { $this.OnFailedAsset($Asset); }
 	
-	
-	this.mName = $PanoName;
+	this.mPanoName = $PanoName;
+	this.mConfig = $Config;
 	this.mOnMetaFailed = $OnMetaFailed;
-	this.mMaterial = $Material;
+	this.mOnNewImage = $OnNewImage;
 	this.mMeta = null;
-	
+		
 	//	load assets
 	this.mMetaAsset = new SoyAsset_Ajax( this, $PanoName+'.meta', OnLoaded, OnFailed );
 	
@@ -115,7 +114,7 @@ SoyPano.prototype.OnLoadedMeta = function()
 		var $RemoteMeta = new SoyAssetMeta( this.mMeta.assets[$Key] );
 		
 		//	can client cope with this asset?
-		if ( !$RemoteMeta.IsSupported() )
+		if ( !$RemoteMeta.IsSupported(this.mConfig) )
 			continue;
 		
 		//console.log($RemoteMeta);
@@ -180,9 +179,9 @@ SoyPano.prototype.OnNewVideoFrame = function($Asset)
 			this.mVideoTexture.minFilter = THREE.LinearFilter;
 			this.mVideoTexture.magFilter = THREE.LinearFilter;
 			
+			alert('needs changing, callback needs to handle video frames seperately');
 			//	overwrite old texture
-			this.mMaterial.map = this.mVideoTexture;
-			this.mMaterial.needsUpdate = true;
+			this.mOnNewImage( this.mVideoTexture );
 		}
 		
 		//	grab new frame from video
@@ -200,11 +199,6 @@ SoyPano.prototype.OnNewJpegFrame = function($Asset)
 	
 	//	update texture
 	console.log("New frame: " + $Asset.mUrl );
-	
-	var $Texture = new THREE.Texture( $Asset.mAsset, new THREE.UVMapping() );
-	$Texture.needsUpdate = true;
-	
-	//	overwrite old texture
-	this.mMaterial.map = $Texture;
-	this.mMaterial.needsUpdate = true;
+
+	this.mOnNewImage( $Asset );
 }

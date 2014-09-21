@@ -20,7 +20,6 @@ function SoyAsset($Pano,$Meta,$OnLoaded,$OnFailed)
 
 	var $Host = GetHost();
 	
-	this.mPano = $Pano;
 	this.mAsset = null;			//	set once loaded
 	this.mUrl = $Host + $Meta.Filename;
 	this.mOnLoaded = $OnLoaded;
@@ -246,13 +245,23 @@ SoyAssetMeta.prototype.IsBetter = function($that)
 	return false;
 }
 
-SoyAssetMeta.prototype.IsCubemap = function()
+
+
+SoyAssetMeta.prototype.GetCubemapLayout = function()
 {
 	if ( typeof this.Codec == 'undefined' )
 		return false;
 	if ( !this.Codec.startsWith('cubemap') )
 		return false;
-	return true;
+
+	var $Layout = this.Codec.slice( 'cubemap_'.length )
+	return $Layout;
+}
+
+SoyAssetMeta.prototype.IsCubemap = function()
+{
+	var $Layout = this.GetCubemapLayout();
+	return $Layout != false;
 }
 
 SoyAssetMeta.prototype.IsVideo = function()
@@ -262,7 +271,7 @@ SoyAssetMeta.prototype.IsVideo = function()
 	return true;
 }
 
-SoyAssetMeta.prototype.IsSupported = function()
+SoyAssetMeta.prototype.IsSupported = function($Config)
 {
 	//	test
 	if ( this.Width > 4000 || this.Height > 4000 )
@@ -279,6 +288,11 @@ SoyAssetMeta.prototype.IsSupported = function()
 		if ( $CanPlay == "" )
 			return false;
 	}
+	
+	//	only support cubemaps if cubemap mode
+	var $CubemapMode = ($Config.mRenderMode == RENDERMODE_CUBEMAP);
+	if ( this.IsCubemap() != $CubemapMode )
+		return false;
 	
 	return true;
 }

@@ -80,6 +80,7 @@
 		<script src="js/SoyFileSelect.js"></script>
 		<script src="js/SoyMouse.js"></script>
 		<script src="js/SoyCss3d.js"></script>
+		<script src="js/SoyConfig.js"></script>
 		<script src="js/SoyAsset.js"></script>
 		<script src="js/SoyPano.js"></script>
 	
@@ -351,28 +352,23 @@ function OnClickedRiftMode()
 				if ( SetTextureFromData( ImageData ) )
 					OnFileUploadSupported(true);
 			}
-		
+
+
 var $Pano = null;
-function LoadPano()
+function LoadPano($Config,$UpdateTextureFunction)
 {
-	var PanoName = GetPanoName();
-	if ( PanoName == false )
+	var $PanoName = GetPanoName();
+	if ( $PanoName == false )
 		return false;
 
-
-
-	var Material = mesh.material;
-	if ( !Material )
-		return false;
-
-	var OnFailedMeta = function() { console.log("Failed to load pano " + PanoName); }
-	$Pano = new SoyPano( PanoName, Material, OnFailedMeta );
+	var OnFailedMeta = function() { alert("Failed to load pano " + $PanoName); }
+	$Pano = new SoyPano( $PanoName, $Config, $UpdateTextureFunction, OnFailedMeta );
 }
 		
 	
 	
 
-			function init($Container,$Config) {
+			function InitWebgl($Container,$Config) {
 		
 				var fov = $Config.mFov;
 				camera = new THREE.PerspectiveCamera( fov, 1, 1, 1000 );
@@ -475,21 +471,49 @@ function LoadPano()
 		AddDefaultSupportAutoSwitch();
 		InitSupport();
 		
-		var $Config = { 'mFov':75, 'mFaceResolution':1000 };
 		
+		//	todo: load pano, if meta ONLY supports cubemap, we need cubemap mode. same with videos...
 		
-		var Container = GetElement("container");
+		//	setup config
+		var $RenderMode = RENDERMODE_NONE;
+		/*
 		if ( UseCanvasMode() )
-		{
-			init( Container, $Config );
-
-			//	load user's required pano
-			LoadPano();
-		}
+			$RenderMode = RENDERMODE_WEBGL;
 		else if ( UseCubemapMode() )
+		*/
+			$RenderMode = RENDERMODE_CUBEMAP;
+			
+		var $Config = new SoyConfig( $RenderMode );
+		var Container = GetElement("container");
+	
+		if ( $Config.mRenderMode == RENDERMODE_WEBGL || $Config.mRenderMode == RENDERMODE_CANVAS )
+		{
+			InitWebgl( Container, $Config );
+
+			var $UpdateTextureFunction = function($Asset)
+			{
+				var $Texture = new THREE.Texture( $Asset.mAsset, new THREE.UVMapping() );
+				$Texture.needsUpdate = true;
+
+				var $Material = mesh.material;
+				$Material.map = $Texture;
+				$Material.needsUpdate = true;
+			};
+			
+			//	load user's required pano
+			LoadPano( $Config, $UpdateTextureFunction );
+		}
+		else if ( $Config.mRenderMode == RENDERMODE_CUBEMAP )
 		{
 			InitCubemap( Container, $Config );
-			SetCubemapBackground();
+
+			var $UpdateTextureFunction = function($Asset)
+			{
+				SetCubemapBackground($Asset);
+			};
+			
+			//	load user's required pano
+			LoadPano( $Config, $UpdateTextureFunction );
 			CubemapUpdate();
 		}
 		else
