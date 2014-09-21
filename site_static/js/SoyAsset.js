@@ -273,8 +273,7 @@ SoyAssetMeta.prototype.IsVideo = function()
 
 SoyAssetMeta.prototype.IsSupported = function($Config)
 {
-	//	test
-	if ( this.Width > 4000 || this.Height > 4000 )
+	if ( this.Width > $Config.mMaxResolution || this.Height > $Config.mMaxResolution )
 		return false;
 	
 	if ( this.IsVideo() )

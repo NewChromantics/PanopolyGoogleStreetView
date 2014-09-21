@@ -49,6 +49,8 @@ function IsMobile()
 {
 	if ( IsDevice('iPad') )
 		return true;
+	if ( IsDevice('iPhone') )
+		return true;
 	//return true;
 	return !HasWebGl();
 }

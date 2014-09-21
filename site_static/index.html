@@ -425,7 +425,9 @@ function LoadPano($Config,$UpdateTextureFunction)
 					 $CubeParent.style.height = $FaceSize + 'px';
 				//	 $CubeParent.style.margin = 'auto';
 					 $CubeParent.className = 'ThreeD';
-					 $CubeParent.style.transform = 'translate3d(-50%,-50%,0) rotateZ(180deg)';
+					 $CubeParent.style.transform = 'translate3d(-50%,-50%,0)';
+					 if ( !IsMobile() )
+						$CubeParent.style.transform += ' rotateZ(180deg)';
 					 renderer.domElement.firstChild.appendChild($CubeParent);
 					 CreateCube( $CubeParent,$FaceSize);
 				}
@@ -502,6 +504,8 @@ function LoadPano($Config,$UpdateTextureFunction)
 		if ( UseCanvasMode() )
 			$RenderMode = RENDERMODE_WEBGL;
 		else if ( UseCubemapMode() )
+			$RenderMode = RENDERMODE_CUBEMAP;
+			
 			$RenderMode = RENDERMODE_CUBEMAP;
 			
 		var $Config = new SoyConfig( $RenderMode );

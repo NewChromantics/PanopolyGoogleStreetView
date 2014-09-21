@@ -5,9 +5,22 @@ var RENDERMODE_NONE = null;
 
 function SoyConfig($RenderMode)
 {
-	this.mFov = 45;
-	this.mFaceResolution = 1000;
+	this.mFov = 60;
 	
+	//	larger res = clipping issues
+	//	gr: trying low res for mobile to stop crashes
+	if ( IsMobile() )
+	{
+		this.mFaceResolution = 256;
+		this.mMaxResolution = 256;
+	}
+	else
+	{
+		//	osx chrome css clips badly at 2000px
+		this.mFaceResolution = 1500;
+		this.mMaxResolution = 2048;
+	}
+
 	this.mRenderMode = $RenderMode;
 	
 	assert(	this.mRenderMode == RENDERMODE_WEBGL ||
