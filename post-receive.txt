@@ -15,6 +15,9 @@ do
 		echo "checking out to $CLONE_DIR..."
 		git --work-tree=$CLONE_DIR checkout -f $branch
 
+		echo "setting permissions for $WWW_DIR"
+		sudo chmod o+w $WWW_DIR
+
 		echo "cleaning $WWW_DIR"
 		rm -rf $WWW_DIR/*
 
