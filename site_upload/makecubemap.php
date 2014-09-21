@@ -144,11 +144,18 @@
 			var_dump($argv);
 		return OnError("404 ($InputFilename)");
 	}
-
-	$Image = LoadImage( $InputFilename, $SampleWidth, $SampleHeight, $SampleTime, $Error );
+	
+	//	try different formats
+	$LoadFormats = GetFfmpegInputFormats();
+	foreach ( $LoadFormats as $LoadFormat )
+	{
+		$Image = LoadImage( $InputFilename, $SampleWidth, $SampleHeight, $SampleTime, $LoadFormat, $Error );
+		if ( $Image !== false )
+			break;
+	}
 	if ( $Image === false )
 		return OnError("Error reading file: $Error");
-
+	
 	if ( $OutputLayout != false && $OutputLayout != 'false' )
 	{
 		//	equirect to cubemap

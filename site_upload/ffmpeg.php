@@ -137,15 +137,17 @@
 		}
 	}
 	
-	
+
 	//	returns an image or false
-	function LoadImage($InputFilename,$Width,$Height,$TimeOffset,&$Error)
+	function LoadImage($InputFilename,$Width,$Height,$TimeOffset,$InputFormat,&$Error)
 	{
+		//	if input is static image, we can't have an offset... this is a little hacky...
+		if ( $InputFormat !== false )
+			$TimeOffset = 0;
+		
 		$OutputFilename = 'pipe:1';
-		//	output to png
-		$Param_Codec = '-f image2 -codec:v png';
-		//$Param_Codec = '-codec:v rawvideo -pix_format rgb24';
-		//$Param_Codec = '-codec:v libx264';	//	h265
+		//	output to png (image2)
+		$Param_Codec = '-f image2';
 
 		//	resize with ffmpeg
 		$ExitCode = -1;
@@ -165,25 +167,18 @@
 
 		$Param_SeekPos = " -ss $TimeOffset";
 		
-		$Param_CatchStdErr = "2>&1";
 		$Param_Scale = "-vf scale=$Width:$Height";
-		$Param_Input = "-i $InputFilename";
+		
+		$Param_Input = '';
+		if ( $InputFormat !== false )
+			$Param_Input .= "-f $InputFormat";
+		$Param_Input .= " -i $InputFilename";
 		$Param_Output = "$OutputFilename";
 		
-		$ExecCmd = FFMPEG_BIN . " $Param_Quiet $Param_Overwrite $Param_SeekPos $Param_Input $Param_Scale $Param_Quality $Param_FrameSet $Param_OutputOther $Param_TimeLimit $Param_Codec $Param_Output $Param_CatchStdErr";
-		
-		if ( false )
-		{
-			exec( $ExecCmd, $ExecOut, $ExitCode );
-			$ExecOut = join('', $ExecOut );
-		}
-		else
-		{
-			ob_start();
-			passthru( $ExecCmd, $ExitCode );
-			$ExecOut = ob_get_contents();
-			ob_end_clean();
-		}
+		$ExecCmd = FFMPEG_BIN . " $Param_Quiet $Param_Overwrite $Param_SeekPos $Param_Input $Param_Scale $Param_Quality $Param_FrameSet $Param_OutputOther $Param_TimeLimit $Param_Codec $Param_Output";
+
+		$ExecOut = '';
+		$ExitCode = SoyExec( $ExecCmd, $ExecOut );
 		
 		if ( $ExitCode != 0 )
 		{
@@ -191,11 +186,13 @@
 			return false;
 		}
 		
-		$Image = imagecreatefromstring( $ExecOut );
+		//	if imagecreatefromstring we error and abort... so silence. But this could give other info if required
+		$Image = @imagecreatefromstring( $ExecOut );
 		if ( $Image === false )
 		{
-			$Error = "imagecreatefromstring() failed";
+			$Error = "imagecreatefromstring() failed [$ExecOut]";
 		}
+		
 		return $Image;
 	}
 

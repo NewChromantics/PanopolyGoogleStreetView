@@ -84,7 +84,7 @@
 		$object['error'] = $Error;
 		$object['debug'] = ob_get_contents();
 		ob_clean();
-		$json = json_encode( $object );
+		$json = json_encode( $object, JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES );
 		echo $json;
 		exit(1);
 	}
@@ -171,6 +171,37 @@
 	{
 		return sys_get_temp_dir() . "/$Panoname.$Suffix.$Extension";
 	}
+
+	//	returns exitcode
+	function SoyExec(&$Command,&$Output,$CatchStdErr=true,$Blocking=true)
+	{
+		if ( $CatchStdErr )
+			$Command .= ' 2>&1';
+
+		if ( !$Blocking )
+			$Command .= ' &';
+		
+		$ExitCode = -1;
+		
+		//	this fails when calling makecubemap.php directly with
+		//		Output file #0 does not contain any stream
+		//	NEED to use passthru
+		if ( false )
+		{
+			exec( $Command, $Output, $ExitCode );
+			$Output = join('', $Output );
+		}
+		else
+		{
+			//	use passthru and capture output
+			ob_start();
+			passthru( $Command, $ExitCode );
+			$Output = ob_get_contents();
+			ob_end_clean();
+		}
+		return $ExitCode;
+	}
+
 	
 	function ExecPhp($Script,$Params,$LogFile,$Blocking)
 	{
@@ -185,7 +216,13 @@
 		return true;
 	}
 
-
+	function GetFfmpegInputFormats()
+	{
+		$LoadFormats[] = false;		//	auto-detect type (seems to work for video)
+		$LoadFormats[] = 'mjpeg';	//	works for jpeg
+		$LoadFormats[] = 'image2';	//	this is png(?!)
+		return $LoadFormats;
+	}
 	
 	class TStreamInfo
 	{
@@ -193,6 +230,7 @@
 		public $mStreamIndex;
 		public $mWidth;
 		public $mHeight;
+		public $mInputFormat;
 	};
 	
 	//	returns associate array of data
@@ -205,13 +243,9 @@
 		}
 		$ExitCode = -1;
 		
-		$Formats[] = false;		//	auto-detect type
-		//	probe for specific formats
-		$Formats[] = 'jpeg';
-		$Formats[] = 'png';
-		$Formats[] = 'mjpeg';	//	works for jpeg
-		
+		$Formats = GetFfmpegInputFormats();
 		$Error = false;
+		$InputFormat = false;
 		
 		foreach ( $Formats as $Format )
 		{
@@ -238,6 +272,7 @@
 			
 			//	success
 			$Error = false;
+			$InputFormat = $Format;
 			break;
 		}
 		
@@ -303,6 +338,7 @@
 			$StreamInfo->mStreamIndex = $Stream['index'];
 			$StreamInfo->mWidth = $Stream['width'];
 			$StreamInfo->mHeight = $Stream['height'];
+			$StreamInfo->mInputFormat = $InputFormat;
 			return $StreamInfo;
 		}
 		
@@ -378,6 +414,10 @@
 			return $Extension;
 		}
 		
+		function GetFfmpegInputFormat()
+		{
+			return $this->mInfo->mInputFormat;
+		}
 	};
 	
 

@@ -149,6 +149,9 @@ AddOnSupportedChangedListener('FileSelect', OnFileSelectSupportChanged );
 			{
 				$Json.error = "Error parsing response from server: " + e.message + "..." + event.target.responseText;
 			}
+
+			console.log($Json);
+			console.log($Json.debug);
 			
 			if ( $Json.error )
 			{

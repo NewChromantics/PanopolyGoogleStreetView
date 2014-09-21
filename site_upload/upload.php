@@ -71,5 +71,5 @@
 	$output['panoname'] = $Panoname;
 	$output['debug'] = ob_get_contents();
 	ob_clean();
-	echo json_encode( $output );
+	echo json_encode( $output, JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES );
 ?>

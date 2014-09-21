@@ -1,5 +1,5 @@
 <?php
-//	define('FAKE_UPLOAD','/Users/grahamr/Desktop/upload');
+	//define('FAKE_UPLOAD','/Users/grahamr/Desktop/upload');
 	
 	//define('UPLOAD_META',false);
 	//define('UPLOAD_ORIG',false);
@@ -97,6 +97,8 @@
 	$AssetParams[] = SoyAssetMeta( 4096, 4096, 'jpg' );
 //	$AssetParams[] = SoyAssetMeta( 512, 256, 'webm', 'vp8', '1000k' );
 	$AssetParams[] = SoyAssetMeta( 2048, 2048, 'jpg', 'cubemap_23ULFRBD' );
+/*
+	
 //	$AssetParams[] = SoyAssetMeta( 1024, 512, 'webm', 'vp8', '2000k' );
 	$AssetParams[] = SoyAssetMeta( 2048, 1024, 'webm', 'vp8', '5000k' );
 //	$AssetParams[] = SoyAssetMeta( 4096, 2048, 'webm', 'vp8', '8000k' );
@@ -106,11 +108,11 @@
 //	$AssetParams[] = SoyAssetMeta( 512, 256, 'gif', 'gif', '5000k' );
 //	$AssetParams[] = SoyAssetMeta( 2048, 1024, 'gif', 'gif', '5000k' );
 	$AssetParams[] = SoyAssetMeta( 2048, 1024, 'mjpeg', 'mjpeg', '5000k' );
-
+*/
 	
 	foreach ( $AssetParams as $Asset )
 	{
-		$Asset = UploadResize( $Asset, $TempFilename, $Panoname );
+		$Asset = UploadResize( $Asset, $TempFilename, $Panoname, $Image );
 		//	failed
 		if ( $Asset === false )
 			continue;
@@ -143,7 +145,7 @@
 		$Meta['isVideo'] = $Image->IsVideo();
 		$Meta['assets'] = $Assets;
 		
-		$MetaJson = json_encode($Meta);
+		$MetaJson = json_encode($Meta, JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES);
 		$RemoteFilename = "$Panoname.meta";
 		$Error = UploadContent( $MetaJson, $RemoteFilename, "text/plain" );
 		if ( $Error !== true )
@@ -154,7 +156,7 @@
 	
 	
 	
-	function UploadResize($Asset,$InputFilename,$Panoname)
+	function UploadResize($Asset,$InputFilename,$Panoname,$Image)
 	{
 		$Width = $Asset['Width'];
 		$Height = $Asset['Height'];
@@ -178,7 +180,9 @@
 		//	resize with ffmpeg
 		$ExitCode = -1;
 		$ExecCmd = '';
-	
+		
+		$InputFormat = $Image->GetFfmpegInputFormat();
+		
 		if ( $Format == 'jpg' && $Codec !== false && strpos($Codec,'cubemap_')==0 )
 		{
 			$CubemapLayout = substr($Codec,strlen('cubemap_'));
@@ -210,6 +214,8 @@
 			$ExecCmd .= FFMPEG_BIN;
 			$ExecCmd .= " -loglevel error";
 			$ExecCmd .= " -y";
+			if ( $InputFormat !== false )
+				$ExecCmd .= " -f $InputFormat";
 			$ExecCmd .= " -i $InputFilename";
 			$ExecCmd .= " -vf scale=$Width:$Height";
 			
@@ -223,6 +229,8 @@
 			$ExecCmd .= FFMPEG_BIN;
 			$ExecCmd .= " -loglevel error";
 			$ExecCmd .= " -y";
+			if ( $InputFormat !== false )
+				$ExecCmd .= " -f $InputFormat";
 			$ExecCmd .= " -i $InputFilename";
 			$ExecCmd .= " -vf scale=$Width:$Height";
 			$ExecCmd .= " -b:v $BitRate";
@@ -256,15 +264,12 @@
 			echo "Unsupported mix: $Format/$Codec";
 			return false;
 		}
-		
-		//	stderr -> stdout
-		$ExecCmd .= " 2>&1";
-		
-		$Asset['Command'] = $ExecCmd;
+				
 		
 		//	execute
-		exec( $ExecCmd, $ExecOut, $ExitCode );
-		$ExecOut = join("\n", $ExecOut );
+		$ExitCode = SoyExec( $ExecCmd, $ExecOut );
+		$Asset['Command'] = $ExecCmd;
+
 		if ( $ExitCode != 0 )
 		{
 			$Asset['Error'] = "spawn error [$ExitCode] [$ExecOut] [$ExecCmd]";
@@ -305,7 +310,7 @@
 	ob_clean();
 	if ( strlen($output['debug'] ) > 0 )
 	{
-		echo json_encode( $output );
+		echo json_encode( $output, JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES );
 		echo "\n";
 	}
 ?>
