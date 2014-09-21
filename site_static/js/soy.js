@@ -79,9 +79,12 @@ if ( IsDevice('iPad') || IsDevice('iPhone') )
 }
 
 //	hijack console.log
-var $console = document.getElementById('console');
-if ( $console )
+function BindConsole($ElementName)
 {
+	var $console = document.getElementById( $ElementName );
+	if ( !$console )
+		return;
+
 	var oldLog = console.log;
 	console.log = function (message)
 	{
@@ -89,6 +92,9 @@ if ( $console )
 		oldLog.apply(console, arguments);
 	};
 }
+
+BindConsole('console');
+
 
 
 function ascii (a)
