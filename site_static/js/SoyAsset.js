@@ -280,8 +280,8 @@ SoyAssetMeta.prototype.IsSupported = function($Config)
 	{
 		//	do video codec test
 		var $Video = document.createElement('video');
-		var $Type = this.mMeta.Format;
-		var $Codec = this.mMeta.Codec;
+		var $Type = this.Format;
+		var $Codec = this.Codec;
 		var $VideoTypeString = 'video/' + $Type + ';codecs="' + $Codec + '"';
 		var $CanPlay = $Video.canPlayType($VideoTypeString);
 		if ( $CanPlay == "" )
