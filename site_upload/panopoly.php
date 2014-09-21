@@ -267,6 +267,7 @@
 				$Error = "failed to execute ffprobe: [$ExitCode][$ExecCmd][$ExecOut]\n";
 				if ( $ExitCode > 0 )
 					$Error .= "Not recognised as media type";
+				echo "ProbeVideo() with $Format: $ExecOut \n";
 				continue;
 			}
 			
