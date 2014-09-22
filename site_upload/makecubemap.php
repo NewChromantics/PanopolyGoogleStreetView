@@ -1,5 +1,4 @@
 <?php
-	$_GET['panoname'] = 'xxx';
 	require('panopoly.php');
 	require('cubemap.php');
 	require('ffmpeg.php');
@@ -7,46 +6,19 @@
 	//	limit to X min processing
 	set_time_limit( 10*60 );
 
-	function GetArgDefault($Name,$Default)
-	{
-		if ( array_key_exists( $Name, $_GET ) )
-			return $_GET[$Name];
-		return $Default;
-	}
-
-	$InputFilename = GetArgDefault('arg',false);
-	$SampleWidth = 4096;
-	$SampleHeight = 4096;
-	$SampleTime = GetArgDefault('SampleTime',0);
+	$InputFilename = GetArg('inputfilename',false);
+	$SampleWidth = GetArg('samplewidth',4096);
+	$SampleHeight = GetArg('sampleheight',4096);
+	$SampleTime = GetArg('SampleTime',0);
 	
-	$OutputFilename = false;		//	false = output to browser
-	$OutputLayout = GetArgDefault('cubemap','ULFRBD');
-	$OutputTileWidth = 2;
-	$OutputTileHeight = 3;
-	$OutputWidth = GetArgDefault('Width',2048);
-	$OutputHeight = GetArgDefault('Height',2048);
+	$OutputFilename = GetArg('outputfilename',false);		//	false = output to browser
+	$OutputLayout = GetArg('layout','23ULFRBD');
+	$OutputWidth = GetArg('Width',256);
+	$OutputHeight = GetArg('Height',256);
 	
 	//	get params
 	if ( IsCli() )
 	{
-		$a = 1;
-		$InputFilename = $argv[$a++];
-		$SampleWidth = $argv[$a++];
-		$SampleHeight = $argv[$a++];
-		$SampleTime = $argv[$a++];
-
-		$OutputFilename = $argv[$a++];
-		$OutputLayout = $argv[$a++];
-		$OutputTileWidth = $argv[$a++];
-		$OutputTileHeight = $argv[$a++];
-		$OutputWidth = $argv[$a++];
-		$OutputHeight = $argv[$a++];
-		
-		if ( $argc != $a )
-		{
-			return OnError("Wrong number of args ($argc != $a)");
-		}
-		
 		//	when being executed from command line the htaccess settings aren't used...
 		//	ideally read this from htaccess.txt
 		ini_set('memory_limit','1024M');
@@ -80,7 +52,7 @@
 		$LatLon = new Vector2(0,0);
 		$SphereImagePos = new Vector2(0,0);
 		
-		$debugminmax = array_key_exists('debugsample',$_GET);
+		$debugminmax = GetArg('debugsample',false);
 		
 		//	go through each tile, convert pixel to lat long, then read
 		foreach ( $Cubemap->mFaceMap as $Face => $FaceOffset )
@@ -138,12 +110,10 @@
 	}
 	
 
+	if ( $InputFilename === false )
+		return OnError("No inputfilename specified");
 	if ( !file_exists($InputFilename) )
-	{
-		if ( IsCli() )
-			var_dump($argv);
 		return OnError("404 ($InputFilename)");
-	}
 	
 	//	try different formats
 	$LoadFormats = GetFfmpegInputFormats();
@@ -159,13 +129,13 @@
 	if ( $OutputLayout != false && $OutputLayout != 'false' )
 	{
 		//	equirect to cubemap
-		$Cubemap = new SoyCubemap( $OutputTileWidth, $OutputTileHeight, $OutputLayout );
+		$Cubemap = new SoyCubemap( $OutputLayout );
 		$Cubemap->Resize( $OutputWidth, $OutputHeight );
 		
 		$start = microtime(true);
 		EquirectToCubemap( $Image, $Cubemap );
 		$time_elapsed_us = microtime(true) - $start;
-		if ( array_key_exists('debugtimer',$_GET) )
+		if ( GetArg('debugtimer',false) )
 			OnError("EquirectToCubemap took $time_elapsed_us secs");
 	}
 

@@ -17,34 +17,26 @@
 	S3::setExceptions(true);
 	S3::setAuth( AWS_ACCESS, AWS_SECRET );
 
-	if ( !isset($argv) )
-		$argv = array();
+	$PanoName = GetArg('panoname',false);
+	$PanoFormat = GetArg('panoformat',false);
 	
-	if ( array_key_exists('arg',$_GET) )
-		$argv[1] = $_GET['arg'];
-	
-	if ( !array_key_exists(1,$argv) )
-		return OnError("Missing argv[1]");
-
 	if ( !file_exists(FFMPEG_BIN) )
 		return OnError("Missing ffmpeg " . FFMPEG_BIN );
-	
-	//	get temp file
-	$Panoname = $argv[1];
+
+	if ( $PanoName === false )
+		return OnError("No PanoName specified");
 	
 	//	if we have a . assume it's a full path
-	if ( strpos($Panoname,'.') !== false || strpos($Panoname,'/') !== false )
+	if ( strpos($PanoName,'.') !== false || strpos($PanoName,'/') !== false )
 	{
-		$TempFilename = $Panoname;
-		$Panoname = 'ArgTemp';
-		if ( array_key_exists('panoname',$_GET) )
-		{
-			$Panoname = SanitisePanoName($_GET['panoname']);
-		}
+		$TempFilename = $PanoName;
+		$PanoName = SanitisePanoName('ArgTemp');
+		$DeleteTempFile = false;
 	}
 	else
 	{
-		$TempFilename = GetPanoTempFilename($Panoname);
+		$TempFilename = GetPanoTempFilename($PanoName);
+		$DeleteTempFile = true;
 	}
 	if ( !file_exists($TempFilename) )
 		return OnError("Missing temp file $TempFilename");
@@ -55,7 +47,7 @@
 	}
 	
 	//	delete temp file on exit if not executed via GET test
-	if ( !array_key_exists('arg',$_GET) )
+	if ( $DeleteTempFile )
 	{
 		register_shutdown_function('DeleteTempFile',$TempFilename);
 	}
@@ -112,7 +104,7 @@
 	
 	foreach ( $AssetParams as $Asset )
 	{
-		$Asset = UploadResize( $Asset, $TempFilename, $Panoname, $Image );
+		$Asset = UploadResize( $Asset, $TempFilename, $PanoName, $Image );
 		//	failed
 		if ( $Asset === false )
 			continue;
@@ -135,7 +127,7 @@
 		if ( defined('UPLOAD_META') && !UPLOAD_META )
 			return false;
 		
-		global $Panoname,$Image;
+		global $PanoName,$Image;
 		
 		$Meta = array();
 		//$Meta['date'] = gmdate('U');
@@ -146,7 +138,7 @@
 		$Meta['assets'] = $Assets;
 		
 		$MetaJson = json_encode($Meta, JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES);
-		$RemoteFilename = "$Panoname.meta";
+		$RemoteFilename = "$PanoName.meta";
 		$Error = UploadContent( $MetaJson, $RemoteFilename, "text/plain" );
 		if ( $Error !== true )
 			OnError($Error);
@@ -156,7 +148,7 @@
 	
 	
 	
-	function UploadResize($Asset,$InputFilename,$Panoname,$Image)
+	function UploadResize($Asset,$InputFilename,$PanoName,$Image)
 	{
 		$Width = $Asset['Width'];
 		$Height = $Asset['Height'];
@@ -173,8 +165,8 @@
 		$Suffix = "{$Width}x$Height";
 		if ( $Codec !== false )
 			$Suffix .= ".$Codec";
-		$RemoteFilename = "$Panoname.$Suffix.$Format";
-		$ResizedTempFilename = GetPanoTempFilename($Panoname,$Suffix,$Format);
+		$RemoteFilename = "$PanoName.$Suffix.$Format";
+		$ResizedTempFilename = GetPanoTempFilename($PanoName,$Suffix,$Format);
 		register_shutdown_function('DeleteTempFile',$ResizedTempFilename);
 		
 		//	resize with ffmpeg
@@ -297,9 +289,9 @@
 		if ( defined('UPLOAD_ORIG') && !UPLOAD_ORIG )
 			return false;
 		
-		global $Panoname,$Image;
+		global $PanoName,$Image;
 		$Extension = $Image->GetContentTypeFileExtension();
-		$RemoteFilename = "$Panoname.orig.$Extension";
+		$RemoteFilename = "$PanoName.orig.$Extension";
 		$Error = UploadFile( $Image->mFilename, $RemoteFilename, $Image->GetMimeType() );
 		if ( $Error !== true )
 			OnError($Error);
@@ -308,7 +300,7 @@
 	
 	
 	$output = array();
-	$output['panoname'] = $Panoname;
+	$output['panoname'] = $PanoName;
 	$output['debug'] = ob_get_contents();
 	ob_clean();
 	if ( strlen($output['debug'] ) > 0 )

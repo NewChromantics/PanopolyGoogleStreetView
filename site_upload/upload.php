@@ -4,13 +4,15 @@
 
 	
 	define('UPLOADFILE_VAR','image');
-	define('CUSTONNAME_VAR','customname');
+	define('CUSTOMNAME_VAR','customname');
+	define('PANOFORMAT_VAR', 'format' );
 	
 	function OnFile($File)
 	{
 		var_dump($File);
 		
-		$desiredname = array_key_exists('customname',$_POST) ? $_POST['customname'] : false;
+		$desiredname = array_key_exists(CUSTOMNAME_VAR,$_POST) ? $_POST[CUSTOMNAME_VAR] : false;
+		$PanoFormat = array_key_exists(PANOFORMAT_VAR,$_POST) ? $_POST[PANOFORMAT_VAR] : false;
 		$size = $File['size'];
 		$tmpfilename = $File['tmp_name'];
 		$error = $File['error'];
@@ -19,6 +21,7 @@
 			$imagetype = exif_imagetype($tmpfilename);
 
 		var_dump($desiredname);
+		var_dump($PanoFormat);
 		var_dump($size);
 		var_dump($tmpfilename);
 		var_dump($error);
@@ -47,9 +50,14 @@
 			return OnError("failed to read image or video information from $SpawnTempFilename");
 		}
 		
+		if ( $PanoFormat == false )
+			$PanoFormat = 'spheremap';
+		
+		$Params = { 'panoname': $Panoname, 'panoformat': $PanoFormat };
+		
 		//	spawn
 		$blocking = false;
-		if ( !ExecPhp("spawn.php", $Panoname, "spawn.log", $blocking ) )
+		if ( !ExecPhp("spawn.php", $Params, "spawn.log", $blocking ) )
 			return OnError("Failed to spawn");
 		
 		return $Panoname;

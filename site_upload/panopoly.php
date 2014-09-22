@@ -38,9 +38,13 @@
 	
 	function Init()
 	{
-		$Debug = array_key_exists( DEBUG_VAR, $_GET );
-		$Debug = true;
-		define( 'DEBUG', $Debug );
+		if ( !defined('DEBUG') )
+		{
+			$Debug = array_key_exists( DEBUG_VAR, $_GET );
+			$Debug = true;
+			define( 'DEBUG', $Debug );
+		}
+		
 		if ( DEBUG )
 		{
 			//	show all errors
@@ -60,6 +64,52 @@
 	}
 	Init();
 
+	function ParamsToParamString($Params)
+	{
+		//	if params is an array, make proper options for getopts
+		if ( is_array($Params) )
+		{
+			$LongParams = '';
+			foreach ( $Params as $Key=>$Value )
+			{
+				assert( strpos($Key,' ')===false );
+				$LongParams .= " --$Key=\"$Value\" ";
+			}
+			$Params = $LongParams;
+		}
+
+		return $Params;
+	}
+	
+	//	return GET, POST or argv option
+	function GetArg($Name,$DefaultValue=false)
+	{
+		$Values = false;
+		
+		if ( IsCli() )
+		{
+			//	look for --$Name=x
+			$LongOption = "$Name:";	//	: requires value
+			$Values = getopt('',array($LongOption));
+		}
+		else
+		{
+			//	try get and post
+			if ( array_key_exists( $Name, $_GET ) )
+				$Values = $_GET;
+			if ( array_key_exists( $Name, $_POST ) )
+				$Values = $_POST;
+		}
+
+		if ( $Values === false )
+			return $DefaultValue;
+		if ( !array_key_exists( $Name, $Values ) )
+			return $DefaultValue;
+		
+		return $Values[$Name];
+	}
+	
+	
 	function ErrorHandler($errno, $errstr, $errfile, $errline)
 	{
 		//	ignore @ errors
@@ -202,18 +252,25 @@
 		return $ExitCode;
 	}
 
-	
+	//	returns output, or true/false if not blocking
 	function ExecPhp($Script,$Params,$LogFile,$Blocking)
 	{
 		//	todo: check $Script exists
 		if ( $LogFile === false )
-			$LogFile = "/dev/null";
+			$LogFile = '';
+		else
+			$LogFile = " >> $LogFile ";
+		
+		$Params = ParamsToParamString($Params);
+		
 		$StdErrtoStdOut = "2>&1";
 		$Blocking = $Blocking ? "" : "&";
-		$Command = "php $Script " . escapeshellarg($Params) . " >> $LogFile $StdErrtoStdOut $Blocking";
-		$result = exec($Command);
-		echo $result;
-		return true;
+		$Command = "php $Script $Params $LogFile $StdErrtoStdOut $Blocking";
+		$Output = '';
+		$ExitCode = -1;
+		exec( $Command, $Output, $ExitCode );
+		$Output = join('',$Output);
+		return $Output;
 	}
 
 	function GetFfmpegInputFormats()

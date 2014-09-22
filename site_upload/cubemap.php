@@ -124,9 +124,11 @@
 		var $mTileMap;	//	2D array of falseUDLRFB
 		var $mFaceMap;	//	reverse of mTileMap to vector2
 		
-		function SoyCubemap($Width,$Height,$Layout)
+		function SoyCubemap($Layout)
 		{
 			$Layout = str_split( $Layout );
+			$Width = intval( array_shift($Layout) );
+			$Height = intval( array_shift($Layout) );
 			
 			//	calc ratio
 			$this->mRatio = GetRatio( $Width, $Height, $SquareTileSize );
