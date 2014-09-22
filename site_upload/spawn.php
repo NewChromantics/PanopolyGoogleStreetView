@@ -1,5 +1,4 @@
 <?php
-	//define('FAKE_UPLOAD','/Users/grahamr/Desktop/upload');
 	
 	//define('UPLOAD_META',false);
 	//define('UPLOAD_ORIG',false);
@@ -7,6 +6,9 @@
 	
 	require('panopoly.php');
 	require('s3.php');
+
+	if ( IsLocalhost() )
+		define('FAKE_UPLOAD','/Users/grahamr/Desktop/upload');
 
 	date_default_timezone_set("Europe/London");
 	
@@ -131,9 +133,10 @@
 		
 		$Meta = array();
 		//$Meta['date'] = gmdate('U');
-		$Meta['origWidth'] = $Image->GetWidth();
-		$Meta['origHeight'] = $Image->GetHeight();
-		$Meta['origType'] = $Image->GetContentType();
+		$Meta['OrigWidth'] = $Image->GetWidth();
+		$Meta['OrigHeight'] = $Image->GetHeight();
+		$Meta['OrigContentType'] = $Image->GetContentType();
+		$Meta['OrigFormatType'] = $Image->GetFfmpegInputFormat();
 		$Meta['isVideo'] = $Image->IsVideo();
 		$Meta['assets'] = $Assets;
 		
@@ -178,28 +181,20 @@
 		if ( $Format == 'jpg' && $Codec !== false && strpos($Codec,'cubemap_')==0 )
 		{
 			$CubemapLayout = substr($Codec,strlen('cubemap_'));
-		
-			//	parse cubemap layout
-			$OutputTileWidth = intval($CubemapLayout[0]);
-			$OutputTileHeight = intval($CubemapLayout[1]);
-			$OutputLayout = substr($CubemapLayout,2);
-			
+	
 			$Params = array();
-			$Params[] = $InputFilename;
-			$Params[] = 4096;//$Image->GetWidth();
-			$Params[] = 4096;//$Image->GetHeight();
-			$Params[] = '1';		//	sample time
+			$Params['inputfilename'] = $InputFilename;
+			$Params['samplewidth'] = 4096;//$Image->GetWidth();
+			$Params['sampleheight'] = 4096;//$Image->GetHeight();
+			$Params['SampleTime'] = 0;		//	sample time
 			
-			$Params[] = $ResizedTempFilename;
-			$Params[] = $OutputLayout;
-			$Params[] = $OutputTileWidth;
-			$Params[] = $OutputTileHeight;
-			$Params[] = $Asset['Width'];
-			$Params[] = $Asset['Height'];
+			$Params['outputfilename'] = $ResizedTempFilename;
+			$Params['layout'] = $CubemapLayout;
+			$Params['Width'] = $Asset['Width'];
+			$Params['Height'] = $Asset['Height'];
 		
 			$ExecCmd = "php makecubemap.php ";
-			foreach ( $Params as $Param )
-				$ExecCmd .= "$Param ";
+			$ExecCmd .= ParamsToParamString( $Params );
 		}
 		else if ( $Format == 'jpg' && $Codec === false )
 		{
@@ -218,7 +213,7 @@
 		}
 		else if ( $Format == 'webm' || $Format == 'mp4' || $Format == 'gif' || $Format == 'mjpeg' )
 		{
-			if ( $Image->IsVideo() )
+			if ( !$Image->IsVideo() )
 				return false;
 			
 			$ExecCmd .= FFMPEG_BIN;

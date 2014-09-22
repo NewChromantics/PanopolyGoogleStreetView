@@ -9,7 +9,7 @@
 	
 	function OnFile($File)
 	{
-		var_dump($File);
+		//var_dump($File);
 		
 		$desiredname = array_key_exists(CUSTOMNAME_VAR,$_POST) ? $_POST[CUSTOMNAME_VAR] : false;
 		$PanoFormat = array_key_exists(PANOFORMAT_VAR,$_POST) ? $_POST[PANOFORMAT_VAR] : false;
@@ -20,13 +20,15 @@
 		if ( file_exists($tmpfilename) )
 			$imagetype = exif_imagetype($tmpfilename);
 
+		/*
 		var_dump($desiredname);
 		var_dump($PanoFormat);
 		var_dump($size);
 		var_dump($tmpfilename);
 		var_dump($error);
 		var_dump($imagetype);
-
+*/
+		
 		//	clean filename to stop naughty hacking. if not good enough force hash
 		$Panoname = SanitisePanoName($desiredname);
 		if ( $Panoname === false )
@@ -53,12 +55,12 @@
 		if ( $PanoFormat == false )
 			$PanoFormat = 'spheremap';
 		
-		$Params = { 'panoname': $Panoname, 'panoformat': $PanoFormat };
-		
+		$Params = array( 'panoname' => $Panoname, 'panoformat' => $PanoFormat );
+		$Params['REMOTE_ADDR'] = GetArg('REMOTE_ADDR',false);
+
 		//	spawn
 		$blocking = false;
-		if ( !ExecPhp("spawn.php", $Params, "spawn.log", $blocking ) )
-			return OnError("Failed to spawn");
+		$Output = ExecPhp("spawn.php", $Params, "spawn.log", $blocking );
 		
 		return $Panoname;
 	}
