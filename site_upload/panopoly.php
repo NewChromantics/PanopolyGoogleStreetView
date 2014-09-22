@@ -4,7 +4,6 @@
 	define('AWS_ACCESS','AKIAJK2WSC6CZI3Y7YUQ');
 	define('AWS_SECRET','OP5gbapC3xlXo1kbO73cJ8T8GkZyZLKyzxjjelPT');
 	define('DEBUG_VAR', 'debug' );
-	define('FAKE_UPLOAD_VAR', 'fakeupload' );
 	
 	//	gr: need a better localhost solution
 	if ( file_exists('./ffmpeg') )
@@ -25,6 +24,19 @@
 	{
 		//	todo: auto argc/v to _GET
 		return (PHP_SAPI == "cli");
+	}
+
+	function IsLocalhost()
+	{
+		$whitelist = array(
+						   '127.0.0.1',
+						   '::1',
+						   'localhost'
+						   );
+		
+		//	cli has no REMOTE_ADDR so we mimick it with an arg
+		$RemoteAddr = GetArg('REMOTE_ADDR',false);
+		return in_array( $RemoteAddr, $whitelist );
 	}
 
 	function dir_exists($Dir)
@@ -53,12 +65,6 @@
 			ini_set('display_errors', 1);
 		}
 
-		if ( !defined('FAKE_UPLOAD') )
-		{
-			$FakeUpload = array_key_exists( FAKE_UPLOAD_VAR, $_GET );
-			define( 'FAKE_UPLOAD', $FakeUpload );
-		}
-		
 		set_error_handler("ErrorHandler");
 		ob_start();
 	}
@@ -85,24 +91,27 @@
 	function GetArg($Name,$DefaultValue=false)
 	{
 		$Values = false;
+
+		//	server (php) takes precedent
+		if ( array_key_exists( $Name, $_SERVER ) )
+			$Values = $_SERVER;
 		
-		if ( IsCli() )
+		if ( array_key_exists( $Name, $_GET ) )
+			$Values = $_GET;
+		
+		if ( array_key_exists( $Name, $_POST ) )
+			$Values = $_POST;
+		
+		if ( !$Values && IsCli() )
 		{
 			//	look for --$Name=x
 			$LongOption = "$Name:";	//	: requires value
 			$Values = getopt('',array($LongOption));
 		}
-		else
-		{
-			//	try get and post
-			if ( array_key_exists( $Name, $_GET ) )
-				$Values = $_GET;
-			if ( array_key_exists( $Name, $_POST ) )
-				$Values = $_POST;
-		}
 
 		if ( $Values === false )
 			return $DefaultValue;
+		
 		if ( !array_key_exists( $Name, $Values ) )
 			return $DefaultValue;
 		
@@ -170,7 +179,7 @@
 			return false;
 		}
 
-		if ( FAKE_UPLOAD !== false )
+		if ( defined('FAKE_UPLOAD') )
 		{
 			if ( dir_exists(FAKE_UPLOAD) )
 			{
@@ -195,7 +204,7 @@
 	//	returns TRUE or error string
 	function UploadContent($Content,$remotefilename,$ContentType)
 	{
-		if ( FAKE_UPLOAD !== false )
+		if ( defined('FAKE_UPLOAD') )
 		{
 			if ( dir_exists(FAKE_UPLOAD) )
 			{
@@ -270,6 +279,8 @@
 		$ExitCode = -1;
 		exec( $Command, $Output, $ExitCode );
 		$Output = join('',$Output);
+		if ( $ExitCode != 0 )
+			$Output = "[$ExitCode]$Output";
 		return $Output;
 	}
 
@@ -380,8 +391,6 @@
 		}
 		
 		//	find the first video stream
-	//	var_dump($Data);
-	//	exit(0);
 		$Streams = $Data['streams'];
 		foreach ( $Streams as $Stream )
 		{
