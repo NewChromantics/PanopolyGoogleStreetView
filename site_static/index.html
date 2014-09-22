@@ -215,6 +215,7 @@ var directionalLight, pointLight;
 			ajax.open("POST", GetUploadUrl() );
 			//ajax.setRequestHeader('Content-Type', 'multipart/form-data;');
 			ajax.send(formdata);
+			console.log("post'd to " + GetUploadUrl() );
 		}
 
 		function OnUploadProgress(event)
@@ -253,6 +254,8 @@ var directionalLight, pointLight;
 				$Json.error = "Error parsing response from server " + e.message;
 			}
 			
+			console.log($Json);
+			
 			if ( $Json.error )
 			{
 				var $Event = {};
@@ -260,6 +263,15 @@ var directionalLight, pointLight;
 				OnUploadError($Event);
 				return;
 			}
+			
+			if ( $Json.panoname === undefined )
+			{
+				var $Event = {};
+				$Event.error = "No error, but no pano name recieved";
+				OnUploadError($Event);
+				return;
+			}
+			
 			var $Url = window.location + "#" + $Json.panoname;
 			GetElement("status").innerHTML = 'Your new url is <a href="' + $Url + '">' + $Url + '</a>';
 		}
