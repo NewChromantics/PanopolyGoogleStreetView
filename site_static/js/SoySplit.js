@@ -10,7 +10,7 @@ function SoySplit()
 
 SoySplit.prototype.IsSupported = function()
 {
-	return false;
+	return true;
 	//	currently three js only
 	if ( !UseCanvasMode() )
 		return false;

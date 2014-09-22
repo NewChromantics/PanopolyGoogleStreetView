@@ -240,4 +240,30 @@ THREE.CSS3DRenderer = function () {
 
 	};
 
+	
+	
+	this.setViewport = function ( x, y, width, height ) {
+		/*
+		_viewportX = x * this.devicePixelRatio;
+		_viewportY = y * this.devicePixelRatio;
+		
+		_viewportWidth = width * this.devicePixelRatio;
+		_viewportHeight = height * this.devicePixelRatio;
+		
+		_gl.viewport( _viewportX, _viewportY, _viewportWidth, _viewportHeight );
+*/		
+	};
+	
+	this.clear = function ( color, depth, stencil ) {
+		/*
+		var bits = 0;
+		
+		if ( color === undefined || color ) bits |= _gl.COLOR_BUFFER_BIT;
+		if ( depth === undefined || depth ) bits |= _gl.DEPTH_BUFFER_BIT;
+		if ( stencil === undefined || stencil ) bits |= _gl.STENCIL_BUFFER_BIT;
+		
+		_gl.clear( bits );
+		*/
+	};
+
 };
