@@ -81,6 +81,7 @@
 		<script src="js/SoyFileSelect.js"></script>
 		<script src="js/SoyMouse.js"></script>
 		<script src="js/SoyCss3d.js"></script>
+		<script src="js/SoyWebgl.js"></script>
 		<script src="js/SoyConfig.js"></script>
 		<script src="js/SoyAsset.js"></script>
 		<script src="js/SoyPano.js"></script>
@@ -512,10 +513,15 @@ function LoadPano($Config,$UpdateTextureFunction)
 		//	setup config
 		var $RenderMode = RENDERMODE_NONE;
 		
-		if ( UseCanvasMode() )
+		if ( IsCanvasSupported() && IsSupported('Webgl') )
+		{
 			$RenderMode = RENDERMODE_WEBGL;
-		else if ( UseCubemapMode() )
+		}
+		else if ( IsCanvasSupported() && IsSupported('Css3d') )
+		{
 			$RenderMode = RENDERMODE_CUBEMAP;
+		}
+			
 						
 		var $Config = new SoyConfig( $RenderMode );
 		var Container = GetElement("container");
@@ -558,7 +564,7 @@ function LoadPano($Config,$UpdateTextureFunction)
 		{
 			ShutdownSupport();
 			Container.style.padding = "20%";
-			Container.innerText = "Not currently supported without webgl.";
+			Container.innerText = "Not currently supported without webgl or css3d.";
 			
 		}
 

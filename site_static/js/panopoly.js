@@ -13,37 +13,6 @@ function AllowWebGl()
 }
 
 
-var $WebglCache = null;
-
-function HasWebGl()
-{
-	if ( !AllowWebGl() )
-		return false;
-	
-	if ( !window.WebGLRenderingContext )
-		return false;
-	
-	//	rendering context could exist, but not enabled (iphone!)
-	//	so need to check if we can fetch a context
-	
-	//	gr: there is no way to delete a context once we've "get" one, so cache
-	//	http://stackoverflow.com/a/14992981/355753
-	if ( !$WebglCache )
-	{
-		var canvas = document.createElement("canvas");
-		try			{	$WebglCache = canvas.getContext("webgl");	}
-		catch (e)	{		}
-	
-		//	do we have experimental? (safari 7 osx enabled from developer menu)
-		if ( !$WebglCache )
-		{
-			try			{	$WebglCache = canvas.getContext("experimental-webgl"); }
-			catch (e)	{	}
-		}
-	}
-
-	return ($WebglCache != null);
-}
 
 function IsMobile()
 {
@@ -85,19 +54,6 @@ function IsGyroSupported()
 	if ( IsDevice('iPad') || IsDevice('iPhone') )
 		return true;
 	return false;
-}
-
-
-function UseCanvasMode()
-{
-	return IsCanvasSupported() && ( HasWebGl() || !IsMobile() );
-}
-
-function UseCubemapMode()
-{
-//	var $Css3D = new SoyCss3d();
-//	return $Css3D.IsSupported();
-	return true;
 }
 
 
