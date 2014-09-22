@@ -219,7 +219,7 @@
 		}
 
 		
-		function ReadPixel_LatLon($Coords,$Image)
+		function GetImageXYFromLatLon($Coords)
 		{
 			
 			// The largest coordinate component determines which face we’re looking at.
@@ -295,7 +295,7 @@
 			var_dump($y);	echo "<p>";
 			exit(0);
 			*/
-			return ReadPixel_Clamped($Image, $x, $y );
+			return new Vector2($x,$y);
 		}
 	};
 	
