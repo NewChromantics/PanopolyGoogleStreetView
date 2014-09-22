@@ -516,9 +516,7 @@ function LoadPano($Config,$UpdateTextureFunction)
 			$RenderMode = RENDERMODE_WEBGL;
 		else if ( UseCubemapMode() )
 			$RenderMode = RENDERMODE_CUBEMAP;
-			
-			$RenderMode = RENDERMODE_CUBEMAP;
-			
+						
 		var $Config = new SoyConfig( $RenderMode );
 		var Container = GetElement("container");
 	
@@ -534,12 +532,23 @@ function LoadPano($Config,$UpdateTextureFunction)
 				}
 				else
 				{
-					var $Texture = new THREE.Texture( $Asset.mAsset, new THREE.UVMapping() );
-					$Texture.needsUpdate = true;
-
 					var $Material = mesh.material;
-					$Material.map = $Texture;
-					$Material.needsUpdate = true;
+					//	already assigned to this asset, so just update it
+					if ( $Material.map.image == $Asset.mAsset )
+					{
+						$Material.map.needsUpdate = true;
+					}
+					else
+					{
+						var $Texture = new THREE.Texture( $Asset.mAsset, new THREE.UVMapping() );
+						$Texture.generateMipmaps = false;
+						$Texture.minFilter = THREE.LinearFilter;
+						$Texture.magFilter = THREE.LinearFilter;
+						$Texture.needsUpdate = true;
+						
+						$Material.map = $Texture;
+						$Material.needsUpdate = true;
+					}
 				}
 			};
 			//	load user's required pano

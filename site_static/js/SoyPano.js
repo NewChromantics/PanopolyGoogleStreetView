@@ -171,22 +171,7 @@ SoyPano.prototype.OnNewVideoFrame = function($Asset)
 	//	push texture
 	if ( $Video.readyState >= HAVE_CURRENT_DATA )
 	{
-		//	first time
-		if ( !this.mVideoTexture )
-		{
-			this.mVideoTexture = new THREE.Texture( $Video );
-			this.mVideoTexture.generateMipmaps = false;
-			this.mVideoTexture.minFilter = THREE.LinearFilter;
-			this.mVideoTexture.magFilter = THREE.LinearFilter;
-			
-			alert('needs changing, callback needs to handle video frames seperately');
-			//	overwrite old texture
-			this.mOnNewImage( this.mVideoTexture );
-		}
-		
-		//	grab new frame from video
-		this.mVideoTexture.needsUpdate = true;
-		//	this.OnNewVideoFrame();
+		this.mOnNewImage( $Asset );
 	}
 	
 	//	fetch next frame
