@@ -73,6 +73,15 @@
 		return GetRgb( ($vx+1.0)/2.0*255, ($vy+1.0)/2.0*255, ($vz+1.0)/2.0*255 );
 	}
 	
+	function GetImageVector2Colour($Vector2,$Image)
+	{
+		$w = imagesx($Image);
+		$h = imagesy($Image);
+		$x = $Vector2->x / $w;
+		$y = $Vector2->y / $h;
+		return GetVector2Colour( new Vector2($x,$y) );
+	}
+	
 	function GetLatLonColour($LatLon)
 	{
 		if ( $LatLon->x < -1 )
