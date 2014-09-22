@@ -13,8 +13,8 @@
 	$SampleTime = GetArg('SampleTime',0);
 	
 	$OutputFilename = GetArg('outputfilename',false);		//	false = output to browser
-	$OutputWidth = GetArg('Width',400);
-	$OutputHeight = GetArg('Height',400);
+	$OutputWidth = GetArg('Width',256);
+	$OutputHeight = GetArg('Height',256);
 	
 	//	get params
 	if ( IsCli() )
