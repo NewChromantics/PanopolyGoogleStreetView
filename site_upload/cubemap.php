@@ -117,6 +117,9 @@
 		$ScreenPos->y = $lon;
 	}
 	
+	//	X		nothing
+	//	UDLRFB	up down left right forward back
+	//	Z		flipped back
 	class SoyCubemap
 	{
 		var $mRatio;	//	w/h vector2
@@ -169,10 +172,50 @@
 				for ( $y=0;	$y<$this->GetTileHeight();	$y++ )
 				{
 					$i = ($y*$this->GetTileWidth()) + $x;
-					$this->mTileMap[$x][$y] = $Layout[$i];
-					$this->mFaceMap[$Layout[$i]] = new Vector2($x,$y);
+					$Face = $Layout[$i];
+					$RealFace = $this->GetRealFace($Face);
+					
+					//	gr: turn this whole thing into a matrix!
+					$Matrix = $this->GetFaceMatrix($Face);
+	
+					$this->mTileMap[$x][$y] = $Face;
+					$this->mFaceMap[$RealFace] = new Vector3($x,$y,$Matrix);
 				}
 			}
+		}
+		
+		function GetFaceMatrix($Face)
+		{
+			switch ( $Face )
+			{
+				case 'U':
+				case 'D':
+				case 'L':
+				case 'R':
+				case 'F':
+				case 'B':
+					return new Vector2(1,1);
+				case 'Z':
+					return new Vector2(-1,-1);
+			}
+			return new Vector2(0,0);
+		}
+		
+		function GetFlipFace($Face)
+		{
+			switch ( $Face )
+			{
+				case 'B':	return 'Z';
+			}
+			return false;
+		}
+		function GetRealFace($Face)
+		{
+			switch ( $Face )
+			{
+				case 'Z':	return 'B';
+			}
+			return $Face;
 		}
 		
 		function IsValid()		{	return $this->mRatio !== false;	}
@@ -189,10 +232,17 @@
 			$this->mTileSize->y = $Height / $this->mRatio->y;
 		}
 		
-		function GetFaceOffset($Face)
+		function HasFace($Face)
 		{
 			if ( !array_key_exists( $Face, $this->mFaceMap ) )
-				return new Vector2(0,0);
+				return false;
+			return true;
+		}
+		
+		function GetFaceOffset($Face)
+		{
+			if ( !$this->HasFace($Face) )
+				return false;
 			
 			return $this->mFaceMap[$Face];
 		}
@@ -280,6 +330,10 @@
 			$FaceSize = $this->mTileSize;
 			$HalfSize = new Vector2( $FaceSize->x/2.0, $FaceSize->y/2.0 );
 			
+			//	need to flip
+			$x *= $faceOffset->z->x;
+			$y *= $faceOffset->z->y;
+			
 			$x = ($x * $HalfSize->x) + $HalfSize->x;
 			$y = ($y * $HalfSize->y) + $HalfSize->y;
 			assert( $x >= 0 && $x <= $FaceSize->x );
@@ -288,13 +342,6 @@
 			$x += $faceOffset->x * $FaceSize->x;
 			$y += $faceOffset->y * $FaceSize->y;
 	
-			/*
-			var_dump($faceOffset);	echo "<p>";
-			var_dump($FaceSize);	echo "<p>";
-			var_dump($x);	echo "<p>";
-			var_dump($y);	echo "<p>";
-			exit(0);
-			*/
 			return new Vector2($x,$y);
 		}
 	};
