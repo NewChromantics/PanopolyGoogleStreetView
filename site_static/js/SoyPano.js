@@ -22,7 +22,8 @@ function SoyPano($PanoName,$Config,$OnNewImage,$OnMetaFailed,$DoLoad)
 		this.mMetaAsset = new SoyAsset_Ajax( $PanoName+'.meta', OnLoaded, OnFailed );
 	
 		//	attempt to load some assets immediately for speed
-	//	this.mAssets.push( new SoyAsset_Image( new SoyAssetMeta($PanoName + '.1024x1024.jpg',1024,1024,'jpg'), OnLoaded, OnFailed ) );
+		this.mAssets.push( new SoyAsset_Image( new SoyAssetMeta($PanoName + '.256x256.jpg',256,256,'jpg'), OnLoaded, OnFailed ) );
+		this.mAssets.push( new SoyAsset_Image( new SoyAssetMeta($PanoName + '.2048x2048.jpg',2048,2048,'jpg'), OnLoaded, OnFailed ) );
 
 		//	do a deffered load of an asset to prove priority works
 	//	setTimeout( function() { $this.mAssets.push( new SoyAsset_Image( '.256.jpg', 1, OnLoaded, OnFailed ) ); }, 2*1000 );
@@ -189,7 +190,11 @@ SoyPano.prototype.OnNewVideoFrame = function($Asset)
 	//	console.log("video error in OnNewVideoFrame " + $Video.mError );
 		return;
 	}
-	
+
+	if ( this.mCurrentAsset != $Asset )
+	{
+		console.log("New video: " + $Asset.mUrl );
+	}
 	this.mCurrentAsset = $Asset;
 	
 	//	push texture
@@ -209,7 +214,7 @@ SoyPano.prototype.OnNewJpegFrame = function($Asset)
 	this.mCurrentAsset = $Asset;
 	
 	//	update texture
-	console.log("New frame: " + $Asset.mUrl );
+	console.log("New jpeg frame: " + $Asset.mUrl );
 
 	this.mOnNewImage( $Asset );
 }
