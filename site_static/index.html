@@ -353,13 +353,15 @@ function OnClickedRiftMode()
 				if ( File.type.startsWith('image') )
 				{
 					//	get image as datauri for texture
-					var DataUriReader = new FileReader();
-					DataUriReader.onload = OnLoadLocalTexture;
-					DataUriReader.readAsDataURL(File);
+					var $Reader = new FileReader();
+					$Reader.onload = OnLoadLocalTexture;
+					$Reader.readAsDataURL(File);
 				}
 				else if ( File.type.startsWith('video') )
 				{
-					alert('video!');
+					var $Reader = new FileReader();
+					$Reader.onload = OnLoadLocalVideo;
+					$Reader.readAsArrayBuffer(File);
 				}
 				else
 				{
@@ -405,6 +407,11 @@ function NewPano($Config,$Asset)
 
 }
 
+	function OnLoadLocalVideo($Event)
+	{
+		alert("Video loading is WIP");
+	}
+
 	function OnLoadLocalTexture($Event)
 	{
 		var $ImageData = $Event.target.result;
@@ -421,7 +428,7 @@ function NewPano($Config,$Asset)
 		};
 		
 		var $Meta = { 'Filename': '' };
-		console.log("creating new asset");
+		//console.log("creating new asset");
 		var $Asset = new SoyAsset_Image( $Meta, OnSuccess, OnFailed, false );
 		$Asset.mUrl = $ImageData;
 		$Asset.Load();
@@ -553,7 +560,6 @@ function NewPano($Config,$Asset)
 	
 		function UpdateTexture($Asset)
 		{
-			console.log("Update texture");
 			if ( $Config.mRenderMode == RENDERMODE_CUBEMAP )
 			{
 				SetCubemapBackground($Asset);
@@ -565,12 +571,12 @@ function NewPano($Config,$Asset)
 				//	already assigned to this asset, so just update it
 				if ( $Material.map.image == $Asset.mAsset )
 				{
-					console.log("refreshing asset");
+					//console.log("refreshing asset");
 					$Material.map.needsUpdate = true;
 				}
 				else
 				{
-					console.log("new texture");
+					//console.log("new texture");
 					var $Texture = new THREE.Texture( $Asset.mAsset, new THREE.UVMapping() );
 					$Texture.generateMipmaps = false;
 					$Texture.minFilter = THREE.LinearFilter;

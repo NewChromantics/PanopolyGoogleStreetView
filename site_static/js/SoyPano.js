@@ -61,7 +61,7 @@ SoyPano.prototype.OnLoadedAsset = function($Asset)
 	}
 	else
 	{
-		console.log("Loaded asset: " + $Asset.mUrl );
+		//console.log("Loaded asset: " + $Asset.mUrl );
 		
 		//	abort lesser assets
 		for ( var $Key in this.mAssets )
@@ -179,14 +179,14 @@ SoyPano.prototype.OnNewVideoFrame = function($Asset)
 	//	video has been unloaded
 	if ( $Video == null )
 	{
-		console.log("null video in OnNewVideoFrame");
+	//	console.log("null video in OnNewVideoFrame");
 		return;
 	}
 	
 	if ( $Video.mError != null )
 	{
 		//	something gone wrong, don't update!
-		console.log("video error in OnNewVideoFrame " + $Video.mError );
+	//	console.log("video error in OnNewVideoFrame " + $Video.mError );
 		return;
 	}
 	
@@ -196,10 +196,6 @@ SoyPano.prototype.OnNewVideoFrame = function($Asset)
 	if ( $Video.readyState >= HAVE_CURRENT_DATA )
 	{
 		this.mOnNewImage( $Asset );
-	}
-	else
-	{
-		console.log($Video.readyState);
 	}
 	
 	var $FrameRate = 25;
