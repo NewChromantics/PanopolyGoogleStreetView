@@ -10,7 +10,7 @@ function GetHost()
 }
 
 
-function SoyAsset($Pano,$Meta,$OnLoaded,$OnFailed)
+function SoyAsset($Meta,$OnLoaded,$OnFailed)
 {
 	if ( arguments.length <= 1 )
 	{
@@ -51,13 +51,13 @@ SoyAsset.prototype.IsLoaded = function()
 
 SoyAsset_Ajax.prototype = new SoyAsset('Ajax');
 
-function SoyAsset_Ajax($Pano,$FileName,$OnLoaded,$OnFailed)
+function SoyAsset_Ajax($FileName,$OnLoaded,$OnFailed)
 {
 	var $Meta = new SoyAssetMeta();
 	$Meta.Filename = $FileName;
 	
 	//	call super
-	SoyAsset.apply( this, [$Pano,$Meta,$OnLoaded,$OnFailed] );
+	SoyAsset.apply( this, [$Meta,$OnLoaded,$OnFailed] );
 
 	this.mAjax = null;
 
@@ -125,12 +125,16 @@ SoyAsset_Ajax.prototype.OnLoad = function($Event)
 
 SoyAsset_Image.prototype = new SoyAsset('Image');
 
-function SoyAsset_Image($Pano,$Meta,$OnLoaded,$OnFailed)
+function SoyAsset_Image($Meta,$OnLoaded,$OnFailed,$DoLoad)
 {
+	if ( typeof $DoLoad == 'undefined' )
+		$DoLoad = true;
+		
 	//	call super
-	SoyAsset.apply( this, [$Pano,$Meta,$OnLoaded,$OnFailed] );
+	SoyAsset.apply( this, [$Meta,$OnLoaded,$OnFailed] );
 	
-	this.Load();
+	if ( $DoLoad )
+		this.Load();
 }
 
 SoyAsset_Image.prototype.Stop = function()
@@ -303,10 +307,10 @@ SoyAssetMeta.prototype.IsSupported = function($Config)
 
 SoyAsset_Video.prototype = new SoyAsset('Video');
 
-function SoyAsset_Video($Pano,$Meta,$OnLoaded,$OnFailed)
+function SoyAsset_Video($Meta,$OnLoaded,$OnFailed)
 {
 	//	call super
-	SoyAsset.apply( this, [$Pano,$Meta,$OnLoaded,$OnFailed] );
+	SoyAsset.apply( this, [$Meta,$OnLoaded,$OnFailed] );
 
 	this.Load();
 }
@@ -352,7 +356,7 @@ SoyAsset_Video.prototype.Load = function()
 	//	video.height = 360;
 	//	video.type = ' video/ogg; codecs="theora, vorbis" ';
 	$Video.autoplay = true;
-	$Video.loop = true;
+	$Video.loop = false;	//	deal with this later
 	$Video.crossOrigin = '';
 	$Video.src = this.mUrl;
 
@@ -369,7 +373,7 @@ SoyAsset_Video.prototype.Load = function()
 */
 	$Video.addEventListener('error', $ErrorFunc, false );
 	$Video.addEventListener('loadedmetadata', $StartFunc, false );
-	$Video.addEventListener('loadstart', $StartFunc, false );
+	//$Video.addEventListener('loadstart', $StartFunc, false );
 	//$Video.addEventListener('progress', $StartFunc, false );
 	//$Video.addEventListener('playing', $StartFunc, false );
 
@@ -388,6 +392,9 @@ SoyAsset_Video.prototype.OnLoad = function($Event)
 
 SoyAsset_Video.prototype.OnError = function($Event)
 {
+	if ( this.IsLoaded() )
+		this.Stop();
+
 	assert( !this.IsLoaded(), "Loaded state wrong" );
 	//	not a failure if we cancelled
 	if ( !this.mDesired )

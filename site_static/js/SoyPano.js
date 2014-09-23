@@ -1,12 +1,8 @@
 
-
-function SoyPano($PanoName,$Config,$OnNewImage,$OnMetaFailed)
+function SoyPano($PanoName,$Config,$OnNewImage,$OnMetaFailed,$DoLoad)
 {
-	//	default
-	if ( typeof $OnMetaFailed == 'undefined' )
-	{
-		$OnMetaFailed = function() { console.log("Failed to load meta"); };
-	}
+	$OnMetaFailed = CheckDefaultParam( $OnMetaFailed, function() { console.log("Failed to load meta"); } );
+	$DoLoad = CheckDefaultParam( $DoLoad, true );
 	
 	var $this = this;
 	var OnLoaded = function($Asset) { $this.OnLoadedAsset($Asset); }
@@ -17,18 +13,38 @@ function SoyPano($PanoName,$Config,$OnNewImage,$OnMetaFailed)
 	this.mOnMetaFailed = $OnMetaFailed;
 	this.mOnNewImage = $OnNewImage;
 	this.mMeta = null;
-		
+	this.mMetaAsset = null;
+	this.mAssets = new Array();
+	
 	//	load assets
-	this.mMetaAsset = new SoyAsset_Ajax( this, $PanoName+'.meta', OnLoaded, OnFailed );
+	if ( $DoLoad )
+	{
+		this.mMetaAsset = new SoyAsset_Ajax( $PanoName+'.meta', OnLoaded, OnFailed );
 	
-	//	attempt to load some assets immediately for speed
-	this.mAssets = new Array(
-							 new SoyAsset_Image( this, new SoyAssetMeta($PanoName + '.1024x1024.jpg',1024,1024,'jpg'), OnLoaded, OnFailed )
-							 );
-	
-	//	do a deffered load of an asset to prove priority works
-	//	setTimeout( function() { $this.mAssets.push( new SoyAsset_Image( $this, '.256.jpg', 1, OnLoaded, OnFailed ) ); }, 2*1000 );
-	
+		//	attempt to load some assets immediately for speed
+	//	this.mAssets.push( new SoyAsset_Image( new SoyAssetMeta($PanoName + '.1024x1024.jpg',1024,1024,'jpg'), OnLoaded, OnFailed ) );
+
+		//	do a deffered load of an asset to prove priority works
+	//	setTimeout( function() { $this.mAssets.push( new SoyAsset_Image( '.256.jpg', 1, OnLoaded, OnFailed ) ); }, 2*1000 );
+	}
+}
+
+SoyPano.prototype.Destroy = function()
+{
+	//	kill all assets
+	for ( var $Key in this.mAssets )
+	{
+		var $Asset = this.mAssets[$Key];
+		if ( !this.mAssets.hasOwnProperty($Key) )
+			continue;
+		$Asset.Stop();
+		delete this.mAssets[$Key];
+	}
+	if ( this.mCurrentAsset )
+	{
+		this.mCurrentAsset.Stop();
+		delete this.mCurrentAsset;
+	}
 }
 
 
@@ -149,9 +165,9 @@ SoyPano.prototype.OnLoadedMeta = function()
 	var OnFailed = function($Asset) { $this.OnFailedAsset($Asset); }
 	
 	if ( $BestRemoteMeta.IsVideo() )
-		this.mAssets.push( new SoyAsset_Video( this, $BestRemoteMeta, OnLoaded, OnFailed ) );
+		this.mAssets.push( new SoyAsset_Video( $BestRemoteMeta, OnLoaded, OnFailed ) );
 	else
-		this.mAssets.push( new SoyAsset_Image( this, $BestRemoteMeta, OnLoaded, OnFailed ) );
+		this.mAssets.push( new SoyAsset_Image( $BestRemoteMeta, OnLoaded, OnFailed ) );
 }
 
 
@@ -159,10 +175,18 @@ SoyPano.prototype.OnNewVideoFrame = function($Asset)
 {
 	var $this = this;
 	var $Video = $Asset.mAsset;
+
+	//	video has been unloaded
+	if ( $Video == null )
+	{
+		console.log("null video in OnNewVideoFrame");
+		return;
+	}
 	
 	if ( $Video.mError != null )
 	{
 		//	something gone wrong, don't update!
+		console.log("video error in OnNewVideoFrame " + $Video.mError );
 		return;
 	}
 	
@@ -173,9 +197,15 @@ SoyPano.prototype.OnNewVideoFrame = function($Asset)
 	{
 		this.mOnNewImage( $Asset );
 	}
+	else
+	{
+		console.log($Video.readyState);
+	}
+	
+	var $FrameRate = 25;
 	
 	//	fetch next frame
-	setTimeout( function() { $this.OnNewVideoFrame($Asset) }, 1000/60, false );
+	setTimeout( function() { $this.OnNewVideoFrame($Asset) }, 1000/$FrameRate, false );
 }
 
 SoyPano.prototype.OnNewJpegFrame = function($Asset)
@@ -186,4 +216,10 @@ SoyPano.prototype.OnNewJpegFrame = function($Asset)
 	console.log("New frame: " + $Asset.mUrl );
 
 	this.mOnNewImage( $Asset );
+}
+
+SoyPano.prototype.AddAsset = function($Asset)
+{
+	this.mAssets.push( $Asset );
+	this.OnLoadedAsset( $Asset );
 }

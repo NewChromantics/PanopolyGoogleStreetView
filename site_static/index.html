@@ -29,6 +29,9 @@
 				<p id="loaded_n_total"></p>
 			</div>
 			
+			<div id="ClearButton" class="Button" onClick="DestroyPano()">
+				Clear
+			</div>
 			<div id="ShrinkButton" class="Button" onClick="SupportToggleEnable('Shrink')">
 				Shrink
 			</div>
@@ -92,6 +95,7 @@
 <script>
 	
 	ShowElement('debug_console',false);
+	ShowElement('ClearButton');
 	
 //	turn on debug stuff
 if ( window.location.hash == '#debug' )
@@ -348,49 +352,74 @@ function OnClickedRiftMode()
 
 				//	get image as datauri for texture
 				var DataUriReader = new FileReader();
-				DataUriReader.onload = SetTexture;
+				DataUriReader.onload = OnLoadLocalTexture;
 				DataUriReader.readAsDataURL(File);
 			}
 		
-			function SetTextureFromData($Data)
-			{
-				var Material = mesh.material;
-				if ( !Material )
-					return false;
-				
-				var image = document.createElement( 'img' );
-				image.src = $Data;
-				Material.map = new THREE.Texture( image );
-				Material.map.needsUpdate = true;
-				Material.needsUpdate = true;
-				return true;
-			}
-		
-			function SetTexture($Event)
-			{
-				var ImageData = $Event.target.result;
-				
-				if ( SetTextureFromData( ImageData ) )
-					OnFileUploadSupported(true);
-			}
 
-
+var $Config = null;
 var $Pano = null;
-function LoadPano($Config,$UpdateTextureFunction)
+
+function DestroyPano()
+{
+	//	kill old pano
+	if ( $Pano )
+	{
+		$Pano.Destroy();
+		delete $Pano;
+		$Pano = null;
+	}
+}
+
+function LoadPano($Config)
 {
 	var $PanoName = GetPanoName();
 	if ( $PanoName == false )
 		return false;
 
 	var OnFailedMeta = function() { alert("Failed to load pano " + $PanoName); }
-	$Pano = new SoyPano( $PanoName, $Config, $UpdateTextureFunction, OnFailedMeta );
-}
-		
-	
-	
 
-			function InitWebgl($Container,$Config) {
+	DestroyPano();
+	$Pano = new SoyPano( $PanoName, $Config, $Config.mOnNewFrame, OnFailedMeta );
+}
+
+function NewPano($Config,$Asset)
+{
+	DestroyPano();
+
+	var OnFailedMeta = function() { alert("Failed to load pano " + $PanoName); }
+
+	$Pano = new SoyPano( 'New', $Config, $Config.mOnNewFrame, OnFailedMeta, false );
+	$Pano.AddAsset( $Asset );
+
+}
+
+	function OnLoadLocalTexture($Event)
+	{
+		var $ImageData = $Event.target.result;
+		var $Image = document.createElement( 'img' );
+		$Image.src = $ImageData;
 		
+		var OnFailed = function() { alert('failed'); };
+		var OnSuccess = function($Asset)
+		{
+			//	asset loaded okay. Kill old Pano (stops video) and create a new one with this asset
+			NewPano( $Config, $Asset );
+			
+			OnFileUploadSupported(true);
+		};
+		
+		var $Meta = { 'Filename': '' };
+		console.log("creating new asset");
+		var $Asset = new SoyAsset_Image( $Meta, OnSuccess, OnFailed, false );
+		$Asset.mUrl = $ImageData;
+		$Asset.Load();
+	}
+
+
+			function InitWebgl($Config)
+			{
+				var $Container = $Config.mContainer;
 				var fov = $Config.mFov;
 				camera = new THREE.PerspectiveCamera( fov, 1, 1, 1000 );
 				camera.target = new THREE.Vector3( 0, 0, 1 );
@@ -404,6 +433,9 @@ function LoadPano($Config,$UpdateTextureFunction)
 					renderer = new THREE.WebGLRenderer();
 				else if ( $Config.mRenderMode == RENDERMODE_CANVAS )
 					renderer = new THREE.CanvasRenderer();
+				
+				if ( !renderer )
+					return false;
 				
 				renderer.setClearColor( 0xFF0000, 1);
 				$Container.appendChild( renderer.domElement );
@@ -459,6 +491,8 @@ function LoadPano($Config,$UpdateTextureFunction)
 				onContainerResize();
 				window.addEventListener( 'resize', onContainerResize, false );
 				animate();
+				
+				return true;
 			}
 
 			function onContainerResize()
@@ -504,13 +538,40 @@ function LoadPano($Config,$UpdateTextureFunction)
 					renderer.render( scene, camera );
 			}
 	
-		
-		</script>
-		
-		
-		<script>
-		
-
+	
+		function UpdateTexture($Asset)
+		{
+			console.log("Update texture");
+			if ( $Config.mRenderMode == RENDERMODE_CUBEMAP )
+			{
+				SetCubemapBackground($Asset);
+			}
+			else
+			{
+				var $Material = mesh.material;
+				
+				//	already assigned to this asset, so just update it
+				if ( $Material.map.image == $Asset.mAsset )
+				{
+					console.log("refreshing asset");
+					$Material.map.needsUpdate = true;
+				}
+				else
+				{
+					console.log("new texture");
+					var $Texture = new THREE.Texture( $Asset.mAsset, new THREE.UVMapping() );
+					$Texture.generateMipmaps = false;
+					$Texture.minFilter = THREE.LinearFilter;
+					$Texture.magFilter = THREE.LinearFilter;
+					$Texture.needsUpdate = true;
+					
+					$Material.map = $Texture;
+					$Material.needsUpdate = true;
+				}
+			}
+			
+			return true;
+		}
 
 		//	save initial mode
 		PushMode();
@@ -535,42 +596,16 @@ function LoadPano($Config,$UpdateTextureFunction)
 		}
 			
 						
-		var $Config = new SoyConfig( $RenderMode );
-		var Container = GetElement("container");
+		$Config = new SoyConfig( $RenderMode );
+		$Config.mContainer = GetElement("container");
+		$Config.mOnNewFrame = UpdateTexture;
 	
 		if ( $Config.mRenderMode != RENDERMODE_NONE )
 		{
-			InitWebgl( Container, $Config );
+			InitWebgl( $Config );
 
-			var $UpdateTextureFunction = function($Asset)
-			{
-				if ( $Config.mRenderMode == RENDERMODE_CUBEMAP )
-				{
-					SetCubemapBackground($Asset);
-				}
-				else
-				{
-					var $Material = mesh.material;
-					//	already assigned to this asset, so just update it
-					if ( $Material.map.image == $Asset.mAsset )
-					{
-						$Material.map.needsUpdate = true;
-					}
-					else
-					{
-						var $Texture = new THREE.Texture( $Asset.mAsset, new THREE.UVMapping() );
-						$Texture.generateMipmaps = false;
-						$Texture.minFilter = THREE.LinearFilter;
-						$Texture.magFilter = THREE.LinearFilter;
-						$Texture.needsUpdate = true;
-						
-						$Material.map = $Texture;
-						$Material.needsUpdate = true;
-					}
-				}
-			};
 			//	load user's required pano
-			LoadPano( $Config, $UpdateTextureFunction );
+			LoadPano( $Config );
 		}
 		else
 		{
