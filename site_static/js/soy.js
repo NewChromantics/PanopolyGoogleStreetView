@@ -127,3 +127,11 @@ function assert(condition, message) {
         throw message; // Fallback
     }
 }
+
+
+function CheckDefaultParam($Param,$Default)
+{
+	if ( typeof $Param == 'undefined' )
+		return $Default;
+	return $Param;
+}
