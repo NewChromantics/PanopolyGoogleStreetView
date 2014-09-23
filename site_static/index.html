@@ -350,10 +350,21 @@ function OnClickedRiftMode()
 				if ( !File )
 					return;
 
-				//	get image as datauri for texture
-				var DataUriReader = new FileReader();
-				DataUriReader.onload = OnLoadLocalTexture;
-				DataUriReader.readAsDataURL(File);
+				if ( File.type.startsWith('image') )
+				{
+					//	get image as datauri for texture
+					var DataUriReader = new FileReader();
+					DataUriReader.onload = OnLoadLocalTexture;
+					DataUriReader.readAsDataURL(File);
+				}
+				else if ( File.type.startsWith('video') )
+				{
+					alert('video!');
+				}
+				else
+				{
+					alert("Don't know what to do with " + File.type + " file type");
+				}
 			}
 		
 
@@ -415,6 +426,7 @@ function NewPano($Config,$Asset)
 		$Asset.mUrl = $ImageData;
 		$Asset.Load();
 	}
+
 
 
 			function InitWebgl($Config)
