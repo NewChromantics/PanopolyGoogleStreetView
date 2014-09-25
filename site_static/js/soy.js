@@ -135,3 +135,11 @@ function CheckDefaultParam($Param,$Default)
 		return $Default;
 	return $Param;
 }
+
+
+//	integer eg; FF0000 to hex
+function GetHexColour($Rgb)
+{
+	var $Length = 6
+	return ('000000000' + $Rgb.toString(16) ).substr(-$Length);
+}
