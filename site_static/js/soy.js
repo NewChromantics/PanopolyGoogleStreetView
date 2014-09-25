@@ -143,3 +143,22 @@ function GetHexColour($Rgb)
 	var $Length = 6
 	return ('000000000' + $Rgb.toString(16) ).substr(-$Length);
 }
+
+
+function forEach($Array,$Callback)
+{
+	for ( var $Key in $Array )
+	{
+		$Callback( $Array[$Key] );
+	}
+}
+
+Math.RadiansToDegrees = function(rad)
+{
+	return rad*(180/Math.PI);
+}
+
+Math.DegreesToRadians = function(deg)
+{
+	return deg * (Math.PI/180);
+}

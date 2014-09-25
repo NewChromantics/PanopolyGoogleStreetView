@@ -29,7 +29,7 @@
 				<p id="loaded_n_total"></p>
 			</div>
 			
-			<div id="ClearButton" class="Button" onClick="DestroyPano()">
+			<div id="ClearButton" class="Button" onClick="forEach($Configs){function($Config){DestroyPano($Config);});">
 				Clear
 			</div>
 			<div id="ShrinkButton" class="Button" onClick="SupportToggleEnable('Shrink')">
@@ -62,7 +62,8 @@
 		</div>
 
 <!-- needs to be before any support that wants to bind to container -->
-		<div id="container"></div>
+<div id="container"></div>
+<div id="xxxcontainer_cubemap"></div>
 
 		<script src="js/soy.js"></script>
 		<script src="threejs/three.min.js"></script>
@@ -176,23 +177,16 @@ AddOnSupportedChangedListener('FileSelect', OnFileSelectSupportChanged );
 
 
 //	scene
-var camera, scene;
-var mesh, lightMesh, geometry;
-var spheres = [];
-var directionalLight, pointLight;
-var $Config = null;
-var $Pano = null;
-var $RendererLeft = null;
-var $RendererRight = null;
+var $Configs = [];
 
 
 function IsSplitMode()
 {
-	return $Config.mSplitEnabled;
+	return $Configs[0].mSplitEnabled;
 }
 function SetSplitMode($Enable)
 {
-	$Config.mSplitEnabled = $Enable;
+	forEach( $Configs, function($Config){ $Config.mSplitEnabled = $Enable; } );
 }
 function ToggleSplit()
 {
@@ -375,14 +369,14 @@ function OnClickedRiftMode()
 		
 
 
-function DestroyPano()
+function DestroyPano($Config)
 {
 	//	kill old pano
-	if ( $Pano )
+	if ( $Config.mPano )
 	{
-		$Pano.Destroy();
-		delete $Pano;
-		$Pano = null;
+		$Config.mPano.Destroy();
+		delete $Config.mPano;
+		$Config.mPano = null;
 	}
 }
 
@@ -394,18 +388,18 @@ function LoadPano($Config)
 
 	var OnFailedMeta = function() { alert("Failed to load pano " + $PanoName); }
 
-	DestroyPano();
-	$Pano = new SoyPano( $PanoName, $Config, $Config.mOnNewFrame, OnFailedMeta );
+	DestroyPano($Config);
+	$Config.mPano = new SoyPano( $PanoName, $Config, $Config.mOnNewFrame, OnFailedMeta );
 }
 
 function NewPano($Config,$Asset)
 {
-	DestroyPano();
+	DestroyPano($Config);
 
 	var OnFailedMeta = function() { alert("Failed to load pano " + $PanoName); }
 
-	$Pano = new SoyPano( 'New', $Config, $Config.mOnNewFrame, OnFailedMeta, false );
-	$Pano.AddAsset( $Asset );
+	$Config.mPano = new SoyPano( 'New', $Config, $Config.mOnNewFrame, OnFailedMeta, false );
+	$Config.mPano.AddAsset( $Asset );
 
 }
 
@@ -465,41 +459,41 @@ function NewPano($Config,$Asset)
 			{
 				var $Container = $Config.mContainer;
 				var fov = $Config.mFov;
-				camera = new THREE.PerspectiveCamera( fov, 1, 1, 1000 );
-				camera.target = new THREE.Vector3( 0, 0, 1 );
-				camera.position.set( 0.001, 0.001, 0.001 );
+				$Config.mCamera = new THREE.PerspectiveCamera( fov, 1, 1, 1000 );
+				$Config.mCamera.target = new THREE.Vector3( 0, 0, 1 );
+				$Config.mCamera.position.set( 0.001, 0.001, 0.001 );
 		
-				scene = new THREE.Scene();
+				$Config.mScene = new THREE.Scene();
 				
 
 
 				if ( $Config.mRenderMode == RENDERMODE_CUBEMAP )
 				{
-					$RendererLeft = new THREE.CSS3DRenderer();
-					$RendererRight = new THREE.CSS3DRenderer();
+					$Config.mRendererLeft = new THREE.CSS3DRenderer();
+					$Config.mRendererRight = new THREE.CSS3DRenderer();
 				}
 				else if ( $Config.mRenderMode == RENDERMODE_WEBGL )
 				{
-					$RendererLeft = new THREE.WebGLRenderer();
+					$Config.mRendererLeft = new THREE.WebGLRenderer();
 				}
 				else if ( $Config.mRenderMode == RENDERMODE_CANVAS )
 				{
-					$RendererLeft = new THREE.CanvasRenderer();
+					$Config.mRendererLeft = new THREE.CanvasRenderer();
 				}
 				
-				if ( !$RendererLeft )
+				if ( !$Config.mRendererLeft )
 					return false;
 					
-				if ( $RendererLeft )
+				if ( $Config.mRendererLeft )
 				{
-					$RendererLeft.setClearColor( 0xFF0000, 1);
-					$Container.appendChild( $RendererLeft.domElement );
+					$Config.mRendererLeft.setClearColor( 0xFF0000, 1);
+					$Container.appendChild( $Config.mRendererLeft.domElement );
 				}
 				
-				if ( $RendererRight )
+				if ( $Config.mRendererRight )
 				{
-					$RendererRight.setClearColor( 0x00FF00, 1);
-					$Container.appendChild( $RendererRight.domElement );
+					$Config.mRendererRight.setClearColor( 0x00FF00, 1);
+					$Container.appendChild( $Config.mRendererRight.domElement );
 				}
 
 				if ( $Config.mRenderMode != RENDERMODE_CUBEMAP )
@@ -514,7 +508,10 @@ function NewPano($Config,$Asset)
 					var Size = $Config.mFaceResolution/2;
 					var geometry = new THREE.SphereGeometry( Size, WidthSegments, HeightSegments );
 					//var geometry = new THREE.BoxGeometry( Size, Size, Size );
-					geometry.applyMatrix( new THREE.Matrix4().makeScale( -1, 1, 1 ) );
+					var mtx = new THREE.Matrix4().makeScale( -1, 1, 1 );
+					var rotMtx = new THREE.Matrix4().makeRotationY( Math.DegreesToRadians(-90) );
+					mtx.multiply( rotMtx );
+					geometry.applyMatrix( mtx );
 
 					//	load default texture
 					var Texture = THREE.ImageUtils.loadTexture( GetDefaultPanoFilename(), new THREE.UVMapping() );
@@ -525,8 +522,8 @@ function NewPano($Config,$Asset)
 											   } );
 					
 		
-					mesh = new THREE.Mesh( geometry, material );
-					scene.add( mesh );
+					$Config.mMesh = new THREE.Mesh( geometry, material );
+					$Config.mScene.add( $Config.mMesh );
 
 					//	gr: add this to render DOM features, but currently needs CSS camera
 					//var $Cube = CreateSceneCube( renderer, $Config, false );
@@ -535,8 +532,8 @@ function NewPano($Config,$Asset)
 				else
 				{
 					//	need to make both for switching back and forth
-					var $CubeLeft = CreateSceneCube( $RendererLeft, $Config, true );
-					var $CubeRight = CreateSceneCube( $RendererRight, $Config, true );
+					var $CubeLeft = CreateSceneCube( $Config.mRendererLeft, $Config, true );
+					var $CubeRight = CreateSceneCube( $Config.mRendererRight, $Config, true );
 				//	var $CubeLeft = null;
 				//	var $CubeRight = null;
 					$Config.mRenderCubes = new Array( $CubeLeft, $CubeRight );
@@ -544,8 +541,8 @@ function NewPano($Config,$Asset)
 				}
 
 
-				effect = new THREE.StereoEffect( $RendererLeft, $RendererRight );
-				effect.separation = $Config.mFaceResolution * 0.10;
+				$Config.mSplitter = new THREE.StereoEffect( $Config.mRendererLeft, $Config.mRendererRight );
+				$Config.mSplitter.separation = $Config.mFaceResolution * 0.10;
 				$Config.mSplitEnabled = false;
 
 
@@ -562,22 +559,22 @@ function NewPano($Config,$Asset)
 				var w = Container.clientWidth;
 				var h = Container.clientHeight;
 
-				camera.aspect = w / h;
-				camera.updateProjectionMatrix();
+				$Config.mCamera.aspect = w / h;
+				$Config.mCamera.updateProjectionMatrix();
 			
-				effect.setSize( w, h );
+				$Config.mSplitter.setSize( w, h );
 
-				if ( $RendererLeft )
+				if ( $Config.mRendererLeft )
 				{
-					$RendererLeft.setSize( w, h );
-					$RendererLeft.setViewport( 0, 0, w, h );
+					$Config.mRendererLeft.setSize( w, h );
+					$Config.mRendererLeft.setViewport( 0, 0, w, h );
 				}
 				
 				//	not expecting right renderer here
-				if ( $RendererRight )
+				if ( $Config.mRendererRight )
 				{
-					$RendererRight.setSize( w, h );
-					$RendererRight.setViewport( 0, 0, 0, 0 );
+					$Config.mRendererRight.setSize( w, h );
+					$Config.mRendererRight.setViewport( 0, 0, 0, 0 );
 				}
 			}
 
@@ -596,7 +593,7 @@ function NewPano($Config,$Asset)
 
 				//	update camera
 				var Quaternion = GetCameraQuaternion();
-				camera.quaternion.copy( Quaternion );
+				$Config.mCamera.quaternion.copy( Quaternion );
 				
 				var QuatDebugElement = GetElement("QuatDebug");
 				if ( QuatDebugElement )
@@ -604,31 +601,35 @@ function NewPano($Config,$Asset)
 				
 				onContainerResize( $Config );
 				
-				if ( effect && $Config.mSplitEnabled )
+				if ( $Config.mSplitter && $Config.mSplitEnabled )
 				{
-				//	effect.setSize( w, h );
-					effect.render( scene, camera );
+				//	$Config.mSplitter.setSize( w, h );
+					$Config.mSplitter.render( $Config.mScene, $Config.mCamera );
 				}
 				else
 				{
-					if ( $RendererLeft )
-						$RendererLeft.render( scene, camera );
-				//	if ( $RendererRight )
-				//		$RendererRight.render( scene, camera );
+					if ( $Config.mRendererLeft )
+						$Config.mRendererLeft.render( $Config.mScene, $Config.mCamera );
+				//	if ( $Config.mRendererRight )
+				//		$Config.mRendererLeftRight.render( $Config.mScene, $Config.mCamera );
 				}
 			}
 	
 	
-		function UpdateTexture($Asset)
+		function UpdateTexture($Asset,$Config)
 		{
 			if ( $Config.mRenderMode == RENDERMODE_CUBEMAP )
 			{
 				for ( var $Key in $Config.mRenderCubes )
+				{
+					//	gr: this log makes it display :/
+					console.log("set cubes",$Config);
 					SetCubemapBackground( $Asset, $Config.mRenderCubes[$Key] );
+				}
 			}
 			else
 			{
-				var $Material = mesh.material;
+				var $Material = $Config.mMesh.material;
 				
 				//	already assigned to this asset, so just update it
 				if ( $Material.map.image == $Asset.mAsset )
@@ -675,18 +676,31 @@ function NewPano($Config,$Asset)
 			$RenderMode = RENDERMODE_CUBEMAP;
 		}
 
-	$RenderMode = RENDERMODE_CUBEMAP;
-						
-		$Config = new SoyConfig( $RenderMode );
+		var $Config = new SoyConfig( $RenderMode );
 		$Config.mContainer = GetElement("container");
-		$Config.mOnNewFrame = UpdateTexture;
-	
+		$Config.mOnNewFrame = function($Asset) {  };
+		$Config.mOnNewFrame = function($Asset) { UpdateTexture($Asset,$Config) };
+		
 		if ( $Config.mRenderMode != RENDERMODE_NONE )
 		{
 			InitWebgl( $Config );
 
 			//	load user's required pano
 			LoadPano( $Config );
+			$Configs.push($Config);
+			
+			
+			//	make a second config
+			if ( GetElement("container_cubemap") )
+			{
+				var $Config2 = new SoyConfig( RENDERMODE_CUBEMAP );
+				$Config2.mOnNewFrame = function($Asset) { UpdateTexture($Asset,$Config2) };
+				$Config2.mContainer = GetElement("container_cubemap");
+				InitWebgl( $Config2 );
+				LoadPano( $Config2 );
+				$Configs.push($Config2);
+			}
+			 
 		}
 		else
 		{

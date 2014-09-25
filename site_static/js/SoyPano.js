@@ -22,8 +22,17 @@ function SoyPano($PanoName,$Config,$OnNewImage,$OnMetaFailed,$DoLoad)
 		this.mMetaAsset = new SoyAsset_Ajax( $PanoName+'.meta', OnLoaded, OnFailed );
 	
 		//	attempt to load some assets immediately for speed
-		this.mAssets.push( new SoyAsset_Image( new SoyAssetMeta($PanoName + '.256x256.jpg',256,256,'jpg'), OnLoaded, OnFailed ) );
-		this.mAssets.push( new SoyAsset_Image( new SoyAssetMeta($PanoName + '.2048x2048.jpg',2048,2048,'jpg'), OnLoaded, OnFailed ) );
+		var $PreloadAssets = [];
+		$PreloadAssets.push( new SoyAssetMeta($PanoName + '.256x256.jpg',256,256,'jpg') );
+		$PreloadAssets.push( new SoyAssetMeta($PanoName + '.2048x2048.jpg',2048,2048,'jpg') );
+
+		forEach( $PreloadAssets, function($AssetMeta)
+		{
+			if ( $AssetMeta.IsSupported($Config) )
+			{
+				$this.mAssets.push( new SoyAsset_Image( $AssetMeta, OnLoaded, OnFailed ) );
+			}
+		});
 
 		//	do a deffered load of an asset to prove priority works
 	//	setTimeout( function() { $this.mAssets.push( new SoyAsset_Image( '.256.jpg', 1, OnLoaded, OnFailed ) ); }, 2*1000 );
@@ -152,7 +161,7 @@ SoyPano.prototype.OnLoadedMeta = function()
 	
 	if ( !$BestRemoteMeta )
 	{
-		console.log("No better assets");
+		console.log("No better assets",$CurrentMeta,this.mMeta.assets);
 		return;
 	}
 	
