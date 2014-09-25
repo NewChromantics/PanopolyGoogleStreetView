@@ -35,7 +35,7 @@
 			<div id="ShrinkButton" class="Button" onClick="SupportToggleEnable('Shrink')">
 				Shrink
 			</div>
-			<div id="SplitButton" class="Button" onClick="SupportToggleEnable('Split')">
+			<div id="SplitButton" class="Button" onClick="ToggleSplit()">
 				Stereo View
 			</div>
 			
@@ -77,7 +77,6 @@
 		<script src="js/SoySupport.js"></script>
 		<script src="js/SoyOculusBridge.js"></script>
 		<script src="js/SoyOculusRest.js"></script>
-		<script src="js/SoySplit.js"></script>
 		<script src="js/SoyShrink.js"></script>
 		<script src="js/SoyFullscreen.js"></script>
 		<script src="js/SoyGyro.js"></script>
@@ -96,6 +95,7 @@
 	
 	ShowElement('debug_console',false);
 	ShowElement('ClearButton');
+	ShowElement('SplitButton');
 	
 //	turn on debug stuff
 if ( window.location.hash == '#debug' )
@@ -129,12 +129,6 @@ function OnOculusRestSupportChanged($Supported)
 {
 	ShowElement('OculusRestButton', $Supported);
 	CheckAutoSwitch( 'OculusRest', $Supported );
-}
-
-function OnSplitSupportChanged($Supported)
-{
-	ShowElement('SplitButton', $Supported);
-	CheckAutoSwitch( 'Split', $Supported );
 }
 
 function OnShrinkSupportChanged($Supported)
@@ -172,13 +166,9 @@ function OnFileSelectSupportChanged()
 }
 
 
-
-
-
 //	support callbacks
 AddOnSupportedChangedListener('OculusBridge', OnOculusBridgeSupportChanged );
 AddOnSupportedChangedListener('OculusRest', OnOculusRestSupportChanged );
-AddOnSupportedChangedListener('Split', OnSplitSupportChanged );
 AddOnSupportedChangedListener('Shrink', OnShrinkSupportChanged );
 AddOnSupportedChangedListener('Fullscreen', OnFullscreenSupportChanged );
 AddOnSupportedChangedListener('Gyro', OnGyroSupportChanged );
@@ -186,10 +176,29 @@ AddOnSupportedChangedListener('FileSelect', OnFileSelectSupportChanged );
 
 
 //	scene
-var camera, scene, effect;
+var camera, scene;
 var mesh, lightMesh, geometry;
 var spheres = [];
 var directionalLight, pointLight;
+var $Config = null;
+var $Pano = null;
+var $RendererLeft = null;
+var $RendererRight = null;
+
+
+function IsSplitMode()
+{
+	return $Config.mSplitEnabled;
+}
+function SetSplitMode($Enable)
+{
+	$Config.mSplitEnabled = $Enable;
+}
+function ToggleSplit()
+{
+	SetSplitMode( !IsSplitMode() );
+}
+
 
 
 		function OnFileUploadSupported($Enable)
@@ -285,10 +294,6 @@ var directionalLight, pointLight;
 			EnableShrink( !IsShrinkEnabled() );
 		}
 
-		function OnClickedSplit()
-		{
-			EnableSplit( !IsSplitMode() );
-		}
 
 function OnClickedRiftMode()
 {
@@ -313,7 +318,6 @@ function OnClickedRiftMode()
 	if ( !CreateRiftControl() )
 	{
 		SetFullscreen(OldFullscreen);
-		SetSplitMode(OldSplitMode);
 		return false;
 	}
 	
@@ -370,8 +374,6 @@ function OnClickedRiftMode()
 			}
 		
 
-var $Config = null;
-var $Pano = null;
 
 function DestroyPano()
 {
@@ -458,8 +460,6 @@ function NewPano($Config,$Asset)
 		return $Cube;
 	}
 
-var $RendererLeft = null;
-var $RendererRight = null;
 
 			function InitWebgl($Config)
 			{
@@ -471,6 +471,7 @@ var $RendererRight = null;
 		
 				scene = new THREE.Scene();
 				
+
 
 				if ( $Config.mRenderMode == RENDERMODE_CUBEMAP )
 				{
@@ -510,7 +511,7 @@ var $RendererRight = null;
 						WidthSegments /= 2;
 						HeightSegments /= 2;
 					}
-					var Size = 5;
+					var Size = $Config.mFaceResolution/2;
 					var geometry = new THREE.SphereGeometry( Size, WidthSegments, HeightSegments );
 					//var geometry = new THREE.BoxGeometry( Size, Size, Size );
 					geometry.applyMatrix( new THREE.Matrix4().makeScale( -1, 1, 1 ) );
@@ -542,56 +543,54 @@ var $RendererRight = null;
 					$Config.mFeatureCubes = new Array( $CubeLeft, $CubeRight );
 				}
 
-				onContainerResize($Config);
+
+				effect = new THREE.StereoEffect( $RendererLeft, $RendererRight );
+				effect.separation = $Config.mFaceResolution * 0.10;
+				$Config.mSplitEnabled = false;
+
+
+			//	onContainerResize($Config);
 				window.addEventListener( 'resize', function() { onContainerResize($Config); }, false );
-				animate();
+				Animate($Config);
 				
 				return true;
 			}
 
-			function onContainerResize($LocalConfig)
+			function onContainerResize($Config)
 			{
-				var $LocalConfig = $Config;
-
 				var Container = $Config.mContainer;
 				var w = Container.clientWidth;
 				var h = Container.clientHeight;
 
 				camera.aspect = w / h;
 				camera.updateProjectionMatrix();
-				console.log("onContainerResize",w,h);
+			
+				effect.setSize( w, h );
 
-				if ( effect )
+				if ( $RendererLeft )
 				{
-					effect.setSize( w, h );
+					$RendererLeft.setSize( w, h );
+					$RendererLeft.setViewport( 0, 0, w, h );
 				}
-				else
+				
+				//	not expecting right renderer here
+				if ( $RendererRight )
 				{
-					if ( $RendererLeft )
-					{
-						$RendererLeft.setSize( w, h );
-						$RendererLeft.setViewport( 0, 0, w, h );
-					}
-					
-					//	not expecting right renderer here
-					if ( $RendererRight )
-					{
-						$RendererRight.setSize( w, h );
-						$RendererRight.setViewport( 0, 0, 0, 0 );
-					}
+					$RendererRight.setSize( w, h );
+					$RendererRight.setViewport( 0, 0, 0, 0 );
 				}
 			}
 
 			//
 
-			function animate() {
+			function Animate($Config) {
 
-				requestAnimationFrame( animate );
+				requestAnimationFrame( function(){Animate($Config);} );
 				
-				render();
+				Render($Config);
 			}
 
-			function render() {
+			function Render($Config) {
 
 				var timer = 0.0001 * Date.now();
 
@@ -603,7 +602,9 @@ var $RendererRight = null;
 				if ( QuatDebugElement )
 					QuatDebugElement.innerText = $CurrentCameraControl + ": " + Quaternion.x + " " + Quaternion.y + " " + Quaternion.z + " " + Quaternion.w;
 				
-				if ( effect )
+				onContainerResize( $Config );
+				
+				if ( effect && $Config.mSplitEnabled )
 				{
 				//	effect.setSize( w, h );
 					effect.render( scene, camera );
@@ -674,7 +675,7 @@ var $RendererRight = null;
 			$RenderMode = RENDERMODE_CUBEMAP;
 		}
 
-	//$RenderMode = RENDERMODE_CUBEMAP;
+	$RenderMode = RENDERMODE_CUBEMAP;
 						
 		$Config = new SoyConfig( $RenderMode );
 		$Config.mContainer = GetElement("container");

@@ -27,7 +27,6 @@ SoyShrink.prototype.Enable = function()
 		if ( !Container )
 			return;
 		Container.className = "ipad_smallviewport";
-		onContainerResize();
 		this.OnEnabled();
 	}
 }
@@ -40,7 +39,6 @@ SoyShrink.prototype.Disable = function()
 		if ( !Container )
 			return;
 		Container.className = "";
-		onContainerResize();
 		this.OnDisabled();
 	}
 }
