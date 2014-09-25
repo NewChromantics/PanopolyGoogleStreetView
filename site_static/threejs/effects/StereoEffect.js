@@ -4,11 +4,11 @@
  * @authod arodic / http://aleksandarrodic.com/
  */
 
-THREE.StereoEffect = function ( renderer ) {
+THREE.StereoEffect = function ( $LeftRenderer,$RightRenderer ) {
 
 	// API
 
-	this.separation = 3;
+	this.separation = 10;
 
 	// internals
 
@@ -23,15 +23,27 @@ THREE.StereoEffect = function ( renderer ) {
 
 	// initialization
 
-	renderer.autoClear = false;
+	if ( $LeftRenderer )
+		$LeftRenderer.autoClear = false;
+	
+	if ( $RightRenderer )
+		$RightRenderer.autoClear = false;
 
 	this.setSize = function ( width, height ) {
 
-		_width = width / 2;
+		var $OneRenderer = !$RightRenderer;
+
+		_width = width;
 		_height = height;
-
-		renderer.setSize( width, height );
-
+/*
+		
+		//	just do this in render()
+		if ( $LeftRenderer )
+			$LeftRenderer.setSize( _width, _height );
+		
+		if ( $RightRenderer )
+			$RightRenderer.setSize( _width, _height );
+*/
 	};
 
 	this.render = function ( scene, camera ) {
@@ -60,21 +72,48 @@ THREE.StereoEffect = function ( renderer ) {
 		_cameraR.far = camera.far;
 		_cameraR.projectionMatrix = _cameraL.projectionMatrix;
 
+		_cameraR.fov = camera.fov;
+		_cameraR.aspect = 0.5 * camera.aspect;
+		_cameraR.updateProjectionMatrix();
+
 		_cameraR.position.copy( _position );
 		_cameraR.quaternion.copy( _quaternion );
 		_cameraR.translateX( this.separation );
 
-		//
+		var $SingleRenderer = ($RightRenderer == null);
+		var $ViewportWidth = $SingleRenderer ? _width/2 : _width/2;
+		var $ViewportHeight = _height;
+		var $CanvasWidth = $SingleRenderer ? _width : _width/2;
+		var $CanvasHeight = _height;
 
-		renderer.setViewport( 0, 0, _width * 2, _height );
-		renderer.clear();
+		//	gr: scissor and viewport don't stop clear() from clearing everything in GL so don't clear.
 
-		renderer.setViewport( 0, 0, _width, _height );
-		renderer.render( scene, _cameraL );
+		if ( $LeftRenderer )
+		{
+			var $x = 0;
+			var $y = 0;
 
-		renderer.setViewport( _width, 0, _width, _height );
-		renderer.render( scene, _cameraR );
-
+			$LeftRenderer.setSize( $CanvasWidth, $CanvasHeight );
+			$LeftRenderer.setViewport( $x, $y, $ViewportWidth, $ViewportHeight );
+	//		$LeftRenderer.setScissor( $x, $y, $ViewportWidth, $ViewportHeight );
+	//		$LeftRenderer.clear();
+			$LeftRenderer.render( scene, _cameraL );
+		}
+		
+		
+		var $SecondRenderer = $SingleRenderer ? $LeftRenderer : $RightRenderer;
+		if ( $SecondRenderer )
+		{
+			var $x = $ViewportWidth;
+			var $y = 0;
+			
+			$SecondRenderer.setSize( $CanvasWidth, $CanvasHeight );
+			$SecondRenderer.setViewport( $x, $y, $ViewportWidth, $ViewportHeight );
+	//		$SecondRenderer.setScissor( $x, $y, $ViewportWidth, $ViewportHeight );
+	//		$SecondRenderer.clear();
+			$SecondRenderer.render( scene, _cameraR );
+		}
+		 
 	};
 
 };

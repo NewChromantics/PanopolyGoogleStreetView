@@ -186,7 +186,7 @@ AddOnSupportedChangedListener('FileSelect', OnFileSelectSupportChanged );
 
 
 //	scene
-var camera, scene, renderer, effect;
+var camera, scene, effect;
 var mesh, lightMesh, geometry;
 var spheres = [];
 var directionalLight, pointLight;
@@ -435,6 +435,31 @@ function NewPano($Config,$Asset)
 	}
 
 
+	function CreateSceneCube($Renderer,$Config,$CreateTextures)
+	{
+		var $CubeParent = document.createElement('div');
+		var $FaceSize = $Config.mFaceResolution;
+		
+		//	need width & margin to center 3D around 2D center
+		$CubeParent.style.width = $FaceSize + 'px';
+		$CubeParent.style.height = $FaceSize + 'px';
+		//	 $CubeParent.style.margin = 'auto';
+		$CubeParent.className = 'ThreeD';
+		
+		//	% or px, no difference
+		$Transform = 'translate3d(-50%,-50%,0)';
+		//$Transform = 'translate3d(-' + ($FaceSize/2) + 'px,-' + ($FaceSize/2) + 'px,0)';
+		$Transform += ' rotateZ(180deg)';
+		SetElementTransform3d( $CubeParent, $Transform );
+		
+		var $RenderCameraElement = $Renderer.domElement.firstChild;
+		$RenderCameraElement.appendChild($CubeParent);
+		var $Cube = CreateCube( $CubeParent, $FaceSize, $CreateTextures );
+		return $Cube;
+	}
+
+var $RendererLeft = null;
+var $RendererRight = null;
 
 			function InitWebgl($Config)
 			{
@@ -445,20 +470,36 @@ function NewPano($Config,$Asset)
 				camera.position.set( 0.001, 0.001, 0.001 );
 		
 				scene = new THREE.Scene();
+				
 
 				if ( $Config.mRenderMode == RENDERMODE_CUBEMAP )
-					renderer = new THREE.CSS3DRenderer();
+				{
+					$RendererLeft = new THREE.CSS3DRenderer();
+					$RendererRight = new THREE.CSS3DRenderer();
+				}
 				else if ( $Config.mRenderMode == RENDERMODE_WEBGL )
-					renderer = new THREE.WebGLRenderer();
+				{
+					$RendererLeft = new THREE.WebGLRenderer();
+				}
 				else if ( $Config.mRenderMode == RENDERMODE_CANVAS )
-					renderer = new THREE.CanvasRenderer();
+				{
+					$RendererLeft = new THREE.CanvasRenderer();
+				}
 				
-				if ( !renderer )
+				if ( !$RendererLeft )
 					return false;
+					
+				if ( $RendererLeft )
+				{
+					$RendererLeft.setClearColor( 0xFF0000, 1);
+					$Container.appendChild( $RendererLeft.domElement );
+				}
 				
-				renderer.setClearColor( 0xFF0000, 1);
-				$Container.appendChild( renderer.domElement );
-
+				if ( $RendererRight )
+				{
+					$RendererRight.setClearColor( 0x00FF00, 1);
+					$Container.appendChild( $RendererRight.domElement );
+				}
 
 				if ( $Config.mRenderMode != RENDERMODE_CUBEMAP )
 				{
@@ -485,49 +526,60 @@ function NewPano($Config,$Asset)
 		
 					mesh = new THREE.Mesh( geometry, material );
 					scene.add( mesh );
+
+					//	gr: add this to render DOM features, but currently needs CSS camera
+					//var $Cube = CreateSceneCube( renderer, $Config, false );
+				
 				}
 				else
 				{
-					var $CubeParent = document.createElement('div');
-					var $FaceSize = $Config.mFaceResolution;
-
-					//	need width & margin to center 3D around 2D center
-					$CubeParent.style.width = $FaceSize + 'px';
-					$CubeParent.style.height = $FaceSize + 'px';
-					//	 $CubeParent.style.margin = 'auto';
-					$CubeParent.className = 'ThreeD';
-					
-					//	% or px, no difference
-					$Transform = 'translate3d(-50%,-50%,0)';
-					//$Transform = 'translate3d(-' + ($FaceSize/2) + 'px,-' + ($FaceSize/2) + 'px,0)';
-					$Transform += ' rotateZ(180deg)';
-					SetElementTransform3d( $CubeParent, $Transform );
-
-					renderer.domElement.firstChild.appendChild($CubeParent);
-					CreateCube( $CubeParent,$FaceSize);
+					//	need to make both for switching back and forth
+					var $CubeLeft = CreateSceneCube( $RendererLeft, $Config, true );
+					var $CubeRight = CreateSceneCube( $RendererRight, $Config, true );
+				//	var $CubeLeft = null;
+				//	var $CubeRight = null;
+					$Config.mRenderCubes = new Array( $CubeLeft, $CubeRight );
+					$Config.mFeatureCubes = new Array( $CubeLeft, $CubeRight );
 				}
 
-				onContainerResize();
-				window.addEventListener( 'resize', onContainerResize, false );
+				onContainerResize($Config);
+				window.addEventListener( 'resize', function() { onContainerResize($Config); }, false );
 				animate();
 				
 				return true;
 			}
 
-			function onContainerResize()
+			function onContainerResize($LocalConfig)
 			{
-				var Container = renderer.domElement.parentNode;
+				var $LocalConfig = $Config;
+
+				var Container = $Config.mContainer;
 				var w = Container.clientWidth;
 				var h = Container.clientHeight;
 
 				camera.aspect = w / h;
 				camera.updateProjectionMatrix();
+				console.log("onContainerResize",w,h);
 
 				if ( effect )
+				{
 					effect.setSize( w, h );
+				}
 				else
-					renderer.setSize( w, h );
-
+				{
+					if ( $RendererLeft )
+					{
+						$RendererLeft.setSize( w, h );
+						$RendererLeft.setViewport( 0, 0, w, h );
+					}
+					
+					//	not expecting right renderer here
+					if ( $RendererRight )
+					{
+						$RendererRight.setSize( w, h );
+						$RendererRight.setViewport( 0, 0, 0, 0 );
+					}
+				}
 			}
 
 			//
@@ -552,9 +604,17 @@ function NewPano($Config,$Asset)
 					QuatDebugElement.innerText = $CurrentCameraControl + ": " + Quaternion.x + " " + Quaternion.y + " " + Quaternion.z + " " + Quaternion.w;
 				
 				if ( effect )
+				{
+				//	effect.setSize( w, h );
 					effect.render( scene, camera );
+				}
 				else
-					renderer.render( scene, camera );
+				{
+					if ( $RendererLeft )
+						$RendererLeft.render( scene, camera );
+				//	if ( $RendererRight )
+				//		$RendererRight.render( scene, camera );
+				}
 			}
 	
 	
@@ -562,7 +622,8 @@ function NewPano($Config,$Asset)
 		{
 			if ( $Config.mRenderMode == RENDERMODE_CUBEMAP )
 			{
-				SetCubemapBackground($Asset);
+				for ( var $Key in $Config.mRenderCubes )
+					SetCubemapBackground( $Asset, $Config.mRenderCubes[$Key] );
 			}
 			else
 			{
@@ -612,7 +673,8 @@ function NewPano($Config,$Asset)
 		{
 			$RenderMode = RENDERMODE_CUBEMAP;
 		}
-			
+
+	//$RenderMode = RENDERMODE_CUBEMAP;
 						
 		$Config = new SoyConfig( $RenderMode );
 		$Config.mContainer = GetElement("container");

@@ -67,8 +67,12 @@ THREE.CSS3DRenderer = function () {
 
 	domElement.appendChild( cameraElement );
 
-	this.setClearColor = function () {
-
+	this.setClearColor = function (Colour) {
+		
+			
+		var $HexColour = GetHexColour(Colour);
+		console.log("setClearColor ",$HexColour,domElement);
+		domElement.style.backgroundColor = '#' + $HexColour;
 	};
 
 	this.setSize = function ( width, height ) {
@@ -78,13 +82,13 @@ THREE.CSS3DRenderer = function () {
 
 		_widthHalf = _width / 2;
 		_heightHalf = _height / 2;
-
+/*
 		domElement.style.width = width + 'px';
 		domElement.style.height = height + 'px';
 
 		cameraElement.style.width = width + 'px';
 		cameraElement.style.height = height + 'px';
-
+*/
 	};
 
 	var epsilon = function ( value ) {
@@ -243,15 +247,33 @@ THREE.CSS3DRenderer = function () {
 	
 	
 	this.setViewport = function ( x, y, width, height ) {
-		/*
 		_viewportX = x * this.devicePixelRatio;
 		_viewportY = y * this.devicePixelRatio;
 		
 		_viewportWidth = width * this.devicePixelRatio;
 		_viewportHeight = height * this.devicePixelRatio;
+
 		
-		_gl.viewport( _viewportX, _viewportY, _viewportWidth, _viewportHeight );
-*/		
+		
+		_width = width;
+		_height = height;
+		
+		_widthHalf = _width / 2;
+		_heightHalf = _height / 2;
+		
+		domElement.style.position = 'absolute';
+		domElement.style.left = x + 'px';
+		domElement.style.top = y + 'px';
+		domElement.style.width = width + 'px';
+		domElement.style.height = height + 'px';
+		
+		
+		cameraElement.style.position = 'absolute';
+	//	cameraElement.style.left = x + 'px';
+	//	cameraElement.style.top = y + 'px';
+		cameraElement.style.width = width + 'px';
+		cameraElement.style.height = height + 'px';
+		
 	};
 	
 	this.clear = function ( color, depth, stencil ) {

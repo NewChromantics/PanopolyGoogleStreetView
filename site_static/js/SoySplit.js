@@ -32,8 +32,12 @@ SoySplit.prototype.Enable = function()
 {
 	if ( !this.IsEnabled() )
 	{
-		effect = new THREE.StereoEffect( renderer );
-		effect.separation = 1;
+		console.log("Making stereo effect with ", $RendererLeft, $RendererRight );
+		if ( $RendererLeft == $RendererRight )
+			console.log("same");
+		
+		effect = new THREE.StereoEffect( $RendererLeft, $RendererRight );
+		//effect.separation = 1;
 		onContainerResize();
 		this.OnEnabled();
 	}

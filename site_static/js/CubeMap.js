@@ -18,8 +18,9 @@ function CreateCubeFace($Parent,$FaceName,$FaceSize,$RotationTransform,$Colour)
 	$Thing.innerText = $FaceName;
 	$FaceContentElement.appendChild($Thing);
 	
-	$Element.style.width = $FaceSize + 'px';
-	$Element.style.height = $FaceSize + 'px';
+	var $Pad = 3;
+	$Element.style.width = ($FaceSize+$Pad) + 'px';
+	$Element.style.height = ($FaceSize+$Pad) + 'px';
 	var $ZTransform = ' translateZ(' + ($FaceSize/2) + 'px) ';
 	var $Transform = $RotationTransform + ' ' + $ZTransform;
 	SetElementTransform3d( $Element, $Transform );
@@ -38,7 +39,6 @@ function CreateCube($Parent,$FaceSize)
 {
 	var $Cube = document.createElement('div');
 	$Cube.className = 'ThreeD';
-	$Cube.id = 'CubeMap';
 	$Parent.appendChild($Cube);
 	
 	//	gr: need this so we rotate around the center... not sure why
@@ -54,17 +54,16 @@ function CreateCube($Parent,$FaceSize)
 	CreateCubeFace( $Cube, 'Right', $FaceSize, 'rotateY(90deg)', 'cyan' );
 	CreateCubeFace( $Cube, 'Down', $FaceSize, 'rotateX(-90deg) rotate(180deg)', 'magenta' );
 
+	return $Cube;
 }
 
 
 
 //	intialise cube faces
-function SetCubemapBackground($Asset)
+function SetCubemapBackground($Asset,$Cube)
 {
-	var $Cube = GetElementCubeMap();
 	if ( !$Cube )
-		return false;
-
+		return;
 	var $Meta = $Asset.mMeta;
 	var $CubemapLayout = $Meta.GetCubemapLayout();
 	if ( !$CubemapLayout )
@@ -128,9 +127,3 @@ function SetFaceBackground($Element,$ImageOffset,$Layout)
 
 
 
-
-function GetElementCubeMap()
-{
-	var $Parent = GetElement('CubeMap');
-	return $Parent;
-}
