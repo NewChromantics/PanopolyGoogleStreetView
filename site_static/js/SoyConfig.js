@@ -6,7 +6,7 @@ var RENDERMODE_NONE = null;
 function SoyConfig($RenderMode)
 {
 	this.mFov = 70;
-	this.mSeperation = 0.20;
+	this.mSeperation = 0.03;
 
 	//	larger res = clipping issues
 	//	gr: trying low res for mobile to stop crashes
