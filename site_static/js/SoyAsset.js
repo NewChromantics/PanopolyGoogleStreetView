@@ -321,16 +321,26 @@ SoyAssetMeta.prototype.IsSupported = function($Config)
 	
 	if ( this.IsVideo() )
 	{
-		//	gr: testing
-		return false;
-		//	do video codec test
-		var $Video = document.createElement('video');
 		var $Type = this.Format;
 		var $Codec = this.Codec;
-		var $VideoTypeString = 'video/' + $Type + ';codecs="' + $Codec + '"';
-		var $CanPlay = $Video.canPlayType($VideoTypeString);
-		if ( $CanPlay == "" )
+		var $IsMjpeg = ( $Type == 'mjpeg' && $Codec == 'mjpeg' );
+
+		//	we all support mjpeg, otherwise, do video codec test
+		if ( !$IsMjpeg )
+		{
+			//	mobile (ios?) only supports mjpeg, as video needs to be clicked. no auto play!
+			if ( IsMobile() )
+				return false;
+			
+			
+			//	gr: debug
 			return false;
+			var $Video = document.createElement('video');
+			var $VideoTypeString = 'video/' + $Type + ';codecs="' + $Codec + '"';
+			var $CanPlay = $Video.canPlayType($VideoTypeString);
+			if ( $CanPlay == "" )
+				return false;
+		}
 	}
 	
 	//	only support cubemaps if cubemap mode
@@ -436,6 +446,69 @@ SoyAsset_Video.prototype.OnError = function($Event)
 	if ( this.IsLoaded() )
 		this.Stop();
 
+	assert( !this.IsLoaded(), "Loaded state wrong" );
+	//	not a failure if we cancelled
+	if ( !this.mDesired )
+		return;
+	this.mOnFailed( this );
+}
+
+
+
+
+
+
+
+
+
+SoyAsset_Mjpeg.prototype = new SoyAsset('Mjpeg');
+
+function SoyAsset_Mjpeg($Meta,$OnLoaded,$OnFailed)
+{
+	//	call super
+	SoyAsset.apply( this, [$Meta,$OnLoaded,$OnFailed] );
+	
+	this.Load();
+}
+
+SoyAsset_Mjpeg.prototype.Stop = function()
+{
+	this.mDesired = false;
+	
+	if ( this.mAsset )
+	{
+		//	abort video by setting invalid src
+		this.mAsset.src = '';
+		this.mAsset.load();
+		//	this.mAsset.stop();
+		delete this.mAsset;
+		this.mAsset = null;
+	}
+	assert( !this.IsLoaded(), "Loaded state wrong" );
+}
+
+SoyAsset_Mjpeg.prototype.Load = function()
+{
+	var $this = this;
+	var $Loop = true;
+	
+	var OnNewJpeg = function($JpegData) { $this.OnLoad($JpegData); };
+	var OnError = function() { $this.OnError(); }
+	var $Mjpeg = new SoyMJpeg( this.mUrl, 25, $Loop, OnNewJpeg, OnError );
+}
+
+SoyAsset_Mjpeg.prototype.OnLoad = function($JpegData)
+{
+	this.mAsset = $JpegData;
+	assert( this.IsLoaded(), "Loaded state wrong" );
+	this.mOnLoaded( this );
+}
+
+SoyAsset_Mjpeg.prototype.OnError = function($Event)
+{
+	if ( this.IsLoaded() )
+		this.Stop();
+	
 	assert( !this.IsLoaded(), "Loaded state wrong" );
 	//	not a failure if we cancelled
 	if ( !this.mDesired )

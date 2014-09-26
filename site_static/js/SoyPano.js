@@ -99,6 +99,9 @@ SoyPano.prototype.OnLoadedAsset = function($Asset)
 		if ( $Asset.GetType() == 'Image' )
 			this.OnNewJpegFrame($Asset);
 		
+		if ( $Asset.GetType() == 'Mjpeg' )
+			this.OnNewJpegFrame($Asset);
+		
 		//	start update of video
 		if ( $Asset.GetType() == 'Video' )
 			this.OnNewVideoFrame($Asset);
@@ -174,7 +177,9 @@ SoyPano.prototype.OnLoadedMeta = function()
 	var OnLoaded = function($Asset) { $this.OnLoadedAsset($Asset); }
 	var OnFailed = function($Asset) { $this.OnFailedAsset($Asset); }
 	
-	if ( $BestRemoteMeta.IsVideo() )
+	if ( $BestRemoteMeta.IsVideo() && $BestRemoteMeta.Format == 'mjpeg' )
+		this.mAssets.push( new SoyAsset_Mjpeg( $BestRemoteMeta, OnLoaded, OnFailed ) );
+	else if ( $BestRemoteMeta.IsVideo() )
 		this.mAssets.push( new SoyAsset_Video( $BestRemoteMeta, OnLoaded, OnFailed ) );
 	else
 		this.mAssets.push( new SoyAsset_Image( $BestRemoteMeta, OnLoaded, OnFailed ) );
@@ -223,7 +228,7 @@ SoyPano.prototype.OnNewJpegFrame = function($Asset)
 	this.mCurrentAsset = $Asset;
 	
 	//	update texture
-	console.log("New jpeg frame: " + $Asset.mUrl );
+	//console.log("New jpeg frame: " + $Asset.mUrl );
 
 	this.mOnNewImage( $Asset );
 }

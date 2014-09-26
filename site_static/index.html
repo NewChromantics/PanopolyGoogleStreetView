@@ -72,6 +72,7 @@
 		<script src="js/GoogleAnalytics.js"></script>
 		<script src="js/ClearDefaultText.js"></script>
 		<script src="js/SoyWebSocket-1.0.js"></script>
+		<script src="js/mjpeg.js"></script>
 		<script src="js/panopoly.js"></script>
 		<script src="js/CubeMap.js"></script>
 		<script src="js/support.js"></script>
@@ -628,7 +629,7 @@ function NewPano($Config,$Asset)
 				for ( var $Key in $Config.mRenderCubes )
 				{
 					//	gr: this log makes it display :/
-					console.log("set cubes",$Config);
+					//console.log("set cubes",$Config);
 					SetCubemapBackground( $Asset, $Config.mRenderCubes[$Key] );
 				}
 			}
