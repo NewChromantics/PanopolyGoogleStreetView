@@ -54,20 +54,25 @@
 		register_shutdown_function('DeleteTempFile',$TempFilename);
 	}
 
+	$EquirectLayout = 'equirect';
+	$CubemapLayout = 'cubemap_23ULFRBD';
+
 	//	parse images as video
-	$Image = new TVideo($TempFilename);
+	$InputLayout = $EquirectLayout;
+	$Image = new TVideo($TempFilename,$Layout);
 	if ( !$Image->IsValid() )
 	{
 		return OnError("failed to read image or video information from $TempFilename");
 	}
 	
 	//	returns associative array
-	function SoyAssetMeta($Width,$Height,$Format,$Codec=false,$BitRate=false)
+	function SoyAssetMeta($Width,$Height,$Format,$Layout,$Codec=false,$BitRate=false)
 	{
 		$Asset = [];
 		$Asset['Width'] = $Width;
 		$Asset['Height'] = $Height;
 		$Asset['Format'] = $Format;
+		$Asset['Layout'] = $Layout;
 		if ( $Codec !== false )
 			$Asset['Codec'] = $Codec;
 		if ( $BitRate !== false )
@@ -81,27 +86,39 @@
 	//	upload initial meta
 	UploadMeta( $OutputAssets );
 
+	
 	//	assets we want to try and create
 	$AssetParams = [];
 
-	$AssetParams[] = SoyAssetMeta( 256, 256, 'jpg' );
-//	$AssetParams[] = SoyAssetMeta( 1024, 1024, 'jpg' );
-	$AssetParams[] = SoyAssetMeta( 2048, 2048, 'jpg' );
-//	$AssetParams[] = SoyAssetMeta( 4096, 2048, 'jpg' );
-	$AssetParams[] = SoyAssetMeta( 4096, 4096, 'jpg' );
-//	$AssetParams[] = SoyAssetMeta( 512, 256, 'webm', 'vp8', '1000k' );
-	$AssetParams[] = SoyAssetMeta( 256, 256, 'jpg', 'cubemap_23ULFRBD' );
-	$AssetParams[] = SoyAssetMeta( 2048, 2048, 'jpg', 'cubemap_23ULFRBD' );
+	$AssetParams[] = SoyAssetMeta( 256, 256, 'jpg', $EquirectLayout );
+//	$AssetParams[] = SoyAssetMeta( 1024, 1024, 'jpg', $EquirectLayout );
+	$AssetParams[] = SoyAssetMeta( 2048, 2048, 'jpg', $EquirectLayout );
+//	$AssetParams[] = SoyAssetMeta( 4096, 2048, 'jpg', $EquirectLayout );
+	$AssetParams[] = SoyAssetMeta( 4096, 4096, 'jpg', $EquirectLayout );
+//	$AssetParams[] = SoyAssetMeta( 512, 256, 'webm', $EquirectLayout 'vp8', '1000k' );
+	$AssetParams[] = SoyAssetMeta( 256, 256, 'jpg', $CubemapLayout );
+	$AssetParams[] = SoyAssetMeta( 2048, 2048, 'jpg', $CubemapLayout );
 	
-//	$AssetParams[] = SoyAssetMeta( 1024, 512, 'webm', 'vp8', '2000k' );
-	$AssetParams[] = SoyAssetMeta( 2048, 1024, 'webm', 'vp8', '5000k' );
-//	$AssetParams[] = SoyAssetMeta( 4096, 2048, 'webm', 'vp8', '8000k' );
-//	$AssetParams[] = SoyAssetMeta( 4096, 4096, 'webm', 'vp8', '10000k' );
-//	$AssetParams[] = SoyAssetMeta( 512, 256, 'mp4', 'h264', '1000k' );
-	$AssetParams[] = SoyAssetMeta( 2048, 1024, 'mp4', 'h264', '5000k' );
-//	$AssetParams[] = SoyAssetMeta( 512, 256, 'gif', 'gif', '5000k' );
-//	$AssetParams[] = SoyAssetMeta( 2048, 1024, 'gif', 'gif', '5000k' );
-	$AssetParams[] = SoyAssetMeta( 2048, 1024, 'mjpeg', 'mjpeg', '5000k' );
+//	$AssetParams[] = SoyAssetMeta( 1024, 512, 'webm', $EquirectLayout, 'vp8', '2000k' );
+	$AssetParams[] = SoyAssetMeta( 2048, 1024, 'webm', EquirectLayout, 'vp8', '5000k' );
+//	$AssetParams[] = SoyAssetMeta( 4096, 2048, 'webm', $EquirectLayout, 'vp8', '8000k' );
+//	$AssetParams[] = SoyAssetMeta( 4096, 4096, 'webm', $EquirectLayout, 'vp8', '10000k' );
+//	$AssetParams[] = SoyAssetMeta( 512, 256, 'mp4', $EquirectLayout, 'h264', '1000k' );
+	$AssetParams[] = SoyAssetMeta( 2048, 1024, 'mp4', EquirectLayout, 'h264', '5000k' );
+//	$AssetParams[] = SoyAssetMeta( 512, 256, 'gif', $EquirectLayout, 'gif', '5000k' );
+//	$AssetParams[] = SoyAssetMeta( 2048, 1024, 'gif', $EquirectLayout, 'gif', '5000k' );
+	$AssetParams[] = SoyAssetMeta( 2048, 1024, 'mjpeg', $EquirectLayout, 'mjpeg', '5000k' );
+
+//	$AssetParams[] = SoyAssetMeta( 1024, 512, 'webm', $CubemapLayout, 'vp8', '2000k' );
+	$AssetParams[] = SoyAssetMeta( 2048, 1024, 'webm', $CubemapLayout, 'vp8', '5000k' );
+	//	$AssetParams[] = SoyAssetMeta( 4096, 2048, 'webm', $CubemapLayout, 'vp8', '8000k' );
+	//	$AssetParams[] = SoyAssetMeta( 4096, 4096, 'webm', $CubemapLayout, 'vp8', '10000k' );
+	//	$AssetParams[] = SoyAssetMeta( 512, 256, 'mp4', $CubemapLayout, 'h264', '1000k' );
+	$AssetParams[] = SoyAssetMeta( 2048, 1024, 'mp4', $CubemapLayout, 'h264', '5000k' );
+	//	$AssetParams[] = SoyAssetMeta( 512, 256, 'gif', $CubemapLayout, 'gif', '5000k' );
+	//	$AssetParams[] = SoyAssetMeta( 2048, 1024, 'gif', $CubemapLayout, 'gif', '5000k' );
+	$AssetParams[] = SoyAssetMeta( 2048, 1024, 'mjpeg', $CubemapLayout, 'mjpeg', '5000k' );
+	
 
 	
 	foreach ( $AssetParams as $Asset )

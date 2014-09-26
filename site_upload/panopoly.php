@@ -13,8 +13,8 @@
 	}
 	else
 	{
-		define('FFMPEG_BIN', '../apps/ffmpeg' );
-		define('FFPROBE_BIN', '../apps/ffprobe' );
+		define('FFMPEG_BIN', '/usr/local/Cellar/ffmpeg/2.3.3/bin/ffmpeg' );
+		define('FFPROBE_BIN', '/usr/local/Cellar/ffmpeg/2.3.3/bin/ffprobe' );
 	}
 
 	define('FFMPEG_JPEG_QUALITY', 2 );	//	1(best)...31(worst)
@@ -115,7 +115,14 @@
 		if ( !array_key_exists( $Name, $Values ) )
 			return $DefaultValue;
 		
-		return $Values[$Name];
+		//	convert special string values to literals
+		$Value = $Values[$Name];
+		if ( is_string($Value) && strcasecmp($Value,'false')==0 )
+			$Value = false;
+		else if ( is_string($Value) && strcasecmp($Value,'true')==0 )
+			$Value = true;
+		
+		return $Value;
 	}
 	
 	
@@ -426,11 +433,13 @@
 	{
 		public $mFilename;
 		public $mInfo;		//	TStreamInfo
+		public $mLayout;
 		
-		public function __construct($Filename)
+		public function __construct($Filename,$Layout)
 		{
 			$this->mFilename = $Filename;
 			$this->mInfo = ProbeVideo( $this->mFilename );
+			$this->mLayout = $Layout;
 		}
 		
 		public function IsValid()
@@ -451,6 +460,11 @@
 		public function GetHeight()
 		{
 			return $this->mInfo->mHeight;
+		}
+		
+		public function GetLayout()
+		{
+			return $this->mLayout;
 		}
 		
 		public function GetContentType()
