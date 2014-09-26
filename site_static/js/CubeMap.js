@@ -67,7 +67,6 @@ function SetCubemapBackground($Asset,$Cube)
 		return;
 	var $Meta = $Asset.mMeta;
 	var $CubemapLayout = $Meta.GetCubemapLayout();
-	console.log("$CubemapLayout: ",$CubemapLayout);
 	if ( !$CubemapLayout )
 		return false;
 	
@@ -109,36 +108,49 @@ function SetFaceBackground($Element,$Face,$Layout)
 		$y = -$y;
 	}
 	
+	var $ElementChildImg = $Element.mFaceImgElement;
 	
 	if ( typeof $ImageUrl == 'object' )
 	{
-		var $ElementChildImg = $ImageUrl.cloneNode(false);
+		//	new image, need to delete the old one
+		if ( $ElementChildImg )
+		{
+			$Element.removeChild( $ElementChildImg );
+			$ElementChildImg = null;
+		}
+		
+		//	create new element as clone (this allows us to re-use the element and cross origin state if we've loaded an image)
+		$ElementChildImg = $ImageUrl.cloneNode(false);
+		$Element.appendChild($ElementChildImg);
+		$Element.mFaceImgElement = $ElementChildImg;
+	}
+	else if ( typeof $ImageUrl == 'string' )
+	{
+	//	console.log("update url", $ImageUrl );
+		//	data url, or url
+		//	need to create element
+		if ( !$ElementChildImg )
+		{
+			console.log("creating new img");
+			$ElementChildImg = document.createElement('img');
+			$Element.appendChild($ElementChildImg);
+			$Element.mFaceImgElement = $ElementChildImg;
+		}
+		
+		$ElementChildImg.src = $ImageUrl;
+	}
+
+	//	set style
+	if ( $ElementChildImg )
+	{
 		$ElementChildImg.style.position = 'fixed';
 		$ElementChildImg.style.left = $x + 'px ';
 		$ElementChildImg.style.top = $y + 'px ';
 		$ElementChildImg.style.width = $w + 'px ';
- 		$ElementChildImg.style.height = $h + 'px ';
+		$ElementChildImg.style.height = $h + 'px ';
 		$ElementChildImg.style.zIndex = -900;	//	doesn't work just setting the content's Z index :/
 		SetElementTransform($ElementChildImg, 'scaleX(' + $ImageMatrix.x +') scaleY(' + $ImageMatrix.y +')' );
-		$Element.appendChild($ElementChildImg);
 	}
-	else
-	{
-		//	check is string?
-		//console.log( typeof $ImageUrl);
-	/*
-	var $ElementChildImg = document.createElement('img');
-	$ElementChildImg.style.width = '100%';
-	$ElementChildImg.style.height = '100%';
-	var $MJpeg = new SoyMJpeg( 'http://image.panopo.ly/banks.mjpeg', $ElementChildImg, 25  );
-	$Element.appendChild( $ElementChildImg );
-*/
-		//	old CSS background method with proper alignment (working)
-		$Element.style.background = 'url(' + $ImageUrl + ') ' + $x + 'px ' + $y + 'px';
-		$Element.style.backgroundSize = $w + 'px ' + $h + 'px ';
-	}
-		
-		
 }
 
 
