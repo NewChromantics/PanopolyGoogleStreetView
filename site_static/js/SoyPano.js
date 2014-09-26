@@ -23,8 +23,8 @@ function SoyPano($PanoName,$Config,$OnNewImage,$OnMetaFailed,$DoLoad)
 	
 		//	attempt to load some assets immediately for speed
 		var $PreloadAssets = [];
-		$PreloadAssets.push( new SoyAssetMeta($PanoName + '.256x256.jpg',256,256,'jpg') );
-		$PreloadAssets.push( new SoyAssetMeta($PanoName + '.2048x2048.jpg',2048,2048,'jpg') );
+		$PreloadAssets.push( new SoyAssetMeta($PanoName + '.256x256.jpg',256,256,'jpg',null,null,'equirect' ) );
+		$PreloadAssets.push( new SoyAssetMeta($PanoName + '.2048x2048.jpg',2048,2048,'jpg',null,null,'equirect') );
 
 		forEach( $PreloadAssets, function($AssetMeta)
 		{

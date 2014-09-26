@@ -193,7 +193,7 @@ SoyAsset_Image.prototype.OnError = function($Event)
 
 
 //	same as asset data in .meta so can construct from json
-function SoyAssetMeta($Filename,$Width,$Height,$Format,$Codec,$BitRate)
+function SoyAssetMeta($Filename,$Width,$Height,$Format,$Codec,$BitRate,$Layout)
 {
 	if ( arguments.length == 0 )
 		return;
@@ -208,8 +208,13 @@ function SoyAssetMeta($Filename,$Width,$Height,$Format,$Codec,$BitRate)
 		this.Codec = $Json.Codec;
 		this.BitRate = $Json.BitRate;
 		this.Filename = $Json.Filename;
+		this.Layout = $Json.Layout;
 		return;
 	}
+	
+	$Layout = CheckDefaultParam( $Layout, 'equirect' );
+	$Layout = CheckDefaultParam( $Codec, null );
+	$Layout = CheckDefaultParam( $BitRate, null );
 	
 	this.Width = $Width;
 	this.Height = $Height;
@@ -217,6 +222,7 @@ function SoyAssetMeta($Filename,$Width,$Height,$Format,$Codec,$BitRate)
 	this.Codec = $Codec;
 	this.BitRate = $BitRate;
 	this.Filename = $Filename;
+	this.Layout = $Layout;
 }
 
 SoyAssetMeta.prototype.IsBetter = function($that)
@@ -249,17 +255,50 @@ SoyAssetMeta.prototype.IsBetter = function($that)
 	return false;
 }
 
+//	.mName and .mParam
+SoyAssetMeta.prototype.GetLayoutAndParam = function()
+{
+	//	legacy default
+	var $LayoutAndParam = { 'mName':"equirect", 'mParam':null };
+	var $Layout = this.Layout;
+	if ( !$Layout )
+		$Layout = this.Codec;
+	if ( !$Layout )
+		return $LayoutAndParam;
+
+	var $ParamStart = $Layout.indexOf('_');
+	if ( $ParamStart > 0 )
+	{
+		$LayoutAndParam.mParam = $Layout.slice($ParamStart+1);
+		$LayoutAndParam.mName = $Layout.slice(0,$ParamStart);
+	}
+	else
+	{
+		$LayoutAndParam.mName = $Layout;
+	}
+
+	//	legacy codec was cubemap or some video codec, if it's not cubemap, it was equirect
+	if ( $Layout == this.Codec && $LayoutAndParam.mName != 'cubemap' )
+	{
+		$LayoutAndParam.mName = 'equirect';
+	}
+
+	return $LayoutAndParam;
+}
+
+SoyAssetMeta.prototype.GetLayout = function()
+{
+	var $LayoutAndParam = this.GetLayoutAndParam();
+	return $LayoutAndParam.mName;
+}
 
 
 SoyAssetMeta.prototype.GetCubemapLayout = function()
 {
-	if ( typeof this.Codec == 'undefined' )
+	var $LayoutAndParam = this.GetLayoutAndParam();
+	if ( $LayoutAndParam.mName != 'cubemap' )
 		return false;
-	if ( !this.Codec.startsWith('cubemap') )
-		return false;
-
-	var $Layout = this.Codec.slice( 'cubemap_'.length )
-	return $Layout;
+	return $LayoutAndParam.mParam;
 }
 
 SoyAssetMeta.prototype.IsCubemap = function()
@@ -282,6 +321,8 @@ SoyAssetMeta.prototype.IsSupported = function($Config)
 	
 	if ( this.IsVideo() )
 	{
+		//	gr: testing
+		return false;
 		//	do video codec test
 		var $Video = document.createElement('video');
 		var $Type = this.Format;

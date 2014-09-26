@@ -63,7 +63,7 @@
 
 <!-- needs to be before any support that wants to bind to container -->
 <div id="container"></div>
-<div id="xxxcontainer_cubemap"></div>
+<div id="container_cubemap"></div>
 
 		<script src="js/soy.js"></script>
 		<script src="threejs/three.min.js"></script>
@@ -330,7 +330,7 @@ function OnClickedRiftMode()
 				if ( Name == '#debug' || Name == 'debug' )
 					Name = null;
 				if ( !Name )
-					Name = "Apartment11";
+					Name = "Elefun";
 				
 				//	assume this might not be the case on all browsers, but chrome's .hash starts with an octothorpe
 				if ( Name[0] == '#' )
@@ -446,7 +446,7 @@ function NewPano($Config,$Asset)
 		$Transform = 'translate3d(-50%,-50%,0)';
 		//$Transform = 'translate3d(-' + ($FaceSize/2) + 'px,-' + ($FaceSize/2) + 'px,0)';
 		$Transform += ' rotateZ(180deg)';
-		SetElementTransform3d( $CubeParent, $Transform );
+		SetElementTransform( $CubeParent, $Transform );
 		
 		var $RenderCameraElement = $Renderer.domElement.firstChild;
 		$RenderCameraElement.appendChild($CubeParent);

@@ -23,7 +23,7 @@ function CreateCubeFace($Parent,$FaceName,$FaceSize,$RotationTransform,$Colour)
 	$Element.style.height = ($FaceSize+$Pad) + 'px';
 	var $ZTransform = ' translateZ(' + ($FaceSize/2) + 'px) ';
 	var $Transform = $RotationTransform + ' ' + $ZTransform;
-	SetElementTransform3d( $Element, $Transform );
+	SetElementTransform( $Element, $Transform );
 	$Element.style.backgroundColor = $Colour;
 	$Element.style.overflow = 'hidden';
 }
@@ -66,23 +66,26 @@ function SetCubemapBackground($Asset,$Cube)
 		return;
 	var $Meta = $Asset.mMeta;
 	var $CubemapLayout = $Meta.GetCubemapLayout();
+	console.log("$CubemapLayout: ",$CubemapLayout);
 	if ( !$CubemapLayout )
 		return false;
 	
 	var $Layout = new CubemapLayout( $Asset.mAsset, $Meta.Width, $Meta.Height, $CubemapLayout );
 	
-	SetFaceBackground( $Cube.mFaces['Front'], $Layout.GetFront(), $Layout );
-	SetFaceBackground( $Cube.mFaces['Back'], $Layout.GetBack(), $Layout );
-	SetFaceBackground( $Cube.mFaces['Left'], $Layout.GetLeft(), $Layout );
-	SetFaceBackground( $Cube.mFaces['Right'], $Layout.GetRight(), $Layout );
-	SetFaceBackground( $Cube.mFaces['Up'], $Layout.GetUp(), $Layout );
-	SetFaceBackground( $Cube.mFaces['Down'], $Layout.GetDown(), $Layout );
+	SetFaceBackground( $Cube.mFaces['Front'], 'F', $Layout );
+	SetFaceBackground( $Cube.mFaces['Back'], 'B', $Layout );
+	SetFaceBackground( $Cube.mFaces['Left'], 'L', $Layout );
+	SetFaceBackground( $Cube.mFaces['Right'], 'R', $Layout );
+	SetFaceBackground( $Cube.mFaces['Up'], 'U', $Layout );
+	SetFaceBackground( $Cube.mFaces['Down'], 'D', $Layout );
 	return true;
 }
 
 
-function SetFaceBackground($Element,$ImageOffset,$Layout)
+function SetFaceBackground($Element,$Face,$Layout)
 {
+	var $ImageOffset = ScaleVectors( $Layout.mFaces[$Face], $Layout.GetFaceSize() );
+	var $ImageMatrix = $Layout.mFaceMatrix[$Face];
 	var $ImageSize = $Layout.mImageSize;
 	var $ImageUrl = $Layout.mImageUrl;
 	if ( !$Element )
@@ -90,20 +93,32 @@ function SetFaceBackground($Element,$ImageOffset,$Layout)
 	
 	var $FaceSize = new THREE.Vector2( $Element.clientWidth, $Element.clientHeight );
 	var $CssScale = DivideVectors( $Layout.GetFaceSize(), $FaceSize );
-	var $x = -($ImageOffset.x/$CssScale.x) + 'px ';
-	var $y = -($ImageOffset.y/$CssScale.y) + 'px ';
-	var $w = ($ImageSize.x/$CssScale.x) + 'px ';
-	var $h = ($ImageSize.y/$CssScale.y) + 'px ';
+	var $x = -($ImageOffset.x/$CssScale.x);
+	var $y = -($ImageOffset.y/$CssScale.y);
+	var $w = ($ImageSize.x/$CssScale.x);
+	var $h = ($ImageSize.y/$CssScale.y);
+	
+	
+	if ( $ImageMatrix.x < 0 )
+	{
+		$x = ($w + $x) - $FaceSize.x;
+		$x = -$x;
+
+		$y = ($h + $y) - $FaceSize.y;
+		$y = -$y;
+	}
+	
 	
 	if ( typeof $ImageUrl == 'object' )
 	{
 		var $ElementChildImg = $ImageUrl.cloneNode(false);
 		$ElementChildImg.style.position = 'fixed';
-		$ElementChildImg.style.left = $x;
-		$ElementChildImg.style.top = $y;
-		$ElementChildImg.style.width = $w;
-		$ElementChildImg.style.height = $h;
+		$ElementChildImg.style.left = $x + 'px ';
+		$ElementChildImg.style.top = $y + 'px ';
+		$ElementChildImg.style.width = $w + 'px ';
+ 		$ElementChildImg.style.height = $h + 'px ';
 		$ElementChildImg.style.zIndex = -900;	//	doesn't work just setting the content's Z index :/
+		SetElementTransform($ElementChildImg, 'scaleX(' + $ImageMatrix.x +') scaleY(' + $ImageMatrix.y +')' );
 		$Element.appendChild($ElementChildImg);
 	}
 	else
@@ -118,8 +133,8 @@ function SetFaceBackground($Element,$ImageOffset,$Layout)
 	$Element.appendChild( $ElementChildImg );
 */
 		//	old CSS background method with proper alignment (working)
-		$Element.style.background = 'url(' + $ImageUrl + ') ' + $x + $y;
-		$Element.style.backgroundSize = $w + $h;
+		$Element.style.background = 'url(' + $ImageUrl + ') ' + $x + 'px ' + $y + 'px';
+		$Element.style.backgroundSize = $w + 'px ' + $h + 'px ';
 	}
 		
 		

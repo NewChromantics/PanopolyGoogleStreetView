@@ -17,7 +17,7 @@ function GetTransformProperty()
 
 
 
-function SetElementTransform3d($Element,$TransformCss)
+function SetElementTransform($Element,$TransformCss)
 {
 	if ( !$Element && $TransformProperty != null )
 		return;

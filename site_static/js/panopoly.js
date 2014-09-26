@@ -204,21 +204,53 @@ function GetCameraQuaternion()
 }
 
 
+function GetRealFace($Face)
+{
+	switch ( $Face )
+	{
+		case 'Z':	return 'B';
+		case 'A':	return 'U';
+		case 'W':	return 'D';
+	}
+	return $Face;
+}
 
+function GetFaceMatrix($Face)
+{
+	switch ( $Face )
+	{
+		case 'Z':	return new THREE.Vector2(-1,-1);
+		case 'A':	return new THREE.Vector2(-1,-1);
+		case 'W':	return new THREE.Vector2(-1,-1);
+	}
+	return new THREE.Vector2(1,1);
+}
 
 function CubemapLayout($ImageUrl,$ImageWidth,$ImageHeight,$Layout)
 {
 	this.mFaces = {};
+	this.mFaceMatrix = {};
 	
 	//	layout should be WH<FACES>
 	var $TileWidth = $Layout[0];
 	var $TileHeight = $Layout[1];
+	
+	assert( isInt( $TileWidth ), 'Invalid tile width:' + $TileWidth );
+	assert( isInt( $TileHeight ), 'Invalid tile height:' + $TileHeight );
+	$TileWidth = isInt( $TileWidth ) ? $TileWidth : 0;
+	$TileHeight = isInt( $TileHeight ) ? $TileHeight : 0;
+	
 	for ( var $t=2;	$t<$Layout.length;	$t++ )
 	{
 		var $Face = $Layout[$t];
 		var $x = ($t-2) % $TileWidth;
 		var $y = Math.floor(($t-2) / $TileWidth);
-		this.mFaces[$Face] = new THREE.Vector2($x,$y);
+		
+		var $RealFace = GetRealFace( $Face );
+		var $FaceMatrix = GetFaceMatrix( $Face );
+		
+		this.mFaces[$RealFace] = new THREE.Vector2($x,$y);
+		this.mFaceMatrix[$RealFace] = $FaceMatrix;
 		//console.log($Face + " = " + $x + "," + $y );
 	}
 	
