@@ -547,7 +547,7 @@ function NewPano($Config,$Asset)
 
 
 				$Config.mSplitter = new THREE.StereoEffect( $Config.mRendererLeft, $Config.mRendererRight );
-				$Config.mSplitter.separation = $Config.mFaceResolution * 0.10;
+				$Config.mSplitter.separation = $Config.mFaceResolution * $Config.mSeperation;
 				$Config.mSplitEnabled = false;
 
 
