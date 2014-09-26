@@ -79,14 +79,20 @@
 		$h = imagesy($Image);
 		$x = $Vector2->x / $w;
 		$y = $Vector2->y / $h;
+
+		if ( $x < 0 || $y < 0 )
+			return GetRgb( 0,255,0 );
+		if ( $x > 1 || $y > 1 )
+			return GetRgb( 255,255,0 );
+
 		return GetVector2Colour( new Vector2($x,$y) );
 	}
 	
 	function GetLatLonColour($LatLon)
 	{
-		if ( $LatLon->x < -1 )
+		if ( $LatLon->x < -kPiF/2 )
 			return GetRgb( 0,255,0 );
-		if ( $LatLon->x > 1 )
+		if ( $LatLon->x > kPiF/2 )
 			return GetRgb( 255,255,0 );
 		
 		$x = $LatLon->x + kPiF;

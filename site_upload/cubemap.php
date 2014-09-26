@@ -1,8 +1,14 @@
 <?php
 	
 	define('kPiF', 3.14159265358979323846264338327950288 );
-	#define kDegToRad		(kPiF / 180.0f)
-	#define kRadToDeg		(180.0f / kPiF)
+	function DegreesToRadians($Deg)
+	{
+		return $Deg * (kPiF / 180.0);
+	}
+	function RadiansToDegrees($Rad)
+	{
+		return $Rad * (180.0 / kPiF);
+	}
 
 	class Vector2
 	{
@@ -76,13 +82,34 @@
 		$LatLon->x = $lat;
 		$LatLon->y = $lon;
 	}
-
+	
+	//	-PI...PI, -PI...PI
+	function ScreenEquirectToLatLon($ScreenPos,$Width=1,$Height=1)
+	{
+		$xmul = 2.0;
+		$xsub = 1.0;
+		$ymul = 2.0;
+		$ysub = 1.0;
+		
+		$xfract = $ScreenPos->x / $Width;
+		$xfract *= $xmul;
+		
+		$yfract = ($Height - $ScreenPos->y) / $Height;
+		$yfract *= $ymul;
+		
+		$lat = ( $xfract - $xsub) * kPiF;
+		$lon = ( $yfract - $ysub) * kPiF;
+		return new Vector2( $lat, $lon );
+	}
+	
+	//	gr: old func.
+	//	this MIGHT be correct. lat is -PI...PI Lon is -HalfPi...HalfPi (but that's confusing)
 	function GetLatLong($x,$y,$Width,$Height)
 	{
 		$xmul = 2.0;
 		$xsub = 1.0;
-		$ysub = 0.5;
 		$ymul = 1.0;
+		$ysub = 0.5;
 		
 		$xfract = $x / $Width;
 		$xfract *= $xmul;
@@ -95,6 +122,15 @@
 		return new Vector2( $lat, $lon );
 	}
 	
+	function LatLonToScreenEquirect($LatLon)
+	{
+		$lat = $LatLon->x;
+		$lon = $LatLon->y;
+		$ScreenPos = new Vector2(0,0);
+		GetScreenFromLatLong($lat,$lon,1,1,$ScreenPos);
+		return $ScreenPos;
+	}
+
 	function GetScreenFromLatLong($lat,$lon,$Width,$Height,&$ScreenPos)
 	{
 		//	-pi...pi -> -1...1
