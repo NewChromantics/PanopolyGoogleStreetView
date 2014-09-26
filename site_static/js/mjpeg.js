@@ -1,23 +1,35 @@
-function SoyMJpeg($Url,$Element,$FrameRate)
+function SoyMJpeg($Url,$FrameRate,$Loop,$OnUpdateJpeg,$OnError)
 {
 	var $this = this;
 
+	//	if an element is provided instead of OnUpdate, make a func
+	if ( typeof $OnUpdate == 'object' )
+	{
+		var $Element = $OnUpdateJpeg;
+		$OnUpdateJpeg = function($JpegData) { $Element.src = $JpegData; };
+	}
+	
 	this.mLastJpegStart = -1;
 	this.mLastReadPos = -1;
 	this.mJpegs = new Array();
 	this.mJpegHeader = null;
 	this.mMJpegAjax = null;
 	this.mUrl = $Url;
-	this.mElement = $Element;
 	this.mFrameRate = $FrameRate;
-	
+	this.mOnError = $OnError;
+	this.mOnUpdateJpeg = $OnUpdateJpeg;
+	this.mLoop = $Loop;
+	this.mCurrentFrame = 0;
+	this.mFinishedParse = false;
 	
 	var ajax = new XMLHttpRequest();
 	this.mMJpegAjax = ajax;
-	ajax.addEventListener("progress", function($Event) { $this.OnMJpegData($Event); }, false );
+	//ajax.addEventListener("progress", function($Event) { $this.OnMJpegData($Event); }, false );
 	//	ajax.addEventListener("load", function($Event){ $this.OnReply($Event); }, false);
 	//	ajax.addEventListener("error", function($Event){ $this.OnError($Event); }, false);
 	//	ajax.addEventListener("abort", function($Event){ $this.OnError($Event); }, false);
+	ajax.onreadystatechange = function($Event) { $this.OnAjaxStateChanged($Event); };
+
 	ajax.open("GET", this.mUrl, true );
 	//ajax.setRequestHeader('Content-Type', 'multipart/form-data;');
 	ajax.withCredentials = false;
@@ -31,22 +43,26 @@ function SoyMJpeg($Url,$Element,$FrameRate)
 
 SoyMJpeg.prototype.PopJpeg = function()
 {
-	//	time for another frame
-	if ( this.mJpegs.length == 0 )
+	if ( !this.mOnUpdateJpeg )
 		return false;
-	if ( !this.mElement )
+
+	//	waiting for next frame
+	if ( this.mCurrentFrame >= this.mJpegs.length )
+	{
+		if ( this.mFinishedParse )
+			this.mCurrentFrame = 0;
 		return false;
+	}
 	
 	//	encode to datauri for html
-	var $JpegData = this.mJpegs[0];
-	this.mJpegs.splice(0,1);
-	
+	var $JpegData = this.mJpegs[this.mCurrentFrame];
+
 	var $Blob = $JpegData;
-	console.log("$Blob:");
-	console.log($Blob);
+//	console.log("$Blob:",$Blob);
 	var $DataUrl = URL.createObjectURL( $Blob );
-	console.log("new jpeg" + $DataUrl );
-	this.mElement.src = $DataUrl;
+//	console.log("new jpeg" + $DataUrl );
+	
+	this.mOnUpdateJpeg( $DataUrl );
 	
 	return true;
 }
@@ -54,6 +70,7 @@ SoyMJpeg.prototype.PopJpeg = function()
 SoyMJpeg.prototype.UpdateJpegToElement = function()
 {
 	this.PopJpeg();
+	this.mCurrentFrame ++;
 	
 	var $UpdateRateMs = 1000/parseFloat(this.mFrameRate);
 	var $this = this;
@@ -62,17 +79,36 @@ SoyMJpeg.prototype.UpdateJpegToElement = function()
 
 SoyMJpeg.prototype.OnJpeg = function($JpegData)
 {
-	console.log("Found jpeg");
+//	console.log("Found jpeg");
 	var $JpegDataView = new DataView($JpegData);
 	var $Blob = new Blob([$JpegDataView], {type: "image/jpeg"});
 	this.mJpegs.push( $Blob );
+}
+
+SoyMJpeg.prototype.OnAjaxStateChanged = function($Event)
+{
+	var $ReadyState = $Event.target.readyState;
+	if ( $ReadyState >= 3 )
+	{
+		this.OnMJpegData( $Event );
+	}
+}
+
+SoyMJpeg.prototype.OnFinishedDownloadingData = function()
+{
+	this.mFinishedParse = true;
 }
 
 SoyMJpeg.prototype.OnMJpegData = function($Event)
 {
 	var $Data = $Event.target.response;
 	if ( $Data == null )
+	{
+		if ( $Event.target.readyState == 4 )
+			this.OnFinishedDownloadingData();
 		return;
+	}
+	
 	console.log($Event);
 	console.log($Data);
 	var $DataLength = $Data.byteLength;
@@ -86,9 +122,7 @@ SoyMJpeg.prototype.OnMJpegData = function($Event)
 		if ( $DataLength < 5 )
 			return;
 		this.mHeader = $Data.slice(0,10);
-		console.log("jpeg header is ");
-		console.log(ab2str(this.mHeader) );
-		console.log( this.mHeader.byteLength );
+		console.log("jpeg header is ", ab2str(this.mHeader), " (" + this.mHeader.byteLength + ")" );
 		this.mLastReadPos = this.mHeader.byteLength;
 		this.mLastJpegStart = 0;
 	}
@@ -113,7 +147,7 @@ SoyMJpeg.prototype.OnMJpegData = function($Event)
 			continue;
 		}
 		
-		console.log("found jpeg from " + this.mLastJpegStart + " to " + $i );
+	//	console.log("found jpeg from " + this.mLastJpegStart + " to " + $i );
 		
 		//	found next jpeg
 		var $JpegData = $Data.slice(this.mLastJpegStart,$i);
@@ -123,5 +157,8 @@ SoyMJpeg.prototype.OnMJpegData = function($Event)
 		this.mLastReadPos = this.mLastJpegStart;
 	}
 	
+
+	if ( $Event.target.readyState == 4 )
+		this.OnFinishedDownloadingData();
 }
 
