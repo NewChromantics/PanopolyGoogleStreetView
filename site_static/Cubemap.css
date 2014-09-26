@@ -29,16 +29,3 @@
 	z-index: 900;	/*	on top of image */
 }
 
-
-#Container
-{
-	position: absolute;
-	left: 50px;
-	top: 50px;
-	right: 80px;
-	bottom: 90px;
-	transform-style: preserve-3d;
-	background: red;
-	overflow: hidden;
-}
-

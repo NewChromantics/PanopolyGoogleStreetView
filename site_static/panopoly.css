@@ -28,7 +28,7 @@ a
 	color: #ffffff;
 }
 
-#container
+.Container
 {
 	text-align: center;
 	position: absolute;
@@ -39,6 +39,8 @@ a
 	bottom:0px;
 	right:0px;
 }
+
+
 
 #container.ipad_smallviewport
 {

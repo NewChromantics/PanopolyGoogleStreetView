@@ -170,3 +170,22 @@ function isInt(n)
 	return $Int != NaN;
 }
 
+//	get params from hash
+//	pano.option.option.option
+var $HashParams = window.location.hash.split('.');
+if ( $HashParams.length > 0 && $HashParams[0][0] == '#' )
+	$HashParams[0] = $HashParams[0].substr(1);
+
+function GetHashParam($Index)
+{
+	if ( $Index < 0 || $Index > $HashParams.length )
+		return null;
+	return $HashParams[$Index];
+}
+
+function HasHashParam($Name)
+{
+	var $HasParam = false;
+	forEach( $HashParams, function($Param) { $HasParam = $HasParam || ($Param==$Name); } );
+	return $HasParam;
+}

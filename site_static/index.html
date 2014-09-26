@@ -62,8 +62,8 @@
 		</div>
 
 <!-- needs to be before any support that wants to bind to container -->
-<div id="container"></div>
-<div id="container_cubemap"></div>
+<div class="Container" id="container"></div>
+<div class="Container" id="container_dual"></div>
 
 		<script src="js/soy.js"></script>
 		<script src="threejs/three.min.js"></script>
@@ -98,8 +98,9 @@
 	ShowElement('ClearButton');
 	ShowElement('SplitButton');
 	
+	
 //	turn on debug stuff
-if ( window.location.hash == '#debug' )
+if ( HasHashParam('debug') )
 {
 	//alert('debug mode');
 	ShowElement('QuatDebug');
@@ -112,13 +113,24 @@ if ( window.location.hash == '#debug' )
 		ShowElement("Uptime");
 		var Container = GetElement("Uptime");
 		if ( !Container )
-		return;
+			return;
 		Container.innerText = parseInt( Container.innerText ) + 1;
 		setTimeout( UpdateUptime, 1000 );
 	}
 	UpdateUptime();
 }
 
+function Debug_SetStyleBorder($Element,$Size)
+{
+	if ( !$Element )
+		return;
+	$Size = CheckDefaultParam($Size,30);
+	$Element.style.left = $Size + 'px';
+	$Element.style.top = $Size + 'px';
+	$Element.style.bottom = $Size + 'px';
+	$Element.style.right = $Size + 'px';
+	console.log("updated border",$Element);
+}
 	
 function OnOculusBridgeSupportChanged($Supported)
 {
@@ -326,16 +338,9 @@ function OnClickedRiftMode()
 			{
 				//	extract from url;
 				//	panopo.ly/#name
-				var Name = window.location.hash;
-				if ( Name == '#debug' || Name == 'debug' )
-					Name = null;
+				var Name = GetHashParam(0);
 				if ( !Name )
-					Name = "Elefun";
-				
-				//	assume this might not be the case on all browsers, but chrome's .hash starts with an octothorpe
-				if ( Name[0] == '#' )
-					Name = Name.substr(1);
-				
+					Name = "Apartment11";
 				return Name;
 			}
 
@@ -667,7 +672,11 @@ function NewPano($Config,$Asset)
 		//	setup config
 		var $RenderMode = RENDERMODE_NONE;
 		
-		if ( IsCanvasSupported() && IsSupported('Webgl') )
+		if ( HasHashParam('cubemap') && IsSupported('Css3d') )
+		{
+			$RenderMode = RENDERMODE_CUBEMAP;
+		}
+		else if ( IsCanvasSupported() && IsSupported('Webgl') )
 		{
 			$RenderMode = RENDERMODE_WEBGL;
 		}
@@ -678,8 +687,10 @@ function NewPano($Config,$Asset)
 
 		var $Config = new SoyConfig( $RenderMode );
 		$Config.mContainer = GetElement("container");
-		$Config.mOnNewFrame = function($Asset) {  };
 		$Config.mOnNewFrame = function($Asset) { UpdateTexture($Asset,$Config) };
+
+		if ( HasHashParam('border') )
+			Debug_SetStyleBorder($Config.mContainer);
 		
 		if ( $Config.mRenderMode != RENDERMODE_NONE )
 		{
@@ -691,11 +702,18 @@ function NewPano($Config,$Asset)
 			
 			
 			//	make a second config
-			if ( GetElement("container_cubemap") )
+			if ( HasHashParam('dual') && GetElement("container_dual") )
 			{
+				var $Container2 = GetElement("container_dual");
+				if ( HasHashParam('border') )
+					Debug_SetStyleBorder($Container2);
+
+				$Config.mContainer.style.bottom = '50%';
+				$Container2.style.top = '50%';
+				
 				var $Config2 = new SoyConfig( RENDERMODE_CUBEMAP );
 				$Config2.mOnNewFrame = function($Asset) { UpdateTexture($Asset,$Config2) };
-				$Config2.mContainer = GetElement("container_cubemap");
+				$Config2.mContainer = $Container2;
 				InitWebgl( $Config2 );
 				LoadPano( $Config2 );
 				$Configs.push($Config2);
