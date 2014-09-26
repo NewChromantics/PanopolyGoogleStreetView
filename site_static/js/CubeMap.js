@@ -10,15 +10,16 @@ function CreateCubeFace($Parent,$FaceName,$FaceSize,$RotationTransform,$Colour)
 	var $FaceContentElement = document.createElement('div');
 	$FaceContentElement.className = 'FaceContent';
 	$Element.appendChild( $FaceContentElement );
-	
+/*
 	var $Thing = document.createElement('span');
 	$Thing.style.position = 'fixed';
 	$Thing.style.top = '50%';
 	$Thing.style.left = '50%';
 	$Thing.innerText = $FaceName;
 	$FaceContentElement.appendChild($Thing);
-	
-	var $Pad = 3;
+*/
+	//	add padding to try and fill gaps. but dont go too far then we get "z fighting"
+	var $Pad = 1;
 	$Element.style.width = ($FaceSize+$Pad) + 'px';
 	$Element.style.height = ($FaceSize+$Pad) + 'px';
 	var $ZTransform = ' translateZ(' + ($FaceSize/2) + 'px) ';
