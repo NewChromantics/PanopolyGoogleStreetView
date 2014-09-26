@@ -162,3 +162,11 @@ Math.DegreesToRadians = function(deg)
 {
 	return deg * (Math.PI/180);
 }
+
+
+function isInt(n)
+{
+	var $Int = parseInt(n);
+	return $Int != NaN;
+}
+
