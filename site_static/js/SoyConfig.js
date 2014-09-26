@@ -12,7 +12,7 @@ function SoyConfig($RenderMode)
 	if ( IsMobile() )
 	{
 		this.mFaceResolution = 256;
-		this.mMaxResolution = 256;
+		this.mMaxResolution = 1024;
 	}
 	else
 	{
