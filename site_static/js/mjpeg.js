@@ -18,8 +18,7 @@ SoyFrameIndex.prototype.GetDataUrl = function($ArrayBuffer)
 	var $JpegDataView = new DataView( $ArrayBuffer, this.mFirstIndex, this.mLength );
 	var $Blob = new Blob([$JpegDataView], {type: "image/jpeg"});
 	this.mDataUrl = URL.createObjectURL( $Blob );
-	console.log("new data url",this.mDataUrl);
-	//delete $Blob;
+//	console.log("new data url",this.mDataUrl);
 	return this.mDataUrl;
 }
 
@@ -125,7 +124,7 @@ SoyMJpeg.prototype.UpdateJpegToElement = function($Timestamp)
 SoyMJpeg.prototype.AddFrame = function($FirstIndex,$LastIndex)
 {
 	this.mFrames.push( new SoyFrameIndex($FirstIndex,$LastIndex) );
-	console.log("found jpeg #" + this.mFrames.length + " from " + $FirstIndex + " to " + $LastIndex );
+//	console.log("found jpeg #" + this.mFrames.length + " from " + $FirstIndex + " to " + $LastIndex );
 	
 
 }
