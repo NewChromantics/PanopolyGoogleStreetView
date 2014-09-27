@@ -77,8 +77,10 @@ SoyMJpeg.prototype.PopJpeg = function()
 	if ( this.mCurrentFrame >= this.mFrames.length )
 	{
 		//	loop
-		if ( this.mFinishedParse )
+		if ( this.mFinishedParse && this.mFrames.length > 0 )
+		{
 			this.mCurrentFrame = this.mCurrentFrame % this.mFrames.length;
+		}
 	}
 	if ( this.mCurrentFrame >= this.mFrames.length )
 		return false;
@@ -156,33 +158,40 @@ SoyMJpeg.prototype.OnMJpegData = function($Event,$Caller)
 	var $HeaderLength = 2;
 	
 	//	need to read header
-	if ( this.mHeader == null )
+	if ( this.mJpegHeader == null )
 	{
 		//	header in 32bit chunks for speed
 		if ( $Data.byteLength < $Int32Size * $HeaderLength )
 			return;
 		
-		this.mHeader = new Array();
+		this.mJpegHeader = new Array();
 		for ( var $i=0;	$i<$HeaderLength;	$i++ )
-			this.mHeader.push( $Data.getUint32($i*$Int32Size) );
-		console.log("jpeg header is ", Uint32ToString(this.mHeader[0]), Uint32ToString(this.mHeader[1]) );
+			this.mJpegHeader.push( $Data.getUint32($i*$Int32Size) );
+		console.log("jpeg header is ", Uint32ToString(this.mJpegHeader[0]), Uint32ToString(this.mJpegHeader[1]) );
 		this.mLastJpegStart = 0;
 		this.mLastReadPos = $Int32Size;
 	}
 
 	//	look for next header
-	for ( var $i=this.mLastReadPos;	$i<$Data.byteLength-($Int32Size*$HeaderLength);	$i++ )
+	var $Length = $Data.byteLength-($Int32Size*$HeaderLength);
+	for ( var $i=this.mLastReadPos;	$i<$Length;	$i++ )
 	{
 		var $Match = true;
-		for ( var $h=0;	$h<this.mHeader.length;	$h++ )
-			$Match &= this.mHeader[$h] == $Data.getUint32($i + ($Int32Size*$h));
+		for ( var $h=0;	$h<this.mJpegHeader.length;	$h++ )
+		{
+			var $a = this.mJpegHeader[$h];
+			var $b = $Data.getUint32($i + ($Int32Size*$h) );
+			$Match &= $a == $b;
+		}
 		if ( !$Match )
 		{
 			this.mLastReadPos = $i;
 			continue;
 		}
 		
-		this.AddFrame( this.mLastJpegStart, $i );
+		//	check for bad jpegs (code error!)
+		if ( $i - this.mLastJpegStart > 10 )
+			this.AddFrame( this.mLastJpegStart, $i );
 		
 		this.mLastJpegStart = $i;
 		this.mLastReadPos = this.mLastJpegStart;

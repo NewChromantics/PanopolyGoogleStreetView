@@ -334,6 +334,7 @@ SoyAssetMeta.prototype.IsSupported = function($Config)
 		}
 		else
 		{
+			//	not supporting mjpeg in non-cubemap
 			if ( $IsMjpeg )
 				return false;
 			
