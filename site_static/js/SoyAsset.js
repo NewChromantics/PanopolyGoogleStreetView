@@ -325,16 +325,22 @@ SoyAssetMeta.prototype.IsSupported = function($Config)
 		var $Codec = this.Codec;
 		var $IsMjpeg = ( $Type == 'mjpeg' && $Codec == 'mjpeg' );
 
-		//	we all support mjpeg, otherwise, do video codec test
-		if ( !$IsMjpeg )
+		//	currently mjpeg is CSS only
+		var $CubemapMode = ($Config.mRenderMode == RENDERMODE_CUBEMAP);
+		
+		if ( $CubemapMode )
 		{
+			return $IsMjpeg;
+		}
+		else
+		{
+			if ( $IsMjpeg )
+				return false;
+			
 			//	mobile (ios?) only supports mjpeg, as video needs to be clicked. no auto play!
 			if ( IsMobile() )
 				return false;
 			
-			
-			//	gr: debug
-			return false;
 			var $Video = document.createElement('video');
 			var $VideoTypeString = 'video/' + $Type + ';codecs="' + $Codec + '"';
 			var $CanPlay = $Video.canPlayType($VideoTypeString);
