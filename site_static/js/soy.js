@@ -108,6 +108,15 @@ function ab2str(buf) {
 	return String.fromCharCode.apply(null, new Uint8Array(buf));
 }
 
+function Uint32ToString($Int)
+{
+	var $a = ($Int >> 24) & 0xff;
+	var $b = ($Int >> 16) & 0xff;
+	var $c = ($Int >> 8) & 0xff;
+	var $d = ($Int >> 0) & 0xff;
+	return String.fromCharCode($a) + String.fromCharCode($b) + String.fromCharCode($c) + String.fromCharCode($d);
+}
+
 function str2ab(str) {
 	var buf = new ArrayBuffer(str.length*2); // 2 bytes for each char
 	var bufView = new Uint8Array(buf);
