@@ -18,7 +18,11 @@ function SoyConfig($RenderMode)
 	else
 	{
 		//	osx chrome css clips badly at 2000px
-		this.mFaceResolution = 1500;
+		//	performance improves as resolution lowers...
+		//		this.mFaceResolution = 1500;
+		//		this.mMaxResolution = 4096;
+		//	ideal: face resolution matches actual face res... otherwise we're wasting video pixels
+		this.mFaceResolution = 512;
 		this.mMaxResolution = 4096;
 	}
 
