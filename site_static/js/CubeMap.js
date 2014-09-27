@@ -22,6 +22,7 @@ function CreateCubeFace($Parent,$FaceName,$FaceSize,$RotationTransform,$Colour)
 	var $Pad = 1;
 	$Element.style.width = ($FaceSize+$Pad) + 'px';
 	$Element.style.height = ($FaceSize+$Pad) + 'px';
+	//	gr: if using backface culling (no noticable speed increase), negate the z transform
 	var $ZTransform = ' translateZ(' + ($FaceSize/2) + 'px) ';
 	var $Transform = $RotationTransform + ' ' + $ZTransform;
 	SetElementTransform( $Element, $Transform );
@@ -48,13 +49,13 @@ function CreateCube($Parent,$FaceSize)
 	$Cube.mFaces = {};
 	
 	//	gr: have swapped L and R here because of cubemap.php output.... one of these is wrong...
-	CreateCubeFace( $Cube, 'Up', $FaceSize, 'rotateX(90deg) rotate(180deg)', 'red' );
+	CreateCubeFace( $Cube, 'Up', $FaceSize, 'rotateX(90deg) rotateZ(180deg)', 'red' );
 	CreateCubeFace( $Cube, 'Front', $FaceSize, '', 'lime' );
 	CreateCubeFace( $Cube, 'Left', $FaceSize, 'rotateY(-90deg)', 'blue' );
 	CreateCubeFace( $Cube, 'Back', $FaceSize, 'rotateY(180deg)', 'yellow' );
 	CreateCubeFace( $Cube, 'Right', $FaceSize, 'rotateY(90deg)', 'cyan' );
-	CreateCubeFace( $Cube, 'Down', $FaceSize, 'rotateX(-90deg) rotate(180deg)', 'magenta' );
-
+	CreateCubeFace( $Cube, 'Down', $FaceSize, 'rotateX(-90deg) rotateZ(180deg)', 'magenta' );
+	
 	return $Cube;
 }
 
@@ -67,8 +68,9 @@ function SetCubemapBackground($Asset,$Cube)
 		return;
 	
 	//	quick update
-	if ( typeof $Asset.mAsset == 'string' && $Cube.mGeometryInitialised )
+	if ( typeof $Asset.mAsset == 'string' && $Cube.mGeometryInitialised === true )
 	{
+		//	for speed up, only update non-culled faces
 		var $Success = true;
 		$Success &= UpdateFaceBackground( $Cube.mFaces['Front'], $Asset );
 		$Success &= UpdateFaceBackground( $Cube.mFaces['Back'], $Asset );
@@ -175,14 +177,15 @@ function SetFaceBackground($Element,$Face,$Layout)
 
 function UpdateFaceBackground($Element,$Asset)
 {
+	var $ImageUrl = $Asset.mAsset;
 	var $ElementChildImg = $Element.mFaceImgElement;
+	/*
 	if ( !$ElementChildImg )
 		return false;
 	
-	var $ImageUrl = $Asset.mAsset;
 	if ( typeof $ImageUrl != 'string' )
 		return false;
-
+*/
 	$ElementChildImg.src = $ImageUrl;
 	return true;
 }
