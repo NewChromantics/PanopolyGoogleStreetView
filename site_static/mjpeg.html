@@ -15,8 +15,9 @@
 			<script src="js/soy.js"></script>
 			<script src="js/mjpeg.js"></script>
 <script>
-	console.log("loading 'http://image.panopo.ly/banks.mjpeg'");
-	var $mjpeg = new SoyMJpeg('http://image.panopo.ly/banks.mjpeg', document.getElementById('sink'), 25 );
+	var $Url = 'http://image.panopo.ly/Elefun.2048x1024.mjpeg.mjpeg';
+	console.log("loading ",$Url);
+	var $mjpeg = new SoyMJpeg($Url, 25, true, document.getElementById('sink') );
 </script>
 
 
