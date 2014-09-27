@@ -65,6 +65,22 @@ function SetCubemapBackground($Asset,$Cube)
 {
 	if ( !$Cube )
 		return;
+	
+	//	quick update
+	if ( typeof $Asset.mAsset == 'string' && $Cube.mGeometryInitialised )
+	{
+		var $Success = true;
+		$Success &= UpdateFaceBackground( $Cube.mFaces['Front'], $Asset );
+		$Success &= UpdateFaceBackground( $Cube.mFaces['Back'], $Asset );
+		$Success &= UpdateFaceBackground( $Cube.mFaces['Left'], $Asset );
+		$Success &= UpdateFaceBackground( $Cube.mFaces['Right'], $Asset );
+		$Success &= UpdateFaceBackground( $Cube.mFaces['Up'], $Asset );
+		$Success &= UpdateFaceBackground( $Cube.mFaces['Down'], $Asset );
+		if ( $Success )
+			return true;
+		console.log("failed fast cubemap update",$Cube);
+	}
+	
 	var $Meta = $Asset.mMeta;
 	var $CubemapLayout = $Meta.GetCubemapLayout();
 	if ( !$CubemapLayout )
@@ -78,6 +94,9 @@ function SetCubemapBackground($Asset,$Cube)
 	SetFaceBackground( $Cube.mFaces['Right'], 'R', $Layout );
 	SetFaceBackground( $Cube.mFaces['Up'], 'U', $Layout );
 	SetFaceBackground( $Cube.mFaces['Down'], 'D', $Layout );
+	
+	$Cube.mGeometryInitialised = true;
+	
 	return true;
 }
 
@@ -153,5 +172,19 @@ function SetFaceBackground($Element,$Face,$Layout)
 	}
 }
 
+
+function UpdateFaceBackground($Element,$Asset)
+{
+	var $ElementChildImg = $Element.mFaceImgElement;
+	if ( !$ElementChildImg )
+		return false;
+	
+	var $ImageUrl = $Asset.mAsset;
+	if ( typeof $ImageUrl != 'string' )
+		return false;
+
+	$ElementChildImg.src = $ImageUrl;
+	return true;
+}
 
 
