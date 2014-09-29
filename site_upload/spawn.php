@@ -6,6 +6,7 @@
 	
 	require('panopoly.php');
 	require('s3.php');
+	require('ffmpeg.php');
 
 	if ( IsLocalhost() )
 		define('FAKE_UPLOAD','/Users/grahamr/Desktop/upload');
@@ -20,7 +21,7 @@
 	S3::setAuth( AWS_ACCESS, AWS_SECRET );
 
 	$PanoName = GetArg('panoname',false);
-	$PanoFormat = GetArg('panoformat',false);
+	$PanoLayout = GetArg('panolayout','equirect');
 	
 	if ( !file_exists(FFMPEG_BIN) )
 		return OnError("Missing ffmpeg " . FFMPEG_BIN );
@@ -54,12 +55,8 @@
 		register_shutdown_function('DeleteTempFile',$TempFilename);
 	}
 
-	$EquirectLayout = 'equirect';
-	$CubemapLayout = 'cubemap_23ULFRBD';
-
 	//	parse images as video
-	$InputLayout = $EquirectLayout;
-	$Image = new TVideo($TempFilename,$Layout);
+	$Image = new TVideo($TempFilename,$PanoLayout);
 	if ( !$Image->IsValid() )
 	{
 		return OnError("failed to read image or video information from $TempFilename");
@@ -87,6 +84,11 @@
 	UploadMeta( $OutputAssets );
 
 	
+	
+	$EquirectLayout = 'equirect';
+	$CubemapLayout = IsCubemapLayout($PanoLayout) ? $PanoLayout : 'cubemap_23ULFRBD';
+	
+	
 	//	assets we want to try and create
 	$AssetParams = [];
 
@@ -100,11 +102,11 @@
 	$AssetParams[] = SoyAssetMeta( 2048, 2048, 'jpg', $CubemapLayout );
 	
 //	$AssetParams[] = SoyAssetMeta( 1024, 512, 'webm', $EquirectLayout, 'vp8', '2000k' );
-	$AssetParams[] = SoyAssetMeta( 2048, 1024, 'webm', EquirectLayout, 'vp8', '5000k' );
+	$AssetParams[] = SoyAssetMeta( 2048, 1024, 'webm', $EquirectLayout, 'vp8', '5000k' );
 //	$AssetParams[] = SoyAssetMeta( 4096, 2048, 'webm', $EquirectLayout, 'vp8', '8000k' );
 //	$AssetParams[] = SoyAssetMeta( 4096, 4096, 'webm', $EquirectLayout, 'vp8', '10000k' );
 //	$AssetParams[] = SoyAssetMeta( 512, 256, 'mp4', $EquirectLayout, 'h264', '1000k' );
-	$AssetParams[] = SoyAssetMeta( 2048, 1024, 'mp4', EquirectLayout, 'h264', '5000k' );
+	$AssetParams[] = SoyAssetMeta( 2048, 1024, 'mp4', $EquirectLayout, 'h264', '5000k' );
 //	$AssetParams[] = SoyAssetMeta( 512, 256, 'gif', $EquirectLayout, 'gif', '5000k' );
 //	$AssetParams[] = SoyAssetMeta( 2048, 1024, 'gif', $EquirectLayout, 'gif', '5000k' );
 	$AssetParams[] = SoyAssetMeta( 2048, 1024, 'mjpeg', $EquirectLayout, 'mjpeg', '5000k' );
@@ -154,6 +156,7 @@
 		$Meta['OrigHeight'] = $Image->GetHeight();
 		$Meta['OrigContentType'] = $Image->GetContentType();
 		$Meta['OrigFormatType'] = $Image->GetFfmpegInputFormat();
+		$Meta['OrigLayout'] = $Image->GetLayout();
 		$Meta['isVideo'] = $Image->IsVideo();
 		$Meta['assets'] = $Assets;
 		
@@ -166,7 +169,15 @@
 		return true;
 	}
 	
+	function IsEquirectLayout($Layout)
+	{
+		return $Layout == 'equirect';
+	}
 	
+	function IsCubemapLayout($Layout)
+	{
+	   return strpos( $Layout, 'cubemap_' ) == 0;
+	}
 	
 	function UploadResize($Asset,$InputFilename,$PanoName,$Image)
 	{
@@ -185,18 +196,39 @@
 		$Suffix = "{$Width}x$Height";
 		if ( $Codec !== false )
 			$Suffix .= ".$Codec";
+		$Suffix .= '.' . $Asset['Layout'];
 		$RemoteFilename = "$PanoName.$Suffix.$Format";
 		$ResizedTempFilename = GetPanoTempFilename($PanoName,$Suffix,$Format);
 		register_shutdown_function('DeleteTempFile',$ResizedTempFilename);
 		
 		//	resize with ffmpeg
 		$ExitCode = -1;
-		$ExecCmd = '';
+		$ExecCmd = null;
+		$PostProcessFunction = null;
 		
 		$InputFormat = $Image->GetFfmpegInputFormat();
+
+		$OldLayout = $Image->GetLayout();
+		$NewLayout = $Asset['Layout'];
 		
-		if ( $Format == 'jpg' && $Codec !== false && strpos($Codec,'cubemap_')==0 )
+		if ( $Format == 'jpg' && $Codec !== false && $OldLayout != $NewLayout )
 		{
+			//	converting layout
+			$Script = false;
+			if ( IsEquirectLayout($OldLayout) && IsCubemapLayout($NewLayout) )
+			{
+				$Script = 'php makecubemap.php';
+			}
+			else if ( IsCubemapLayout($OldLayout) && IsEquirectLayout($NewLayout) )
+			{
+				$Script = 'php makeequirectangular.php';
+			}
+			else
+			{
+				echo "$Format/$Codec Cannot convert from $OldLayout to $NewLayout";
+				return false;
+			}
+			
 			$CubemapLayout = substr($Codec,strlen('cubemap_'));
 	
 			$Params = array();
@@ -206,14 +238,13 @@
 			$Params['SampleTime'] = 0;		//	sample time
 			
 			$Params['outputfilename'] = $ResizedTempFilename;
-			$Params['layout'] = $CubemapLayout;
+			$Params['layout'] = $NewLayout;
 			$Params['Width'] = $Asset['Width'];
 			$Params['Height'] = $Asset['Height'];
 		
-			$ExecCmd = "php makecubemap.php ";
-			$ExecCmd .= ParamsToParamString( $Params );
+			$ExecCmd = "$Script " . ParamsToParamString( $Params );
 		}
-		else if ( $Format == 'jpg' && $Codec === false )
+		else if ( $Format == 'jpg' && $Codec === false && $OldLayout == $NewLayout )
 		{
 			$ExecCmd .= FFMPEG_BIN;
 			$ExecCmd .= " -loglevel error";
@@ -232,6 +263,12 @@
 		{
 			if ( !$Image->IsVideo() )
 				return false;
+		
+			if ( $OldLayout != $NewLayout )
+			{
+				echo "$Format/$Codec Cannot convert from $OldLayout to $NewLayout";
+				return false;
+			}
 			
 			$ExecCmd .= FFMPEG_BIN;
 			$ExecCmd .= " -loglevel error";
@@ -262,11 +299,26 @@
 			{
 				$ExecCmd .= " -f mjpeg";
 				$ExecCmd .= " -codec:v mjpeg";
+				$ExecCmd .= " -qscale:v " . FFMPEG_MJPEG_QUALITY;
+				
+				$PostProcessFunction = function(&$Asset,$LocalFilename)
+				{
+					$Indexes = MakeMjpegIndexes($LocalFilename);
+					if ( !is_array($Indexes) )
+					{
+						if ( !is_string($Indexes) )
+							return 'Failed to generate mjpeg indexes';
+						return 'MakeMjpegIndexes: ' . $Indexes;
+					}
+					$Asset['MjpegIndexes'] = join(' ',$Indexes);
+					return true;
+				};
 			}
 			
 			$ExecCmd .= " $ResizedTempFilename";
 		}
-		else
+		
+		if ( !$ExecCmd )
 		{
 			echo "Unsupported mix: $Format/$Codec";
 			return false;
@@ -291,6 +343,14 @@
 			return $Asset;
 		}
 
+		//	execute post-process
+		if ( $PostProcessFunction )
+		{
+			$Error = $PostProcessFunction( $Asset, $ResizedTempFilename );
+			if ( $Error !== true )
+				$Asset['PostProcessError'] = $Error;
+		}
+		
 		//	save uploaded filename
 		$Asset['Filename'] = $RemoteFilename;
 		return $Asset;

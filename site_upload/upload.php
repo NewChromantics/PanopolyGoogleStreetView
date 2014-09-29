@@ -5,14 +5,14 @@
 	
 	define('UPLOADFILE_VAR','image');
 	define('CUSTOMNAME_VAR','customname');
-	define('PANOFORMAT_VAR', 'format' );
+	define('PANOLAYOUT_VAR', 'layout' );
 	
 	function OnFile($File)
 	{
 		//var_dump($File);
 		
-		$desiredname = array_key_exists(CUSTOMNAME_VAR,$_POST) ? $_POST[CUSTOMNAME_VAR] : false;
-		$PanoFormat = array_key_exists(PANOFORMAT_VAR,$_POST) ? $_POST[PANOFORMAT_VAR] : false;
+		$desiredname = GetArg(CUSTOMNAME_VAR, false );
+		$PanoLayout = GetArg(PANOLAYOUT_VAR,'equirect');
 		$size = $File['size'];
 		$tmpfilename = $File['tmp_name'];
 		$error = $File['error'];
@@ -46,17 +46,15 @@
 			return OnError("Error with uploaded temp file ($tmpfilename,$SpawnTempFilename)");
 		
 		//	test if is a video format
-		$Image = new TVideo($SpawnTempFilename);
+		$Image = new TVideo($SpawnTempFilename,$PanoLayout);
 		if ( !$Image->IsValid() )
 		{
 			return OnError("failed to read image or video information from $SpawnTempFilename");
 		}
 		
-		if ( $PanoFormat == false )
-			$PanoFormat = 'spheremap';
-		
-		$Params = array( 'panoname' => $Panoname, 'panoformat' => $PanoFormat );
-		$Params['REMOTE_ADDR'] = GetArg('REMOTE_ADDR',false);
+		$Params = array( 'panoname' => $Panoname, 'panolayout' => $PanoLayout );
+		if ( GetArg('REMOTE_ADDR',false) !== false )
+			$Params ['REMOTE_ADDR'] = 'localhost';	//	::1 doesn't translate well for php option parsing...
 
 		//	spawn
 		$blocking = false;
