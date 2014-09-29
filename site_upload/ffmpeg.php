@@ -211,4 +211,45 @@
 		return $Image;
 	}
 
+	//	return array of indexes or error string
+	function MakeMjpegIndexes($Filename)
+	{
+		$Indexes = [];
+		
+		$File = @fopen( $Filename, 'rb' );
+		if ( $File===false )
+			return "failed to open $Filename";
+		
+		$LastBuffer = '';
+		
+		//	pull out header
+		$HeaderLength = 8;
+		$JpegHeader = fread( $File, $HeaderLength );
+		$CurrentIndex = $HeaderLength;
+		$Indexes[] = 0;
+		
+		while ( !feof($File) )
+		{
+			$Buffer = $LastBuffer;
+			$Buffer .= fread( $File, 1024 );
+			
+			for ( $i=0;	$i<strlen($Buffer)-strlen($JpegHeader);	$i++,$CurrentIndex++ )
+			{
+				$Match = true;
+				for ( $h=0;	$Match && $h<strlen($JpegHeader);	$h++ )
+					$Match &= $Buffer[$i+$h] == $JpegHeader[$h];
+				
+				if ( $Match )
+					$Indexes[] = $CurrentIndex;
+			}
+			
+			$LastBuffer = substr( $Buffer, -strlen($JpegHeader) );
+		}
+		
+		fclose( $File );
+		
+		return $Indexes;
+	}
+	
+	
 ?>
