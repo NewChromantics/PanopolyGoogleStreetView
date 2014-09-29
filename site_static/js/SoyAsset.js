@@ -319,6 +319,12 @@ SoyAssetMeta.prototype.IsSupported = function($Config)
 	if ( this.Width > $Config.mMaxResolution || this.Height > $Config.mMaxResolution )
 		return false;
 	
+	var $CubemapMode = ($Config.mRenderMode == RENDERMODE_CUBEMAP);
+
+	//	only support cubemaps if cubemap mode
+	if ( this.IsCubemap() != $CubemapMode )
+		return false;
+	
 	if ( this.IsVideo() )
 	{
 		var $Type = this.Format;
@@ -326,8 +332,6 @@ SoyAssetMeta.prototype.IsSupported = function($Config)
 		var $IsMjpeg = ( $Type == 'mjpeg' && $Codec == 'mjpeg' );
 
 		//	currently mjpeg is CSS only
-		var $CubemapMode = ($Config.mRenderMode == RENDERMODE_CUBEMAP);
-		
 		if ( $CubemapMode )
 		{
 			return $IsMjpeg;
@@ -350,10 +354,6 @@ SoyAssetMeta.prototype.IsSupported = function($Config)
 		}
 	}
 	
-	//	only support cubemaps if cubemap mode
-	var $CubemapMode = ($Config.mRenderMode == RENDERMODE_CUBEMAP);
-	if ( this.IsCubemap() != $CubemapMode )
-		return false;
 	
 	return true;
 }
