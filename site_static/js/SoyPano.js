@@ -146,7 +146,7 @@ SoyPano.prototype.OnLoadedMeta = function()
 		if ( !$RemoteMeta.IsSupported(this.mConfig) )
 			continue;
 		
-		//console.log($RemoteMeta);
+		//console.log("supported meta: ", $RemoteMeta, this );
 		if ( $CurrentMeta == null && $BestRemoteMeta == null )
 		{
 			$BestRemoteMeta = $RemoteMeta;
@@ -169,8 +169,7 @@ SoyPano.prototype.OnLoadedMeta = function()
 	}
 	
 	//	load this better asset
-	console.log("Load better asset: ");
-	console.log($BestRemoteMeta);
+	console.log( this, "Load better asset: ", $BestRemoteMeta);
 	
 	
 	var $this = this;

@@ -73,6 +73,8 @@
 		<script src="js/ClearDefaultText.js"></script>
 		<script src="js/SoyWebSocket-1.0.js"></script>
 		<script src="js/mjpeg.js"></script>
+		<script src="js/SoyRect.js"></script>
+		
 		<script src="js/panopoly.js"></script>
 		<script src="js/CubeMap.js"></script>
 		<script src="js/support.js"></script>
@@ -199,7 +201,12 @@ function IsSplitMode()
 }
 function SetSplitMode($Enable)
 {
-	forEach( $Configs, function($Config){ $Config.mSplitEnabled = $Enable; } );
+	forEach( $Configs, function($Config)
+			{
+				$Config.mSplitEnabled = $Enable;
+				onContainerResize($Config);
+			}
+			);
 }
 function ToggleSplit()
 {
@@ -466,8 +473,8 @@ function NewPano($Config,$Asset)
 				var $Container = $Config.mContainer;
 				var fov = $Config.mFov;
 				$Config.mCamera = new THREE.PerspectiveCamera( fov, 1, 1, 1000 );
-				$Config.mCamera.target = new THREE.Vector3( 0, 0, 1 );
-				$Config.mCamera.position.set( 0.001, 0.001, 0.001 );
+			//	$Config.mCamera.target = new THREE.Vector3( 0, 0, 1 );
+			//	$Config.mCamera.position.set( 0.001, 0.001, 0.001 );
 		
 				$Config.mScene = new THREE.Scene();
 				
@@ -549,10 +556,10 @@ function NewPano($Config,$Asset)
 
 				$Config.mSplitter = new THREE.StereoEffect( $Config.mRendererLeft, $Config.mRendererRight );
 				$Config.mSplitter.separation = $Config.mFaceResolution * $Config.mSeperation;
-				$Config.mSplitEnabled = false;
+				$Config.mSplitEnabled = true;
 
 
-			//	onContainerResize($Config);
+				onContainerResize($Config);
 				window.addEventListener( 'resize', function() { onContainerResize($Config); }, false );
 				Animate($Config);
 				
@@ -567,24 +574,27 @@ function NewPano($Config,$Asset)
 
 				$Config.mCamera.aspect = w / h;
 				$Config.mCamera.updateProjectionMatrix();
-			
-				$Config.mSplitter.setSize( w, h );
 
-				if ( $Config.mRendererLeft )
+				if ( $Config.mSplitEnabled )
 				{
-					$Config.mRendererLeft.setSize( w, h );
-					$Config.mRendererLeft.setViewport( 0, 0, w, h );
+					$Config.mSplitter.setSize( w, h );
+				}
+				else
+				{
+					if ( $Config.mRendererLeft )
+					{
+						$Config.mRendererLeft.setSize( w, h );
+						$Config.mRendererLeft.setViewport( 0, 0, w, h );
+					}
+				
+					if ( $Config.mRendererRight )
+					{
+						$Config.mRendererRight.setSize( 0, 0 );
+						$Config.mRendererRight.setViewport( 0, 0, 0, 0 );
+					}
 				}
 				
-				//	not expecting right renderer here
-				if ( $Config.mRendererRight )
-				{
-					$Config.mRendererRight.setSize( w, h );
-					$Config.mRendererRight.setViewport( 0, 0, 0, 0 );
-				}
 			}
-
-			//
 
 			function Animate($Config) {
 
@@ -607,7 +617,7 @@ function NewPano($Config,$Asset)
 				
 				onContainerResize( $Config );
 				
-				if ( $Config.mSplitter && $Config.mSplitEnabled )
+				if ( $Config.mSplitEnabled )
 				{
 				//	$Config.mSplitter.setSize( w, h );
 					$Config.mSplitter.render( $Config.mScene, $Config.mCamera );
@@ -616,8 +626,13 @@ function NewPano($Config,$Asset)
 				{
 					if ( $Config.mRendererLeft )
 						$Config.mRendererLeft.render( $Config.mScene, $Config.mCamera );
-				//	if ( $Config.mRendererRight )
-				//		$Config.mRendererLeftRight.render( $Config.mScene, $Config.mCamera );
+					
+					if ( $Config.mRendererRight )
+					{
+						$Config.mRendererRight.setSize( 0, 0 );
+						$Config.mRendererRight.setViewport( 0, 0, 0, 0 );
+					//	$Config.mRendererLeftRight.render( $Config.mScene, $Config.mCamera );
+					}
 				}
 			}
 	

@@ -45,7 +45,9 @@ THREE.CSS3DRenderer = function () {
 	
 	var cache = {
 		camera: { fov: 0, style: '' },
-		objects: {}
+		objects: {},
+		domRect: null,
+		cameraRect: null
 	};
 
 	var domElement = document.createElement( 'div' );
@@ -55,6 +57,7 @@ THREE.CSS3DRenderer = function () {
 	domElement.style.MozTransformStyle = 'preserve-3d';
 	domElement.style.oTransformStyle = 'preserve-3d';
 	domElement.style.transformStyle = 'preserve-3d';
+	domElement.style.position = 'absolute';
 
 	this.domElement = domElement;
 
@@ -64,9 +67,10 @@ THREE.CSS3DRenderer = function () {
 	cameraElement.style.MozTransformStyle = 'preserve-3d';
 	cameraElement.style.oTransformStyle = 'preserve-3d';
 	cameraElement.style.transformStyle = 'preserve-3d';
+	cameraElement.style.position = 'absolute';
 
 	domElement.appendChild( cameraElement );
-
+	
 	this.setClearColor = function (Colour) {
 		
 			
@@ -247,33 +251,33 @@ THREE.CSS3DRenderer = function () {
 	
 	
 	this.setViewport = function ( x, y, width, height ) {
-		_viewportX = x * this.devicePixelRatio;
-		_viewportY = y * this.devicePixelRatio;
-		
-		_viewportWidth = width * this.devicePixelRatio;
-		_viewportHeight = height * this.devicePixelRatio;
 
-		
-		
 		_width = width;
 		_height = height;
 		
 		_widthHalf = _width / 2;
 		_heightHalf = _height / 2;
+
+		var $Rect = new SoyRect( x, y, width, height );
+		if ( !$Rect.Equals(cache.domRect) )
+		{
+			domElement.style.left = x + 'px';
+			domElement.style.top = y + 'px';
+			domElement.style.width = width + 'px';
+			domElement.style.height = height + 'px';
+			console.log("updated dom style ", cache.domRect, $Rect, this );
+			cache.domRect = $Rect;
+		}
 		
-		domElement.style.position = 'absolute';
-		domElement.style.left = x + 'px';
-		domElement.style.top = y + 'px';
-		domElement.style.width = width + 'px';
-		domElement.style.height = height + 'px';
-		
-		
-		cameraElement.style.position = 'absolute';
-	//	cameraElement.style.left = x + 'px';
-	//	cameraElement.style.top = y + 'px';
-		cameraElement.style.width = width + 'px';
-		cameraElement.style.height = height + 'px';
-		
+		if ( !$Rect.Equals(cache.cameraRect) )
+		{
+			//	cameraElement.style.left = x + 'px';
+			//	cameraElement.style.top = y + 'px';
+			cameraElement.style.width = width + 'px';
+			cameraElement.style.height = height + 'px';
+			console.log("updated camera style ", cache.cameraRect, $Rect, this );
+			cache.cameraRect = $Rect;
+		}
 	};
 	
 	this.clear = function ( color, depth, stencil ) {
