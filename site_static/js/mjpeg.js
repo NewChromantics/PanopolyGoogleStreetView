@@ -2,8 +2,17 @@ function SoyFrameIndex($FirstIndex,$LastIndex)
 {
 	this.mFirstIndex = $FirstIndex;
 	this.mLastIndex = $LastIndex;
-	this.mLength = $LastIndex - $FirstIndex;
 	this.mDataUrl = null;
+}
+
+SoyFrameIndex.prototype.GetLength = function($ArrayBuffer)
+{
+	var $LastIndex = this.mLastIndex;
+	if ( this.mLastIndex < 0 )
+		$LastIndex = $ArrayBuffer.byteLength;
+	
+	var $Length = $LastIndex - this.mFirstIndex;
+	return $Length;
 }
 
 SoyFrameIndex.prototype.GetDataUrl = function($ArrayBuffer)
@@ -15,7 +24,7 @@ SoyFrameIndex.prototype.GetDataUrl = function($ArrayBuffer)
 	if ( !$ArrayBuffer )
 		return null;
 	
-	var $JpegDataView = new DataView( $ArrayBuffer, this.mFirstIndex, this.mLength );
+	var $JpegDataView = new DataView( $ArrayBuffer, this.mFirstIndex, this.GetLength($ArrayBuffer) );
 	var $Blob = new Blob([$JpegDataView], {type: "image/jpeg"});
 	this.mDataUrl = URL.createObjectURL( $Blob );
 //	console.log("new data url",this.mDataUrl);
@@ -23,7 +32,7 @@ SoyFrameIndex.prototype.GetDataUrl = function($ArrayBuffer)
 }
 
 
-function SoyMJpeg($Url,$FrameRate,$Loop,$OnUpdateJpeg,$OnError)
+function SoyMJpeg($Url,$FrameRate,$Loop,$IndexList,$OnUpdateJpeg,$OnError)
 {
 	var $this = this;
 
@@ -37,6 +46,7 @@ function SoyMJpeg($Url,$FrameRate,$Loop,$OnUpdateJpeg,$OnError)
 	this.mLastJpegStart = -1;
 	this.mLastReadPos = -1;
 	this.mFrames = new Array();	//	SoyFrameIndex
+	this.mMetaFrames = new Array();	//	SoyFrameIndex
 	this.mJpegHeader = null;
 	this.mAjax = null;
 	this.mUrl = $Url;
@@ -47,6 +57,30 @@ function SoyMJpeg($Url,$FrameRate,$Loop,$OnUpdateJpeg,$OnError)
 	this.mCurrentFrame = 0;
 	this.mFinishedParse = false;
 
+	//	parse index list if provided!
+	if ( CheckDefaultParam($IndexList,false) !== false )
+	{
+		var $Indexes = $IndexList.split(' ');
+		var $Offset = HasHashParam('mjpegoffset') ? 8 : 0;
+		for ( var $i=-1;	$i<$Indexes.length;	$i++ )
+		{
+			//	-1 means "eof" (don't pre-know last byte...)
+			var $FirstIndex = 0;
+			var $NextIndex = -1;
+			
+			//	special case, early parser didn't have 0 as first jpeg pos so we start at -1
+			if ( $i >= 0 )
+				$FirstIndex = parseInt($Indexes[$i]) + $Offset;
+			
+			if ( $i+1 < $Indexes.length )
+				$NextIndex = parseInt($Indexes[$i+1]) + $Offset;
+			
+			if ( $FirstIndex == $NextIndex )
+				continue;
+			
+			this.mMetaFrames.push( new SoyFrameIndex( $FirstIndex, $NextIndex ) );
+		}
+	}
 	
 	var ajax = new XMLHttpRequest();
 	this.mAjax = ajax;
@@ -142,6 +176,20 @@ SoyMJpeg.prototype.OnAjaxStateChanged = function($Event)
 
 SoyMJpeg.prototype.OnFinishedDownloadingData = function()
 {
+	/*
+	//	compare frame indexes
+	if ( this.mMetaFrames.length > 0 )
+	{
+		for ( var $i=0;	$i<this.mFrames.length;	$i++ )
+		{
+			var $MetaIndex = this.mMetaFrames[$i].mFirstIndex;
+			var $ParsedIndex = this.mFrames[$i].mFirstIndex;
+			if ( $MetaIndex == $ParsedIndex )
+				continue;
+			console.log($i,$MetaIndex,$ParsedIndex);
+		}
+	}
+	 */
 	this.mFinishedParse = true;
 }
 
@@ -152,6 +200,15 @@ SoyMJpeg.prototype.OnMJpegData = function($Event,$Caller)
 	if ( !$Ajax.response )
 		return;
 
+	//	don't need to parse frames if we already have them
+	if ( this.mMetaFrames.length > 0 )
+	{
+		this.mFrames = this.mMetaFrames;
+		if ( $Event.target.readyState == 4 )
+			this.OnFinishedDownloadingData();
+		return;
+	}
+	
 	var $Data = new DataView( $Ajax.response );
 
 	var $Int32Size = 4;
