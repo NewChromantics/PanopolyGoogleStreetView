@@ -202,13 +202,8 @@ function SoyAssetMeta($Filename,$Width,$Height,$Format,$Codec,$BitRate,$Layout)
 	if ( arguments.length <= 1 )
 	{
 		var $Json = arguments[0];
-		this.Width = $Json.Width;
-		this.Height = $Json.Height;
-		this.Format = $Json.Format;
-		this.Codec = $Json.Codec;
-		this.BitRate = $Json.BitRate;
-		this.Filename = $Json.Filename;
-		this.Layout = $Json.Layout;
+		for ( var $Key in $Json )
+			this[$Key] = $Json[$Key];
 		return;
 	}
 	
