@@ -18,6 +18,7 @@
 	}
 
 	define('FFMPEG_JPEG_QUALITY', 2 );	//	1(best)...31(worst)
+	define('FFMPEG_MJPEG_QUALITY', 4 );	//	1(best)...31(worst)
 	define('VIDEO_FORMATS', 'vp8 webm mp4 h264' );
 
 	function IsCli()
@@ -78,6 +79,7 @@
 			$LongParams = '';
 			foreach ( $Params as $Key=>$Value )
 			{
+				$Key = str_replace('_','',$Key);
 				assert( strpos($Key,' ')===false );
 				$LongParams .= " --$Key=\"$Value\" ";
 			}
@@ -104,6 +106,9 @@
 		
 		if ( !$Values && IsCli() )
 		{
+			//	some things don't translate to cli args so we remove the underscores...
+			$Name = str_replace('_','',$Name);
+
 			//	look for --$Name=x
 			$LongOption = "$Name:";	//	: requires value
 			$Values = getopt('',array($LongOption));
