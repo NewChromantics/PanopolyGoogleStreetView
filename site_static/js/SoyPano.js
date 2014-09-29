@@ -132,12 +132,13 @@ SoyPano.prototype.OnFailedAsset = function($Asset)
 	}
 }
 
-SoyPano.prototype.OnLoadedMeta = function()
+SoyPano.prototype.GetBetterAsset = function($FilterFunction)
 {
 	var $CurrentMeta = this.mCurrentAsset ? this.mCurrentAsset.mMeta : null;
 	
 	//	load some better stuff compared to mAssets
 	var $BestRemoteMeta = null;
+	
 	for ( var $Key in this.mMeta.assets )
 	{
 		var $RemoteMeta = new SoyAssetMeta( this.mMeta.assets[$Key] );
@@ -145,6 +146,11 @@ SoyPano.prototype.OnLoadedMeta = function()
 		//	can client cope with this asset?
 		if ( !$RemoteMeta.IsSupported(this.mConfig) )
 			continue;
+		
+		//	check filter
+		if ( $FilterFunction )
+			if ( !$FilterFunction($RemoteMeta) )
+				continue;
 		
 		//console.log("supported meta: ", $RemoteMeta, this );
 		if ( $CurrentMeta == null && $BestRemoteMeta == null )
@@ -162,26 +168,50 @@ SoyPano.prototype.OnLoadedMeta = function()
 		$BestRemoteMeta = $RemoteMeta;
 	}
 	
+	return $BestRemoteMeta;
+}
+
+SoyPano.prototype.OnLoadedMeta = function()
+{
+	var $CurrentMeta = this.mCurrentAsset ? this.mCurrentAsset.mMeta : null;
+
+	//	load some more assets
+	var $LoadAssets = new Array();
+	
+	var $BestRemoteMeta = this.GetBetterAsset();
+	$LoadAssets.push($BestRemoteMeta);
 	if ( !$BestRemoteMeta )
-	{
 		console.log("No better assets",$CurrentMeta,this.mMeta.assets);
-		return;
+
+	//	if we have nothing, and our best is a video
+	//	gr: todo: convert this to kb-related, so maybe we can load super-low quality video first if it's small
+	if ( !$CurrentMeta )
+	{
+		var $FilterFunction = function($Meta)
+		{
+			return $BestRemoteMeta != $Meta && !$Meta.IsVideo();
+		};
+		var $FastRemoteMeta = this.GetBetterAsset( $FilterFunction );
+		if ( $FastRemoteMeta )
+			$LoadAssets.push($FastRemoteMeta);
 	}
-	
-	//	load this better asset
-	console.log( this, "Load better asset: ", $BestRemoteMeta);
-	
 	
 	var $this = this;
 	var OnLoaded = function($Asset) { $this.OnLoadedAsset($Asset); }
 	var OnFailed = function($Asset) { $this.OnFailedAsset($Asset); }
 	
-	if ( $BestRemoteMeta.IsVideo() && $BestRemoteMeta.Format == 'mjpeg' )
-		this.mAssets.push( new SoyAsset_Mjpeg( $BestRemoteMeta, OnLoaded, OnFailed ) );
-	else if ( $BestRemoteMeta.IsVideo() )
-		this.mAssets.push( new SoyAsset_Video( $BestRemoteMeta, OnLoaded, OnFailed ) );
-	else
-		this.mAssets.push( new SoyAsset_Image( $BestRemoteMeta, OnLoaded, OnFailed ) );
+	for ( var $Key in $LoadAssets )
+	{
+		var $AssetMeta = $LoadAssets[$Key];
+		console.log( this, "Load additonal asset: ", $AssetMeta );
+
+		if ( $AssetMeta.IsVideo() && $AssetMeta.Format == 'mjpeg' )
+			this.mAssets.push( new SoyAsset_Mjpeg( $AssetMeta, OnLoaded, OnFailed ) );
+		else if ( $AssetMeta.IsVideo() )
+			this.mAssets.push( new SoyAsset_Video( $AssetMeta, OnLoaded, OnFailed ) );
+		else
+			this.mAssets.push( new SoyAsset_Image( $AssetMeta, OnLoaded, OnFailed ) );
+	}
 }
 
 
