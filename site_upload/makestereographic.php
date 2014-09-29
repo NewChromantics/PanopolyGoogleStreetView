@@ -15,8 +15,9 @@
 	$OutputWidth = GetArg('Width',256);
 	$OutputHeight = GetArg('Height',256);
 	
-	$InputLayout = 'equirect';
-	
+	$InputLayout = GetArg('inputlayout','equirect');
+//	$OutputLayout = GetArg('outputlayout','false');
+
 	//	get params
 	if ( IsCli() )
 	{

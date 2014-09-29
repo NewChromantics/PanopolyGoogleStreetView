@@ -7,12 +7,13 @@
 	set_time_limit( 10*60 );
 
 	$InputFilename = GetArg('inputfilename',false);
-	$InputLayout = GetArg('layout',false);
+	$InputLayout = GetArg('inputlayout',false);
 	$SampleWidth = GetArg('samplewidth',4096);
 	$SampleHeight = GetArg('sampleheight',4096);
 	$SampleTime = GetArg('SampleTime',0);
 	
 	$OutputFilename = GetArg('outputfilename',false);		//	false = output to browser
+	$OutputLayout = GetArg('outlayout',false);
 	$OutputWidth = GetArg('Width',256);
 	$OutputHeight = GetArg('Height',256);
 	
