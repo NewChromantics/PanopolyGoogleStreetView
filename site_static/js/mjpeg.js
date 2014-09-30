@@ -56,6 +56,7 @@ function SoyMJpeg($Url,$FrameRate,$Loop,$IndexList,$OnUpdateJpeg,$OnError)
 	this.mLoop = $Loop;
 	this.mCurrentFrame = 0;
 	this.mFinishedParse = false;
+	this.mTimer = null;
 
 	//	parse index list if provided!
 	if ( CheckDefaultParam($IndexList,false) !== false )
@@ -100,6 +101,19 @@ function SoyMJpeg($Url,$FrameRate,$Loop,$IndexList,$OnUpdateJpeg,$OnError)
 	this.UpdateJpegToElement();
 }
 
+SoyMJpeg.prototype.Destroy = function()
+{
+	this.mFrames = null;
+	this.mMetaFrames = null;
+	this.mJpegHeader = null;
+	this.mAjax = null;
+
+	if ( this.mTimer !== null )
+	{
+		window.cancelAnimationFrame( this.mTimer );
+		this.mTimer = null;
+	}
+}
 
 SoyMJpeg.prototype.PopJpeg = function()
 {
@@ -152,7 +166,7 @@ SoyMJpeg.prototype.UpdateJpegToElement = function($Timestamp)
 	
 	//	use request animation frame to be more CPU friendly and allow tab sleep
 	var $this = this;
-	requestAnimationFrame( function($Timestamp){ $this.UpdateJpegToElement($Timestamp); } );
+	this.mTimer = window.requestAnimationFrame( function($Timestamp){ $this.UpdateJpegToElement($Timestamp); } );
 //	setTimeout( function(){ $this.UpdateJpegToElement(); }, $UpdateRateMs );
 }
 
@@ -196,6 +210,10 @@ SoyMJpeg.prototype.OnFinishedDownloadingData = function()
 SoyMJpeg.prototype.OnMJpegData = function($Event,$Caller)
 {
 	var $Ajax = $Event.target;//this.mAjax;
+	
+//	var $TotalBytes = $Ajax.getResponseHeader('Content-length');
+//	var $DownloadBytes = $Ajax.responseText.length;
+//	console.log("downloading " + $DownloadBytes + "/" + $TotalBytes );
 	
 	if ( !$Ajax.response )
 		return;

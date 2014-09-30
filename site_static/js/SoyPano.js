@@ -249,6 +249,7 @@ SoyPano.prototype.OnNewVideoFrame = function($Asset)
 	var $FrameRate = 25;
 	
 	//	fetch next frame
+	//	gr: change to requestAnimationFrame!
 	setTimeout( function() { $this.OnNewVideoFrame($Asset) }, 1000/$FrameRate, false );
 }
 

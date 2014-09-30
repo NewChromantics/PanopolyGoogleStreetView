@@ -22,14 +22,15 @@
 			
 			<div id="ImageUploader" class="FileInput">
 				Upload Image<br />
-				<input type="text" id="ImageUploader_CustomName" name="CustomName" class="cleardefault" value="custom url" />
+				<input type="text" id="ImageUploader_CustomName" name="customname" class="cleardefault" value="custom url" />
+				<input type="text" id="ImageUploader_Layout" name="layout" class="cleardefault" value="Layout" />
 				<input type="button" value="Upload File"  onclick="UploadImage()"/>
 				<progress id="progressBar" value="0" max="100" style="width:300px;"></progress>
 				<h3 id="status"></h3>
 				<p id="loaded_n_total"></p>
 			</div>
 			
-			<div id="ClearButton" class="Button" onClick="forEach($Configs){function($Config){DestroyPano($Config);});">
+			<div id="ClearButton" class="Button" onClick="forEach($Configs,function($Config){DestroyPano($Config);});">
 				Clear
 			</div>
 			<div id="ShrinkButton" class="Button" onClick="SupportToggleEnable('Shrink')">
@@ -220,7 +221,23 @@ function ToggleSplit()
 			//	image binary loaded okay, enable upload
 			ShowElement("ImageUploader", $Enable );
 		}
-		
+
+		function AppendToForm($Form,$ElementName)
+		{
+			var $Element = GetElement( $ElementName );
+			if ( !$Element )
+			return;
+			
+			var $FormName = $Element.name;
+			var $Default = CheckDefaultParam( $Element.defaultText, '' );
+			console.log('default: ',$Default,$Element);
+			var $Value = $Element.value;
+			if ( $Value == $Default )
+			return;
+			
+			$Form.append( $FormName, $Value );
+		}
+
 		function UploadImage()
 		{
 			GetElement("progressBar").value = 0;
@@ -230,10 +247,10 @@ function ToggleSplit()
 			var file = GetElement("image_selector").files[0];
 			//alert(file.name+" | "+file.size+" | "+file.type);
 			formdata.append("image", file);
-			var defaultcustomname = GetElement("ImageUploader_CustomName").defaultText;
-			var customname = GetElement("ImageUploader_CustomName").value;
-			if ( customname != defaultcustomname )
-				formdata.append("customname", customname );
+			
+			AppendToForm(formdata,'ImageUploader_CustomName');
+			AppendToForm(formdata,'ImageUploader_Layout');
+
 			var ajax = new XMLHttpRequest();
 			ajax.upload.addEventListener("progress", OnUploadProgress, false);
 			ajax.addEventListener("load", OnUploadComplete, false);
@@ -384,6 +401,8 @@ function OnClickedRiftMode()
 
 function DestroyPano($Config)
 {
+	console_logStack();
+	alert("Destroy pano" +$Config.mRenderMode);
 	//	kill old pano
 	if ( $Config.mPano )
 	{
@@ -413,7 +432,6 @@ function NewPano($Config,$Asset)
 
 	$Config.mPano = new SoyPano( 'New', $Config, $Config.mOnNewFrame, OnFailedMeta, false );
 	$Config.mPano.AddAsset( $Asset );
-
 }
 
 	function OnLoadLocalVideo($Event)
@@ -426,21 +444,34 @@ function NewPano($Config,$Asset)
 		var $ImageData = $Event.target.result;
 		var $Image = document.createElement( 'img' );
 		$Image.src = $ImageData;
-		
-		var OnFailed = function() { alert('failed'); };
-		var OnSuccess = function($Asset)
+
+		for ( var $Key in $Configs )
 		{
-			//	asset loaded okay. Kill old Pano (stops video) and create a new one with this asset
-			NewPano( $Config, $Asset );
-			
-			OnFileUploadSupported(true);
-		};
+			var $Config = $Configs[$Key];
+		//	alert('on load [' + $Key + '] ' + $Config.mRenderMode);
+
+			var $OnFailed = function($Asset,$Config)
+			{
+				OnFileUploadSupported(false);
+			};
+			var $OnSuccess = function($Asset,$Config)
+			{
+				//	asset loaded okay. Kill old Pano (stops video) and create a new one with this asset
+				NewPano( $Config, $Asset );
+				OnFileUploadSupported(true);
+			};
 		
-		var $Meta = { 'Filename': '' };
-		//console.log("creating new asset");
-		var $Asset = new SoyAsset_Image( $Meta, OnSuccess, OnFailed, false );
-		$Asset.mUrl = $ImageData;
-		$Asset.Load();
+			var $Layout = 'equirect';
+			if ( $Config.mRenderMode == RENDERMODE_CUBEMAP )
+				$Layout = 'cubemap_11L';
+				
+			var $Meta = new SoyAssetMeta( { 'Filename': '', 'Layout': $Layout } );
+			console.log("creating new asset",$Meta);
+			var $Asset = new SoyAsset_Image( $Meta, function($Asset){ $OnSuccess($Asset,$Asset.mConfig);}, function($Asset){ $OnFailed($Asset,$Asset.mConfig);}, false );
+			$Asset.mConfig = $Config;
+			$Asset.mUrl = $ImageData;
+			$Asset.Load();
+		}
 	}
 
 
@@ -650,6 +681,8 @@ function NewPano($Config,$Asset)
 			}
 			else
 			{
+			//	console.log("Update texture", $Asset,$Config);
+				//console_logStack();
 				var $Material = $Config.mMesh.material;
 				
 				//	already assigned to this asset, so just update it
@@ -680,6 +713,7 @@ function NewPano($Config,$Asset)
 		
 		//	init support
 		AddDefaultSupportAutoSwitch();
+		
 		InitSupport();
 		
 		
@@ -701,20 +735,24 @@ function NewPano($Config,$Asset)
 			$RenderMode = RENDERMODE_CUBEMAP;
 		}
 
-		var $Config = new SoyConfig( $RenderMode );
-		$Config.mContainer = GetElement("container");
-		$Config.mOnNewFrame = function($Asset) { UpdateTexture($Asset,$Config) };
+		var $Config1 = new SoyConfig( $RenderMode );
+		$Config1.mContainer = GetElement("container");
+		$Config1.mOnNewFrame = function($Asset) { UpdateTexture($Asset,$Config1) };
 
+		var $Mouse = GetSupport('Mouse');
+		if ( $Mouse )
+			$Mouse.SetContainer( $Config1.mContainer );
+	
 		if ( HasHashParam('border') )
-			Debug_SetStyleBorder($Config.mContainer);
+			Debug_SetStyleBorder($Config1.mContainer);
 		
-		if ( $Config.mRenderMode != RENDERMODE_NONE )
+		if ( $Config1.mRenderMode != RENDERMODE_NONE )
 		{
-			InitWebgl( $Config );
+			InitWebgl( $Config1 );
 
 			//	load user's required pano
-			LoadPano( $Config );
-			$Configs.push($Config);
+			LoadPano( $Config1 );
+			$Configs.push($Config1);
 			
 			
 			//	make a second config
@@ -724,7 +762,7 @@ function NewPano($Config,$Asset)
 				if ( HasHashParam('border') )
 					Debug_SetStyleBorder($Container2);
 
-				$Config.mContainer.style.bottom = '50%';
+				$Config1.mContainer.style.bottom = '50%';
 				$Container2.style.top = '50%';
 				
 				var $Config2 = new SoyConfig( RENDERMODE_CUBEMAP );

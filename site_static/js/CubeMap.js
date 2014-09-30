@@ -1,4 +1,67 @@
 
+
+function GetRealFace($Face)
+{
+	switch ( $Face )
+	{
+		case 'Z':	return 'B';
+		case 'A':	return 'U';
+		case 'W':	return 'D';
+	}
+	return $Face;
+}
+
+function GetFaceMatrix($Face)
+{
+	switch ( $Face )
+	{
+		case 'Z':	return new THREE.Vector2(-1,-1);
+		case 'A':	return new THREE.Vector2(-1,-1);
+		case 'W':	return new THREE.Vector2(-1,-1);
+	}
+	return new THREE.Vector2(1,1);
+}
+
+function CubemapLayout($ImageUrl,$ImageWidth,$ImageHeight,$Layout)
+{
+	this.mFaces = {};
+	this.mFaceMatrix = {};
+	
+	//	layout should be WH<FACES>
+	var $TileWidth = $Layout[0];
+	var $TileHeight = $Layout[1];
+	
+	assert( isInt( $TileWidth ), 'Invalid tile width:' + $TileWidth );
+	assert( isInt( $TileHeight ), 'Invalid tile height:' + $TileHeight );
+	$TileWidth = isInt( $TileWidth ) ? $TileWidth : 0;
+	$TileHeight = isInt( $TileHeight ) ? $TileHeight : 0;
+	
+	for ( var $t=2;	$t<$Layout.length;	$t++ )
+	{
+		var $Face = $Layout[$t];
+		var $x = ($t-2) % $TileWidth;
+		var $y = Math.floor(($t-2) / $TileWidth);
+		
+		var $RealFace = GetRealFace( $Face );
+		var $FaceMatrix = GetFaceMatrix( $Face );
+		
+		this.mFaces[$RealFace] = new THREE.Vector2($x,$y);
+		this.mFaceMatrix[$RealFace] = $FaceMatrix;
+		//console.log($Face + " = " + $x + "," + $y );
+	}
+	
+	this.mFaceCount = new THREE.Vector2( $TileWidth, $TileHeight );
+	this.mImageUrl = $ImageUrl;
+	this.mImageSize = new THREE.Vector2( $ImageWidth/$TileWidth, $ImageHeight/$TileHeight );
+}
+
+CubemapLayout.prototype.GetFaceSize = function()
+{
+	return DivideVectors( this.mImageSize, this.mFaceCount );
+}
+
+
+
 function CreateCubeFace($Parent,$FaceName,$FaceSize,$RotationTransform,$Colour)
 {
 	var $Element = document.createElement('div');
@@ -68,7 +131,8 @@ function SetCubemapBackground($Asset,$Cube)
 		return;
 	
 	//	quick update
-	if ( typeof $Asset.mAsset == 'string' && $Cube.mGeometryInitialised === true )
+	var $ImageAssetType = typeof $Asset.mAsset;
+	if ( $ImageAssetType == 'string' && $Cube.mGeometryInitialised === $ImageAssetType )
 	{
 		//	for speed up, only update non-culled faces
 		var $Success = true;
@@ -86,31 +150,49 @@ function SetCubemapBackground($Asset,$Cube)
 	var $Meta = $Asset.mMeta;
 	var $CubemapLayout = $Meta.GetCubemapLayout();
 	if ( !$CubemapLayout )
-		return false;
+		$CubemapLayout = '11F';
 	
-	var $Layout = new CubemapLayout( $Asset.mAsset, $Meta.Width, $Meta.Height, $CubemapLayout );
+	$Cube.mLayout = new CubemapLayout( $Asset.mAsset, $Meta.Width, $Meta.Height, $CubemapLayout );
 	
-	SetFaceBackground( $Cube.mFaces['Front'], 'F', $Layout );
-	SetFaceBackground( $Cube.mFaces['Back'], 'B', $Layout );
-	SetFaceBackground( $Cube.mFaces['Left'], 'L', $Layout );
-	SetFaceBackground( $Cube.mFaces['Right'], 'R', $Layout );
-	SetFaceBackground( $Cube.mFaces['Up'], 'U', $Layout );
-	SetFaceBackground( $Cube.mFaces['Down'], 'D', $Layout );
+	SetFaceBackground( $Cube.mFaces['Front'], 'F', $Cube.mLayout );
+	SetFaceBackground( $Cube.mFaces['Back'], 'B', $Cube.mLayout );
+	SetFaceBackground( $Cube.mFaces['Left'], 'L', $Cube.mLayout );
+	SetFaceBackground( $Cube.mFaces['Right'], 'R', $Cube.mLayout );
+	SetFaceBackground( $Cube.mFaces['Up'], 'U', $Cube.mLayout );
+	SetFaceBackground( $Cube.mFaces['Down'], 'D', $Cube.mLayout );
 	
-	$Cube.mGeometryInitialised = true;
+	$Cube.mGeometryLayout = $CubemapLayout;
+	$Cube.mGeometryInitialised = $ImageAssetType;
 	
 	return true;
 }
 
+function DeleteFace($Element,$Face)
+{
+	if ( $Element.mFaceImgElement )
+	{
+		$Element.removeChild( $Element.mFaceImgElement );
+		$Element.mFaceImgElement = null;
+	}
+
+}
 
 function SetFaceBackground($Element,$Face,$Layout)
 {
+	if ( !$Element )
+		return false;
+	
+	if ( !($Face in $Layout.mFaces) )
+	{
+		DeleteFace($Element,$Face);
+		return false;
+	}
+	
+	//console.log("Setting face " + $Face,$Layout);
 	var $ImageOffset = ScaleVectors( $Layout.mFaces[$Face], $Layout.GetFaceSize() );
 	var $ImageMatrix = $Layout.mFaceMatrix[$Face];
 	var $ImageSize = $Layout.mImageSize;
 	var $ImageUrl = $Layout.mImageUrl;
-	if ( !$Element )
-		return;
 	
 	var $FaceSize = new THREE.Vector2( $Element.clientWidth, $Element.clientHeight );
 	var $CssScale = DivideVectors( $Layout.GetFaceSize(), $FaceSize );
@@ -172,6 +254,8 @@ function SetFaceBackground($Element,$Face,$Layout)
 		$ElementChildImg.style.zIndex = -900;	//	doesn't work just setting the content's Z index :/
 		SetElementTransform($ElementChildImg, 'scaleX(' + $ImageMatrix.x +') scaleY(' + $ImageMatrix.y +')' );
 	}
+	
+	return true;
 }
 
 

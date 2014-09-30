@@ -336,11 +336,22 @@ SoyAsset_Image.prototype.Load = function()
 
 SoyAsset_Image.prototype.OnLoad = function($Event)
 {
+	//	take dimensions - this sets dimensions for unknown sizes, and corrects existing meta data
+	var $w = this.mImage.width;
+	var $h = this.mImage.height;
+	if ( isInt($w) && isInt($h) )
+	{
+//	console.log("onload image ",this.mImage,$w,$h);
+		this.mMeta.Width = $w;
+		this.mMeta.Height = $h;
+	}
+	
 	//	move ownership
 	this.mAsset = this.mImage;
 	this.mImage = null;
-	
+
 	assert( this.IsLoaded(), "Loaded state wrong" );
+	console.log("image onloaded ",this.mOnLoaded);
 	this.mOnLoaded( this );
 }
 
@@ -378,13 +389,14 @@ function SoyAsset_Video($Meta,$OnLoaded,$OnFailed)
 SoyAsset_Video.prototype.Stop = function()
 {
 	this.mDesired = false;
+	this.mError = 'Stopped';
 
 	if ( this.mAsset )
 	{
 		//	abort video by setting invalid src
 		this.mAsset.src = '';
 		this.mAsset.load();
-	//	this.mAsset.stop();
+		//this.mAsset.stop();
 		delete this.mAsset;
 		this.mAsset = null;
 	}
@@ -485,13 +497,12 @@ SoyAsset_Mjpeg.prototype.Stop = function()
 	this.mDesired = false;
 	
 	if ( this.mAsset )
-	{
-		//	abort video by setting invalid src
-		this.mAsset.src = '';
-		this.mAsset.load();
-		//	this.mAsset.stop();
-		delete this.mAsset;
 		this.mAsset = null;
+	
+	if ( this.mMjpeg )
+	{
+		this.mMjpeg.Destroy();
+		this.mMjpeg = null;
 	}
 	assert( !this.IsLoaded(), "Loaded state wrong" );
 }
@@ -504,7 +515,7 @@ SoyAsset_Mjpeg.prototype.Load = function()
 	var OnNewJpeg = function($JpegData) { $this.OnLoad($JpegData); };
 	var OnError = function() { $this.OnError(); }
 	console.log("load mjpeg", this);
-	var $Mjpeg = new SoyMJpeg( this.mUrl, 25, $Loop, this.mMeta.MjpegIndexes, OnNewJpeg, OnError );
+	this.mMjpeg = new SoyMJpeg( this.mUrl, 25, $Loop, this.mMeta.MjpegIndexes, OnNewJpeg, OnError );
 }
 
 SoyAsset_Mjpeg.prototype.OnLoad = function($JpegData)

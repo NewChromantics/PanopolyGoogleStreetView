@@ -5,15 +5,12 @@ RegisterSupport('Mouse', new SoyMouse() );
 
 function SoyMouse($Container)
 {
-	if ( $Container == undefined )
-		$Container = document.body;
-	
 	//	call super
 	SoySupport.apply( this, arguments );
 	
 	this.mUpdateRateMs = 1000/30;
 	this.mQuaternion = new THREE.Quaternion();
-	this.mContainer = $Container;
+	this.mContainer = CheckDefaultParam( $Container, document.body );
 	
 	
 	this.mScreenOrientation = window.screenOrientation || 0;
@@ -38,6 +35,7 @@ SoyMouse.prototype.IsSupported = function()
 
 SoyMouse.prototype.Init = function()
 {
+	//console.log("mouse init ", this.mContainer );
 	if ( !this.IsSupported() )
 	{
 		this.OnUnsupported();
@@ -45,18 +43,38 @@ SoyMouse.prototype.Init = function()
 	}
 	
 	var $this = this;
-	this.mContainer.addEventListener( 'mousedown', function($Event){ $this.OnMouseDown($Event); }, false );
-	this.mContainer.addEventListener( 'mousemove', function($Event){ $this.OnMouseMove($Event); }, false );
-	this.mContainer.addEventListener( 'mouseup', function($Event){ $this.OnMouseUp($Event); }, false );
+	this.SetContainer( this.mContainer );
 
 	this.UpdateQuaternion();
 	
 	this.OnSupported();
 }
 
+SoyMouse.prototype.SetContainer = function($Container)
+{
+	console.log("SetContainer from ", this.mContainer, " to ", $Container );
+	var $this = this;
+
+	if ( this.mContainer )
+	{
+		this.mContainer.removeEventListener( 'mousedown', function($Event){ $this.OnMouseDown($Event); } );
+		this.mContainer.removeEventListener( 'mousemove', function($Event){ $this.OnMouseMove($Event); } );
+		this.mContainer.removeEventListener( 'mouseup', function($Event){ $this.OnMouseUp($Event); } );
+		
+	}
+	
+	this.mContainer = $Container;
+	if ( this.mContainer )
+	{
+		this.mContainer.addEventListener( 'mousedown', function($Event){ $this.OnMouseDown($Event); }, false );
+		this.mContainer.addEventListener( 'mousemove', function($Event){ $this.OnMouseMove($Event); }, false );
+		this.mContainer.addEventListener( 'mouseup', function($Event){ $this.OnMouseUp($Event); }, false );
+	}
+}
+
 SoyMouse.prototype.OnMouseDown = function($Event)
 {
-	$Event.preventDefault();
+	//$Event.preventDefault();
 	
 	this.isUserInteracting = true;
 	this.onPointerDownPointerX = $Event.clientX;
