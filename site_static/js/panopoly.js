@@ -73,9 +73,9 @@ var $CurrentCameraControl = null;
 var $ModeStack = new Array();
 
 //	auto-switch modesets
-var $DesktopOculusRestMode = new Array('OculusRest','Split'/*,'Fullscreen'*/);
-var $DesktopOculusBridgeMode = new Array('OculusBridge','Split'/*,'Fullscreen'*/);
-var $IosRiftMode = new Array('Gyro','Split','ExternalDisplay');
+var $DesktopOculusRestMode = new Array('OculusRest'/*,'Fullscreen'*/);
+var $DesktopOculusBridgeMode = new Array('OculusBridge'/*,'Fullscreen'*/);
+var $IosRiftMode = new Array('Gyro','ExternalDisplay');
 var $IosGyroMode = new Array('Gyro');
 var $DesktopMouseMode = new Array('Mouse');
 
