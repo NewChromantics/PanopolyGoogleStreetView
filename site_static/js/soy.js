@@ -172,6 +172,10 @@ Math.DegreesToRadians = function(deg)
 	return deg * (Math.PI/180);
 }
 
+function MathSign(n)
+{
+	return n?n<0?-1:1:0;
+}
 
 function isInt(n)
 {

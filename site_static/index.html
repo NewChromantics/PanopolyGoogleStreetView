@@ -93,6 +93,8 @@
 		<script src="js/SoyAsset.js"></script>
 		<script src="js/SoyPano.js"></script>
 	
+		<script src="js/PanoMenu.js"></script>
+	
 
 <div id="debug_console" style="overflow:scroll;height:200px;z-index:999;position:absolute;left:0;top:20px;opacity:0.5;background:white;"></div>
 
@@ -541,6 +543,7 @@ function NewPano($Config,$MetaAsset)
 					$Container.appendChild( $Config.mRendererRight.domElement );
 				}
 
+
 				if ( $Config.mRenderMode != RENDERMODE_CSS )
 				{
 					var WidthSegments = 60;
@@ -617,12 +620,14 @@ function NewPano($Config,$MetaAsset)
 					{
 						$Config.mRendererLeft.setSize( w, h );
 						$Config.mRendererLeft.setViewport( 0, 0, w, h );
+						$Config.mRendererLeft.mViewport = new SoyRect( 0, 0, w, h );
 					}
 				
 					if ( $Config.mRendererRight )
 					{
 						$Config.mRendererRight.setSize( 0, 0 );
 						$Config.mRendererRight.setViewport( 0, 0, 0, 0 );
+						$Config.mRendererRight.mViewport = new SoyRect( 0, 0, 0, 0 );
 					}
 				}
 				
@@ -666,6 +671,7 @@ function NewPano($Config,$MetaAsset)
 					//	$Config.mRendererLeftRight.render( $Config.mScene, $Config.mCamera );
 					}
 				}
+				
 			}
 	
 	
@@ -747,7 +753,7 @@ function NewPano($Config,$MetaAsset)
 	
 		if ( HasHashParam('border') )
 			Debug_SetStyleBorder($Config1.mContainer);
-		
+	
 		if ( $Config1.mRenderMode != RENDERMODE_NONE )
 		{
 			InitWebgl( $Config1 );
@@ -785,6 +791,11 @@ function NewPano($Config,$MetaAsset)
 		}
 
 
+		if ( HasHashParam('menu') )
+		{
+			forEach($Configs,function($Config) { RegisterMenuConfig($Config); } );
+			ShowMenu("hello!");
+		}
 			</script>
 
 	</body>

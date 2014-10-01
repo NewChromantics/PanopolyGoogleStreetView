@@ -95,6 +95,8 @@ THREE.StereoEffect = function ( $LeftRenderer,$RightRenderer ) {
 
 			$LeftRenderer.setSize( $CanvasWidth, $CanvasHeight );
 			$LeftRenderer.setViewport( $x, $y, $ViewportWidth, $ViewportHeight );
+			$LeftRenderer.mViewport = new SoyRect($x,$y,$ViewportWidth, $ViewportHeight);
+			$LeftRenderer.mCameraTranslateX = -this.separation;
 	//		$LeftRenderer.setScissor( $x, $y, $ViewportWidth, $ViewportHeight );
 	//		$LeftRenderer.clear();
 			$LeftRenderer.render( scene, _cameraL );
@@ -109,6 +111,8 @@ THREE.StereoEffect = function ( $LeftRenderer,$RightRenderer ) {
 			
 			$SecondRenderer.setSize( $CanvasWidth, $CanvasHeight );
 			$SecondRenderer.setViewport( $x, $y, $ViewportWidth, $ViewportHeight );
+			$SecondRenderer.mViewport = new SoyRect($x,$y,$ViewportWidth, $ViewportHeight);
+			$SecondRenderer.mCameraTranslateX = this.separation;
 	//		$SecondRenderer.setScissor( $x, $y, $ViewportWidth, $ViewportHeight );
 	//		$SecondRenderer.clear();
 			$SecondRenderer.render( scene, _cameraR );
