@@ -52,7 +52,7 @@ SoyMouse.prototype.Init = function()
 
 SoyMouse.prototype.SetContainer = function($Container)
 {
-	console.log("SetContainer from ", this.mContainer, " to ", $Container );
+	//console.log("SetContainer from ", this.mContainer, " to ", $Container );
 	var $this = this;
 
 	if ( this.mContainer )
