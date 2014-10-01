@@ -1,9 +1,14 @@
 var RENDERMODE_WEBGL = 'webgl';		//	three js
 var RENDERMODE_CANVAS = 'canvas';	//	three js without webgl
-var RENDERMODE_CUBEMAP = 'cubemap';	//	css3d
+var RENDERMODE_CSS = 'css';	//	css3d
 var RENDERMODE_NONE = null;
 
-function SoyConfig($RenderMode)
+var GEOMODE_CUBEMAP = 'cubemap';
+var GEOMODE_SPHERE = 'sphere';
+var GEOMODE_SHADER = 'shader';
+
+
+function SoyConfig($RenderMode,$GeoMode)
 {
 	//	higher fov = higher seperation
 	
@@ -39,10 +44,54 @@ function SoyConfig($RenderMode)
 	}
 
 	this.mRenderMode = $RenderMode;
-	
-	assert(	this.mRenderMode == RENDERMODE_WEBGL ||
-		   this.mRenderMode == RENDERMODE_CANVAS ||
-		   this.mRenderMode == RENDERMODE_NONE ||
-		   this.mRenderMode == RENDERMODE_CUBEMAP
-		   );
+	this.mGeoMode = $GeoMode;
 }
+
+
+SoyConfig.prototype.SupportsAssetMeta = function($AssetMeta)
+{
+	var $Config = this;
+	
+	if ( $AssetMeta.Width > $Config.mMaxResolution || $AssetMeta.Height > $Config.mMaxResolution )
+		return false;
+
+	var $CubemapMode = ($Config.mRenderMode == RENDERMODE_CSS);
+
+	//	only support cubemaps if cubemap mode
+	if ( $AssetMeta.IsCubemap() != $CubemapMode )
+		return false;
+
+	if ( $AssetMeta.IsVideo() )
+	{
+		var $Type = $AssetMeta.Format;
+		var $Codec = $AssetMeta.Codec;
+		var $IsMjpeg = ( $Type == 'mjpeg' && $Codec == 'mjpeg' );
+		
+		//	currently mjpeg is CSS only
+		if ( $CubemapMode )
+		{
+			return $IsMjpeg;
+		}
+		else
+		{
+			//	not supporting mjpeg in non-cubemap
+			if ( $IsMjpeg )
+				return false;
+			
+			//	mobile (ios?) only supports mjpeg, as video needs to be clicked. no auto play!
+			if ( IsMobile() )
+				return false;
+			
+			var $Video = document.createElement('video');
+			var $VideoTypeString = 'video/' + $Type + ';codecs="' + $Codec + '"';
+			var $CanPlay = $Video.canPlayType($VideoTypeString);
+			if ( $CanPlay == "" )
+				return false;
+		}
+	}
+
+
+	return true;
+}
+
+

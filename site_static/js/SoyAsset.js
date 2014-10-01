@@ -135,46 +135,8 @@ SoyAssetMeta.prototype.IsVideo = function()
 
 SoyAssetMeta.prototype.IsSupported = function($Config)
 {
-	if ( this.Width > $Config.mMaxResolution || this.Height > $Config.mMaxResolution )
-		return false;
+	return $Config.SupportsAssetMeta(this);
 	
-	var $CubemapMode = ($Config.mRenderMode == RENDERMODE_CUBEMAP);
-	
-	//	only support cubemaps if cubemap mode
-	if ( this.IsCubemap() != $CubemapMode )
-		return false;
-	
-	if ( this.IsVideo() )
-	{
-		var $Type = this.Format;
-		var $Codec = this.Codec;
-		var $IsMjpeg = ( $Type == 'mjpeg' && $Codec == 'mjpeg' );
-		
-		//	currently mjpeg is CSS only
-		if ( $CubemapMode )
-		{
-			return $IsMjpeg;
-		}
-		else
-		{
-			//	not supporting mjpeg in non-cubemap
-			if ( $IsMjpeg )
-				return false;
-			
-			//	mobile (ios?) only supports mjpeg, as video needs to be clicked. no auto play!
-			if ( IsMobile() )
-				return false;
-			
-			var $Video = document.createElement('video');
-			var $VideoTypeString = 'video/' + $Type + ';codecs="' + $Codec + '"';
-			var $CanPlay = $Video.canPlayType($VideoTypeString);
-			if ( $CanPlay == "" )
-				return false;
-		}
-	}
-	
-	
-	return true;
 }
 
 

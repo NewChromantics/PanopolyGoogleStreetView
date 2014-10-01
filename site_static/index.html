@@ -432,7 +432,6 @@ function NewPano($Config,$MetaAsset)
 	$Config.mPano.mMeta = $MetaAsset;
 	console.log($MetaAsset);
 	$Config.mPano.OnLoadedMeta();
-	//$Config.mPano.AddAsset( $Asset );
 }
 
 	function OnLoadLocalVideo($Event)
@@ -446,13 +445,12 @@ function NewPano($Config,$MetaAsset)
 		
 		//	create new pano meta which does everything for us...
 		var $AssetMeta = {};
-		//$AssetMeta.Layout = 'cubemap_11L';
-		$AssetMeta.Layout = 'equirect';
+		$AssetMeta.Layout = 'cubemap_11L';
 		$AssetMeta.Filename = $ImageData;
 		$AssetMeta.Format = 'jpg';	//	hmmm
 		
 		var $AssetMeta2 = {};
-		$AssetMeta2.Layout = 'cubemap_11L';
+		$AssetMeta2.Layout = 'equirect';
 		$AssetMeta2.Filename = $ImageData;
 		$AssetMeta2.Format = 'jpg';	//	hmmm
 		
@@ -514,7 +512,7 @@ function NewPano($Config,$MetaAsset)
 				
 
 
-				if ( $Config.mRenderMode == RENDERMODE_CUBEMAP )
+				if ( $Config.mRenderMode == RENDERMODE_CSS )
 				{
 					$Config.mRendererLeft = new THREE.CSS3DRenderer();
 					$Config.mRendererRight = new THREE.CSS3DRenderer();
@@ -543,7 +541,7 @@ function NewPano($Config,$MetaAsset)
 					$Container.appendChild( $Config.mRendererRight.domElement );
 				}
 
-				if ( $Config.mRenderMode != RENDERMODE_CUBEMAP )
+				if ( $Config.mRenderMode != RENDERMODE_CSS )
 				{
 					var WidthSegments = 60;
 					var HeightSegments = 40;
@@ -673,7 +671,7 @@ function NewPano($Config,$MetaAsset)
 	
 		function UpdateTexture($Asset,$Config)
 		{
-			if ( $Config.mRenderMode == RENDERMODE_CUBEMAP )
+			if ( $Config.mRenderMode == RENDERMODE_CSS )
 			{
 				for ( var $Key in $Config.mRenderCubes )
 				{
@@ -722,12 +720,13 @@ function NewPano($Config,$MetaAsset)
 		
 		//	todo: load pano, if meta ONLY supports cubemap, we need cubemap mode. same with videos...
 		
+		
 		//	setup config
 		var $RenderMode = RENDERMODE_NONE;
 		
 		if ( HasHashParam('cubemap') && IsSupported('Css3d') )
 		{
-			$RenderMode = RENDERMODE_CUBEMAP;
+			$RenderMode = RENDERMODE_CSS;
 		}
 		else if ( IsCanvasSupported() && IsSupported('Webgl') )
 		{
@@ -735,7 +734,7 @@ function NewPano($Config,$MetaAsset)
 		}
 		else if ( IsCanvasSupported() && IsSupported('Css3d') )
 		{
-			$RenderMode = RENDERMODE_CUBEMAP;
+			$RenderMode = RENDERMODE_CSS;
 		}
 
 		var $Config1 = new SoyConfig( $RenderMode );
@@ -768,7 +767,7 @@ function NewPano($Config,$MetaAsset)
 				$Config1.mContainer.style.bottom = '50%';
 				$Container2.style.top = '50%';
 				
-				var $Config2 = new SoyConfig( RENDERMODE_CUBEMAP );
+				var $Config2 = new SoyConfig( RENDERMODE_CSS );
 				$Config2.mOnNewFrame = function($Asset) { UpdateTexture($Asset,$Config2) };
 				$Config2.mContainer = $Container2;
 				InitWebgl( $Config2 );
