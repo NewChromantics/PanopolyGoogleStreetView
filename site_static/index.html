@@ -401,8 +401,6 @@ function OnClickedRiftMode()
 
 function DestroyPano($Config)
 {
-	console_logStack();
-	alert("Destroy pano" +$Config.mRenderMode);
 	//	kill old pano
 	if ( $Config.mPano )
 	{
@@ -424,14 +422,17 @@ function LoadPano($Config)
 	$Config.mPano = new SoyPano( $PanoName, $Config, $Config.mOnNewFrame, OnFailedMeta );
 }
 
-function NewPano($Config,$Asset)
+function NewPano($Config,$MetaAsset)
 {
 	DestroyPano($Config);
 
 	var OnFailedMeta = function() { alert("Failed to load pano " + $PanoName); }
 
 	$Config.mPano = new SoyPano( 'New', $Config, $Config.mOnNewFrame, OnFailedMeta, false );
-	$Config.mPano.AddAsset( $Asset );
+	$Config.mPano.mMeta = $MetaAsset;
+	console.log($MetaAsset);
+	$Config.mPano.OnLoadedMeta();
+	//$Config.mPano.AddAsset( $Asset );
 }
 
 	function OnLoadLocalVideo($Event)
@@ -442,36 +443,38 @@ function NewPano($Config,$Asset)
 	function OnLoadLocalTexture($Event)
 	{
 		var $ImageData = $Event.target.result;
-		var $Image = document.createElement( 'img' );
-		$Image.src = $ImageData;
+		
+		//	create new pano meta which does everything for us...
+		var $AssetMeta = {};
+		//$AssetMeta.Layout = 'cubemap_11L';
+		$AssetMeta.Layout = 'equirect';
+		$AssetMeta.Filename = $ImageData;
+		$AssetMeta.Format = 'jpg';	//	hmmm
+		
+		var $AssetMeta2 = {};
+		$AssetMeta2.Layout = 'cubemap_11L';
+		$AssetMeta2.Filename = $ImageData;
+		$AssetMeta2.Format = 'jpg';	//	hmmm
+		
+		var $Meta = {};
+		$Meta.isVideo = false;
+		$Meta.assets = new Array( $AssetMeta, $AssetMeta2 );
 
 		for ( var $Key in $Configs )
 		{
 			var $Config = $Configs[$Key];
-		//	alert('on load [' + $Key + '] ' + $Config.mRenderMode);
+			NewPano( $Config, $Meta );
+		}
 
-			var $OnFailed = function($Asset,$Config)
-			{
-				OnFileUploadSupported(false);
-			};
-			var $OnSuccess = function($Asset,$Config)
-			{
-				//	asset loaded okay. Kill old Pano (stops video) and create a new one with this asset
-				NewPano( $Config, $Asset );
-				OnFileUploadSupported(true);
-			};
-		
-			var $Layout = 'equirect';
-			if ( $Config.mRenderMode == RENDERMODE_CUBEMAP )
-				$Layout = 'cubemap_11L';
-				
+/*	gr: consider using below to verify it's a usable image, rather than a blank display
+	
 			var $Meta = new SoyAssetMeta( { 'Filename': '', 'Layout': $Layout } );
 			console.log("creating new asset",$Meta);
 			var $Asset = new SoyAsset_Image( $Meta, function($Asset){ $OnSuccess($Asset,$Asset.mConfig);}, function($Asset){ $OnFailed($Asset,$Asset.mConfig);}, false );
 			$Asset.mConfig = $Config;
 			$Asset.mUrl = $ImageData;
 			$Asset.Load();
-		}
+ */
 	}
 
 

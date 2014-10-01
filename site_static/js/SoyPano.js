@@ -138,7 +138,7 @@ SoyPano.prototype.GetBetterAsset = function($FilterFunction)
 	
 	//	load some better stuff compared to mAssets
 	var $BestRemoteMeta = null;
-	
+	console.log("GetBetterAsset", this.mMeta.assets);
 	for ( var $Key in this.mMeta.assets )
 	{
 		var $RemoteMeta = new SoyAssetMeta( this.mMeta.assets[$Key] );
@@ -192,8 +192,7 @@ SoyPano.prototype.OnLoadedMeta = function()
 			return $BestRemoteMeta != $Meta && !$Meta.IsVideo();
 		};
 		var $FastRemoteMeta = this.GetBetterAsset( $FilterFunction );
-		if ( $FastRemoteMeta )
-			$LoadAssets.push($FastRemoteMeta);
+		$LoadAssets.push($FastRemoteMeta);
 	}
 	
 	var $this = this;
@@ -203,6 +202,8 @@ SoyPano.prototype.OnLoadedMeta = function()
 	for ( var $Key in $LoadAssets )
 	{
 		var $AssetMeta = $LoadAssets[$Key];
+		if ( $AssetMeta == null )
+			continue;
 		console.log( this, "Load additonal asset: ", $AssetMeta );
 
 		if ( $AssetMeta.IsVideo() && $AssetMeta.Format == 'mjpeg' )

@@ -188,7 +188,7 @@ function SoyAsset($Meta,$OnLoaded,$OnFailed)
 		return;
 	}
 
-	var $Host = GetHost();
+	var $Host = $Meta.Filename.startsWith('data:') ? '' : GetHost();
 	
 	this.mAsset = null;			//	set once loaded
 	this.mUrl = $Host + $Meta.Filename;
@@ -221,8 +221,10 @@ SoyAsset.prototype.IsLoaded = function()
 
 SoyAsset_Ajax.prototype = new SoyAsset('Ajax');
 
-function SoyAsset_Ajax($FileName,$OnLoaded,$OnFailed)
+function SoyAsset_Ajax($FileName,$OnLoaded,$OnFailed,$DoLoad)
 {
+	$DoLoad = CheckDefaultParam($DoLoad,true);
+	
 	var $Meta = new SoyAssetMeta();
 	$Meta.Filename = $FileName;
 	
@@ -231,7 +233,8 @@ function SoyAsset_Ajax($FileName,$OnLoaded,$OnFailed)
 
 	this.mAjax = null;
 
-	this.Load();
+	if ( $DoLoad )
+		this.Load();
 }
 
 
@@ -323,13 +326,13 @@ SoyAsset_Image.prototype.Load = function()
 	
 	//	fetch
 	console.log("Loading " + this.mUrl );
-	
+		
 	var $Image = document.createElement('img');
 	this.mImage = $Image;
 	$Image.addEventListener('load', function($Event){ $this.OnLoad($Event); }, false );
 //	$Image.addEventListener('progress', function($Event){ $this.OnLoad($Event); }, false );
 	$Image.addEventListener('error', function($Event){ $this.OnError($Event); }, false );
-			
+				
 	$Image.crossOrigin = '';
 	$Image.src = this.mUrl;
 }
@@ -351,7 +354,6 @@ SoyAsset_Image.prototype.OnLoad = function($Event)
 	this.mImage = null;
 
 	assert( this.IsLoaded(), "Loaded state wrong" );
-	console.log("image onloaded ",this.mOnLoaded);
 	this.mOnLoaded( this );
 }
 
