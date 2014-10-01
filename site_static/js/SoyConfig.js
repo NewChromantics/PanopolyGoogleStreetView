@@ -5,9 +5,21 @@ var RENDERMODE_NONE = null;
 
 function SoyConfig($RenderMode)
 {
-	this.mFov = 70;
-	this.mSeperation = 0.03;
+	//	higher fov = higher seperation
+	
+	//	webgl
+	//	100 = 0.08 (0.09 tolerable on both)
+	//	90 = 0.05
 
+	//	cubemap
+	//	100 = 0.10
+	//	90 = 0.08
+	//	70 = 0.07
+	this.mFov = 90;
+	this.mSeperation = 0.06;
+
+	//	gr: fov ~100 has clipping issues in css mode
+	
 	//	larger res = clipping issues
 	//	gr: trying low res for mobile to stop crashes
 	if ( IsMobile() )
