@@ -246,6 +246,9 @@ function SetFaceBackground($Element,$Face,$Layout)
 	//	set style
 	if ( $ElementChildImg )
 	{
+		if ( HasHashParam('showcube') )
+			$ElementChildImg.style.opacity = '0.5';
+
 		$ElementChildImg.style.position = 'fixed';
 		$ElementChildImg.style.left = $x + 'px ';
 		$ElementChildImg.style.top = $y + 'px ';
