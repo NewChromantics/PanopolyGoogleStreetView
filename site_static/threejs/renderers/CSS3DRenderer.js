@@ -182,6 +182,22 @@ THREE.CSS3DRenderer = function () {
 			var element = object.element;
 			var cachedStyle = cache.objects[ object.id ];
 
+			//	if object is past far z, hide it
+			if ( camera.far )
+			{
+				var viewPosition = new THREE.Vector3();
+				viewPosition.setFromMatrixPosition( object.matrixWorld );
+				
+				var $ViewZSq = viewPosition.distanceToSquared( camera.position );
+				var $FarSq = camera.far * camera.far;
+				var $NearSq = camera.near * camera.near;
+				//console.log( Math.sqrt($ViewZSq), camera.near, camera.far );
+				var $Visible = ( $ViewZSq <= $FarSq ) && ( $ViewZSq >= $NearSq );
+				var $NewVisibilityStyle = $Visible ? 'visible' : 'hidden';
+				if ( element.style.visibility != $NewVisibilityStyle )
+					element.style.visibility = $NewVisibilityStyle;
+			}
+			
 			if ( cachedStyle === undefined || cachedStyle !== style ) {
 
 				element.style.WebkitTransform = style;
