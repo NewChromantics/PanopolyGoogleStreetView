@@ -171,15 +171,13 @@ function PanoGui($Container,$Name,$Config,$SceneRenderer)
 	
 	this.mScene = new THREE.Scene();
 	this.mCamera = new THREE.PerspectiveCamera( $Fov, $Aspect, 1, 1000 );
-	//	this might be altered by fov... see the sphere cube stuff. for now, this is good enough
-	this.mCamera.position.z = this.GetCameraZ();
 	
 	this.Render();
 }
 
 PanoGui.prototype.GetCameraZ = function()
 {
-	return this.mResolution;
+	return 0;
 }
 
 PanoGui.prototype.ShowSphere = function()
@@ -189,11 +187,11 @@ PanoGui.prototype.ShowSphere = function()
 	element.style.width = '100px';
 	element.style.height = '100px';
 	
-	
+	var $ObjectOffset = new THREE.Vector3(0,0,100);
 	var $dist = 200;
 	var scene = this.mScene;
 	
-	var vector = new THREE.Vector3();
+	var vector = new THREE.Vector3(0,0,0);
 	
 	for ( var i = 0; i < table.length; i += 5 ) {
 		
@@ -220,6 +218,9 @@ PanoGui.prototype.ShowSphere = function()
 		object.position.x = Math.random() * $dist - ($dist/2);
 		object.position.y = Math.random() * $dist - ($dist/2);
 		object.position.z = Math.random() * $dist - ($dist/2);
+		object.position.x += $ObjectOffset.x;
+		object.position.y += $ObjectOffset.y;
+		object.position.z += $ObjectOffset.z;
 		scene.add( object );
 		
 		objects.push( object );
@@ -244,6 +245,9 @@ PanoGui.prototype.ShowSphere = function()
 		object.position.x = $dist * Math.cos( theta ) * Math.sin( phi );
 		object.position.y = $dist * Math.sin( theta ) * Math.sin( phi );
 		object.position.z = $dist * Math.cos( phi );
+		object.position.x += $ObjectOffset.x;
+		object.position.y += $ObjectOffset.y;
+		object.position.z += $ObjectOffset.z;
 		
 		vector.copy( object.position ).multiplyScalar( 2 );
 		
@@ -258,7 +262,7 @@ PanoGui.prototype.ShowSphere = function()
 	
 	transform( targets.sphere );
 
-	this.Show(element);
+	//this.Show(element);
 }
 
 
@@ -267,8 +271,8 @@ PanoGui.prototype.Show = function($Element)
 	//	wrap in a div where we control scale
 	//	$Element, if it has dimensions, should be in %
 	var $Wrapper = document.createElement('div');
-	$Wrapper.style.width = this.mResolution + 'px';
-	$Wrapper.style.height = this.mResolution + 'px';
+	$Wrapper.style.width = (this.mResolution/10) + 'px';
+	$Wrapper.style.height = (this.mResolution/10) + 'px';
 	//$Wrapper.style.backgroundColor = 'red';
 	//$Wrapper.style.opacity = '0.5';
 	
@@ -279,7 +283,11 @@ PanoGui.prototype.Show = function($Element)
 	// create the object3d for this element
 	var cssObject = new THREE.CSS3DObject( $Wrapper );
 	// we reference the same position and rotation
-	cssObject.position = new THREE.Vector3(0,0,0);
+
+	cssObject.position.x = 0;
+	cssObject.position.y = 0;
+	cssObject.position.z = 0;
+
 	// add it to the css scene
 	this.mScene.add(cssObject);
 }
@@ -287,14 +295,32 @@ PanoGui.prototype.Show = function($Element)
 PanoGui.prototype.Render = function($Timestamp)
 {
 //	console.log( this.mName );
+	var $SceneCamera = this.mSceneRenderer.mLastCamera;
+	if ( $SceneCamera )
+	{
+		/*
+		//	gr: always make camera match parent
+		this.mCamera.near = $SceneCamera.near;
+		this.mCamera.far = $SceneCamera.far;
+		this.mCamera.fov = $SceneCamera.fov;
+		 //this.mCamera.aspect = 0.5 * $SceneCamera.aspect;
+		this.mCamera.aspect = $SceneCamera.aspect;
+		this.mCamera.updateProjectionMatrix();
+		this.mCamera.projectionMatrix.copy($SceneCamera.projectionMatrix);
+	*/
+		this.mCamera.position.copy( $SceneCamera.position );
+		this.mCamera.rotation.copy( $SceneCamera.rotation );
+	}
 	
-	//	test 3d with anim
-//	this.mCamera.rotation.y += 0.05;
-	this.mCamera.position.set(0,0,this.GetCameraZ());
-	this.mCamera.position.z += (this.mResolution) + Math.sin($Timestamp /1000)*(this.mResolution/1);
-	var $TransScale = (this.mResolution)*5;
-	this.mCamera.translateX( MathSign(this.mSceneRenderer.mCameraTranslateX)  * $TransScale  * this.mConfig.mSeperation );
-	console.log(this.mCamera.position.x);
+	//	animate children else where to make sure all gui elements match...
+	//	gr: one scene/css object... mulitple dom elements?
+	//this.mCamera.translateZ( Math.sin($Timestamp /1000)*(this.mResolution/1) );
+	if ( this.mScene.children.length > 0 )
+	{
+		var $trans = Math.sin($Timestamp /1000)*(1000);
+		this.mScene.children[0].position.z = $trans;
+	}
+
 	
 	var $Viewport = CheckDefaultParam( this.mSceneRenderer.mViewport, false );
 	//console.log($Viewport,this.mScene.children[0]);
@@ -343,14 +369,18 @@ function ShowMenu($Element)
 	if ( typeof $Element == 'string' )
 	{
 		var $NewElement = document.createElement('div');
+		$NewElement.innerText = $Element;
+		/*
 		$NewElement.style.width = '50%';
 		$NewElement.style.height = '50%';
 		$NewElement.style.marginLeft = '25%';
 		$NewElement.style.marginTop = '25%';
+		 */
 		$NewElement.style.backgroundColor = 'white';
 		$NewElement.style.opacity = '0.8';
-		$NewElement.style.fontSize = '300%';
-		$NewElement.innerText = $Element;
+		$NewElement.style.fontSize = '100pt';
+		$NewElement.style.padding = '20px';
+		$NewElement.style.width = '400px';
 		$Element = $NewElement;
 	}
 	
