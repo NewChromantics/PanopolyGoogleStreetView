@@ -523,3 +523,131 @@ function ShowMenu($Element,$Width,$Height)
 	} );
 }
 
+
+function Lerp($From,$To,$t)
+{
+	var $Delta = $To - $From;
+	return $From + ( $Delta * $t );
+}
+
+function GetLerp($From,$To,$Value)
+{
+	var $Delta = $To - $From;
+	var $t = ($Value - $From) / $Delta;
+	return $t;
+}
+
+//	returns when finished
+function Slide($this,$Timestep,$FromAngle,$ToAngle,$FromLerp,$ToLerp)
+{
+	var $LerpStep = 0.001;
+	var $Dist = 200;
+
+	$this.mLerp = CheckDefaultParam( $this.mLerp, $FromLerp );
+	$this.mLerp += $Timestep * $LerpStep;
+
+	var $Finished = ( $this.mLerp >= $ToLerp );
+	if ( $Finished )
+		$this.mLerp = $ToLerp;
+
+	//	animate in world space
+	var $Deg = Lerp($FromAngle,$ToAngle,GetLerp($FromLerp,$ToLerp,$this.mLerp) );
+	var $Rad = THREE.Math.degToRad( $Deg );
+	$this.position.x = Math.cos( $Rad ) * $Dist;
+	$this.position.z = Math.sin( $Rad ) * $Dist;
+	$this.quaternion.setFromAxisAngle( new THREE.Vector3(0,1,0), THREE.Math.degToRad(-$Deg-90) );
+
+	return $Finished;
+}
+
+function SlideOn($this,$Timestep)
+{
+	if ( Slide($this,$Timestep,180,270,-1,0) )
+		$this.mOnUpdate = null;
+}
+
+function SlideOff($this,$Timestep)
+{
+	if ( Slide($this,$Timestep,270,360,0,1) )
+		$this.mOnUpdate = null;
+}
+
+function PanoMenu($Element,$OnUpdate)
+{
+	$OnUpdate = CheckDefaultParam( $OnUpdate, false );
+	this.mOnUpdate = $OnUpdate;
+	this.mDeleteMe = false;
+	this.mElement = $Element;
+	this.mObjects = [];
+	this.position = new THREE.Vector3();
+	this.quaternion = new THREE.Quaternion();
+	this.scale = new THREE.Vector3(1,1,1);
+	
+	this.Update(0);
+}
+
+PanoMenu.prototype.Update = function($Timestamp)
+{
+	//	calc timestep
+	var $Timestep = 1000/60;
+	if ( this.mOnUpdate )
+	{
+		this.mOnUpdate( this, $Timestep );
+	}
+	
+	//	delete self
+	if ( this.mDeleteMe )
+	{
+		
+	}
+	
+	//	update object in scene
+	var $this = this;
+	forEach( this.mObjects, function($Object)
+	{
+			$Object.position.copy( $this.position );
+			$Object.quaternion.copy( $this.quaternion );
+			$Object.scale.copy( $this.scale );
+		//	$Object.updateMatrixWorld();
+	});
+
+	var $this = this;
+	requestAnimationFrame( function($Timestamp){ $this.Update($Timestamp); } );
+
+}
+
+
+PanoMenu.prototype.Show = function()
+{
+	this.mOnUpdate = SlideOn;
+
+	//	todo: grab existing element w/h
+	var $Width = CheckDefaultParam( this.mElement.style.width, 100 );
+	var $Height = CheckDefaultParam( this.mElement.style.height, $Width );
+
+	$Width = 50;
+	$Height = 50;
+	//	gr: scale this res & margin for menuresoluition
+	this.mElement.style.width = ($Width) + '%';	//	scale down
+	this.mElement.style.height = ($Height) + '%';
+	this.mElement.style.marginLeft = (100/2) - ($Width/2) + '%';
+	this.mElement.style.marginTop = (100/2) - ($Height/2) + '%';
+	//this.mElement.style.overflow = 'hidden';
+	this.mElement.style.fontSize = '10%';
+	
+	var $FollowCamera = true;
+	
+	var $this = this;
+	forEach( $GuiRenderers, function($Gui)
+	{
+		var $Object = $Gui.Show($this.mElement,$FollowCamera);
+		$this.mObjects.push( $Object );
+	} );
+}
+
+
+PanoMenu.prototype.Hide = function()
+{
+	this.mOnUpdate = SlideOff;
+}
+

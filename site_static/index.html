@@ -800,9 +800,20 @@ function NewPano($Config,$MetaAsset)
 		if ( HasHashParam('menu') )
 		{
 			forEach($Configs,function($Config) { RegisterMenuConfig($Config); } );
-			ShowMenu("hello!");
+			
+			
+			
+			var $WelcomeDom = document.createElement('div');
+			$WelcomeDom.innerHTML = 'welcome<br />to<br />panopo.ly';
+			$WelcomeDom.style.backgroundColor = 'white';
+			var $WelcomeMenu = new PanoMenu($WelcomeDom);
+			$WelcomeMenu.Show();
+			setTimeout( function(){$WelcomeMenu.Hide();}, 2* 1000 );
+			
+			//ShowMenu("hello!");
 		}
-			</script>
+
+	</script>
 
 	</body>
 </html>
