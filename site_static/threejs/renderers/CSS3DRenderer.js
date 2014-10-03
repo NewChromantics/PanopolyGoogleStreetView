@@ -157,7 +157,12 @@ THREE.CSS3DRenderer = function () {
 
 			var style;
 
-			if ( object instanceof THREE.CSS3DSprite ) {
+			if ( object.getCSSMatrix )
+			{
+				matrix.copy( object.getCSSMatrix( camera ) );
+				style = getObjectCSSMatrix( matrix );
+			}
+			else if ( object instanceof THREE.CSS3DSprite ) {
 
 				// http://swiftcoder.wordpress.com/2008/11/25/constructing-a-billboard-matrix/
 
@@ -175,6 +180,7 @@ THREE.CSS3DRenderer = function () {
 
 			} else {
 
+				matrix = object.matrixWorld;
 				style = getObjectCSSMatrix( object.matrixWorld );
 
 			}
@@ -183,10 +189,10 @@ THREE.CSS3DRenderer = function () {
 			var cachedStyle = cache.objects[ object.id ];
 
 			//	if object is past far z, hide it
-			if ( camera.far )
+			if ( camera.far && object.mEnableCull!==false )
 			{
 				var viewPosition = new THREE.Vector3();
-				viewPosition.setFromMatrixPosition( object.matrixWorld );
+				viewPosition.setFromMatrixPosition( matrix );
 				
 				var $ViewZSq = viewPosition.distanceToSquared( camera.position );
 				var $FarSq = camera.far * camera.far;

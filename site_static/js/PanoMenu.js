@@ -124,6 +124,14 @@ var table = [
 var objects = [];
 var targets = { table: [], sphere: [], helix: [], grid: [] };
 
+//	compared to face res
+//	gr: we want to increase this resolution. when we do, we need to alter camera properties to scale up otherwise element's offset wrong (that's why we need to limit distance to fov)
+var $MenuResolution = 0.9;
+var $FollowCameraDistanceFarScale = 0.99;
+
+//	if cull fails, then the distance from the camera is wrong and you won't be able to focus in 3d :)
+var $FollowCameraEnableCull = true;
+
 
 function transform( targets ) {
 	
@@ -150,6 +158,8 @@ function PanoGui($Container,$Name,$Config,$SceneRenderer)
 	var $Fov = $Config.mFov;
 	var $Aspect = 1;
 	var $FaceResolution = $Config.mFaceResolution;
+	var $Near = 0;
+	var $Far = $FaceResolution / 2;	//	this is how far away the cubemap faces are
 	
 	this.mName = $Name;
 	this.mConfig = $Config;
@@ -170,7 +180,7 @@ function PanoGui($Container,$Name,$Config,$SceneRenderer)
 	//this.mRenderer.domElement.style.top = '0px';
 	
 	this.mScene = new THREE.Scene();
-	this.mCamera = new THREE.PerspectiveCamera( $Fov, $Aspect, 1, 1000 );
+	this.mCamera = new THREE.PerspectiveCamera( $Fov, $Aspect, $Near, $Far );
 	
 	this.Render();
 }
@@ -266,13 +276,19 @@ PanoGui.prototype.ShowSphere = function()
 }
 
 
-PanoGui.prototype.Show = function($Element)
+PanoGui.prototype.Show = function($Element,$FollowCamera)
 {
+	$FollowCamera = CheckDefaultParam($FollowCamera,false);
+	
 	//	wrap in a div where we control scale
 	//	$Element, if it has dimensions, should be in %
 	var $Wrapper = document.createElement('div');
-	$Wrapper.style.width = (this.mResolution/10) + 'px';
-	$Wrapper.style.height = (this.mResolution/10) + 'px';
+	var $w = (this.mResolution/2) * $MenuResolution;
+	var $h = (this.mResolution/2) * $MenuResolution;
+	$Wrapper.style.width = $w + 'px';
+	$Wrapper.style.height = $h + 'px';
+	//	to allow % font in children, make font size same as height
+	$Wrapper.style.fontSize = $h +  'px';
 	//$Wrapper.style.backgroundColor = 'red';
 	//$Wrapper.style.opacity = '0.5';
 	
@@ -281,21 +297,71 @@ PanoGui.prototype.Show = function($Element)
 	$Wrapper.appendChild($Clone);
 	
 	// create the object3d for this element
-	var cssObject = new THREE.CSS3DObject( $Wrapper );
-	// we reference the same position and rotation
+	if ( $FollowCamera )
+	{
+		//	orientate to face camera....
+		//	gr: not what we want to do when we start rotating menus
+		//var cssObject = new THREE.CSS3DSprite( $Wrapper );
+		var cssObject = new THREE.CSS3DObject( $Wrapper );
+		
+		cssObject.mFollowMatrix = new THREE.Matrix4();
+		cssObject.mEnableCull = $FollowCameraEnableCull;
+		
+		
+		cssObject.getCSSMatrix = function($Camera)
+		{
+			//	we use rendering camera far
+			var $Far = $Camera.far;
+			var $ParentCamera = $Camera.mParentCamera;
+			if ( !$ParentCamera )
+				return this.matrixWorld;
 
-	cssObject.position.x = 0;
-	cssObject.position.y = 0;
-	cssObject.position.z = 0;
+			var $Timestamp = new Date().getTime();
+			
+			//	get scale to turn menu res into face size (which would be full-screen)
+			var $MenuScale = 1 - $FollowCameraDistanceFarScale;
+			
+			var $Dist = ($Far * $MenuScale) -1;	//	-1 to stop clipping if menu scale is 1
+			
+			//	debug anim
+			//$Dist += Math.sin($Timestamp/1000) * $Far*0.5;
+			
+			var $Forward = new THREE.Vector3( 0, 0, $Dist );
+			$Forward.applyMatrix4($ParentCamera.matrixWorld);
+
+			var $CameraMatrix = new THREE.Matrix4();
+			$CameraMatrix.makeRotationFromQuaternion( $ParentCamera.quaternion );
+			$CameraMatrix.setPosition($Forward);
+
+			var $LocalMatrix = this.matrixWorld.clone();
+			$LocalMatrix.multiplyScalar( 1 );
+
+			//$CameraMatrix.getInverse($CameraMatrix);
+			//$LocalMatrix.getInverse($LocalMatrix);
+			this.mFollowMatrix.multiplyMatrices($CameraMatrix,$LocalMatrix);
+		
+			return this.mFollowMatrix;
+		};
+	}
+	else
+	{
+		var cssObject = new THREE.CSS3DObject( $Wrapper );
+	}
+	cssObject.mFollowCamera = $FollowCamera;
 
 	// add it to the css scene
 	this.mScene.add(cssObject);
+
+	return cssObject;
 }
+
+
 
 PanoGui.prototype.Render = function($Timestamp)
 {
 //	console.log( this.mName );
 	var $SceneCamera = this.mSceneRenderer.mLastCamera;
+	var $SceneParentCamera = this.mSceneRenderer.mLastParentCamera;
 	if ( $SceneCamera )
 	{
 		/*
@@ -312,15 +378,37 @@ PanoGui.prototype.Render = function($Timestamp)
 		this.mCamera.rotation.copy( $SceneCamera.rotation );
 	}
 	
+	//	update parent camera reference
+	this.mCamera.mParentCamera = $SceneParentCamera;
+	
 	//	animate children else where to make sure all gui elements match...
 	//	gr: one scene/css object... mulitple dom elements?
-	//this.mCamera.translateZ( Math.sin($Timestamp /1000)*(this.mResolution/1) );
+	/*
 	if ( this.mScene.children.length > 0 )
 	{
-		var $trans = Math.sin($Timestamp /1000)*(1000);
-		this.mScene.children[0].position.z = $trans;
+		var $Child = this.mScene.children[0];
+		//	place child in front of camera...
+		if ( $SceneParentCamera )
+		{
+			if ( $Child.mFollowCamera )
+			{
+				var $Dist = -Math.sin($Timestamp /(3*1000))*(this.mCamera.far*0.90);
+				var $Forward = new THREE.Vector3( 0, 0, -$Dist );
+				$SceneParentCamera.updateMatrixWorld();
+				$Forward.applyMatrix4( $SceneParentCamera.matrixWorld );
+				console.log($Forward);
+				$Child.position.copy( $Forward );
+				$Child.updateMatrixWorld();
+			}
+			
+		}
+		else
+		{
+			var $trans = -Math.sin($Timestamp /(3*1000))*(this.mCamera.far*0.90);
+			$Child.position.z = $trans;
+		}
 	}
-
+*/
 	
 	var $Viewport = CheckDefaultParam( this.mSceneRenderer.mViewport, false );
 	//console.log($Viewport,this.mScene.children[0]);
@@ -363,31 +451,75 @@ function CreateGui($SceneRenderer,$Config,$Name)
 	$GuiRenderers.push( $Gui );
 }
 
-function ShowMenu($Element)
+function ShowMenu($Element,$Width,$Height)
 {
+	$Width = CheckDefaultParam( $Width, 100 );
+	$Height = CheckDefaultParam( $Height, $Width );
+	
 	//	construct the rendering element
 	if ( typeof $Element == 'string' )
 	{
 		var $NewElement = document.createElement('div');
 		$NewElement.innerText = $Element;
-		/*
-		$NewElement.style.width = '50%';
-		$NewElement.style.height = '50%';
-		$NewElement.style.marginLeft = '25%';
-		$NewElement.style.marginTop = '25%';
-		 */
 		$NewElement.style.backgroundColor = 'white';
 		$NewElement.style.opacity = '0.8';
-		$NewElement.style.fontSize = '100pt';
-		$NewElement.style.padding = '20px';
-		$NewElement.style.width = '400px';
+		$NewElement.style.fontSize = '10%';
+		
+		//	gr: scale this res & margin for menuresoluition
+		$NewElement.style.width = ($Width) + '%';	//	scale down
+		$NewElement.style.height = ($Height) + '%';
+		$NewElement.style.marginLeft = (100/2) - ($Width/2) + '%';
+		$NewElement.style.marginTop = (100/2) - ($Height/2) + '%';
+		$NewElement.style.overflow = 'hidden';
+		
 		$Element = $NewElement;
 	}
 	
 	forEach( $GuiRenderers, function($Gui)
 	{
-		$Gui.Show($Element);
+		//	$Gui.Show($Element,true);
+		var $Objecta = null;
+		var $Objectb = null;
+		$Objecta = $Gui.Show($Element,false);
+		$Objectb = $Gui.Show($Element,true);
 		//$Gui.ShowSphere();
+		
+			
+			
+		var $SpinAnim = function($Timestamp)
+		{
+			var $Object = this;
+			var $CamFar = 512/2;
+			
+			//	animate in world space
+			var $Dist = $CamFar * 0.90;
+
+			var $Offset = new THREE.Vector3( 0, 0, -$Dist  );
+			$Object.position.copy($Offset);
+			
+			//	animate
+			
+		//	$Object.position.x += Math.cos($Timestamp /1000) * $Dist;
+		//	$Object.position.z += Math.sin($Timestamp /1000) * $Dist;
+
+		//	$Object.rotateOnAxis( new THREE.Vector3(0,1,0), 0.11 );
+			
+			$Object.updateMatrixWorld();
+
+			requestAnimationFrame( function($Timestamp){ $Object.Animate($Timestamp); } );
+		};
+			
+		if ( $Objecta )
+		{
+			$Objecta.Animate = $SpinAnim;
+			$Objecta.Animate(0);
+		}
+			
+		if ( $Objectb )
+		{
+			$Objectb.Animate = $SpinAnim;
+			$Objectb.Animate(0);
+		}
 	} );
 }
 

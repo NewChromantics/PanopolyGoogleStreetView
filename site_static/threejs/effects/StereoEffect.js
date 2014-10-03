@@ -101,6 +101,7 @@ THREE.StereoEffect = function ( $LeftRenderer,$RightRenderer ) {
 	//		$LeftRenderer.clear();
 			$LeftRenderer.render( scene, _cameraL );
 			$LeftRenderer.mLastCamera = _cameraL;
+			$LeftRenderer.mLastParentCamera = camera;
 		}
 		
 		
@@ -118,6 +119,7 @@ THREE.StereoEffect = function ( $LeftRenderer,$RightRenderer ) {
 	//		$SecondRenderer.clear();
 			$SecondRenderer.render( scene, _cameraR );
 			$SecondRenderer.mLastCamera = _cameraR;
+			$SecondRenderer.mLastParentCamera = camera;
 		}
 		 
 	};

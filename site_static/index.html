@@ -506,7 +506,9 @@ function NewPano($Config,$MetaAsset)
 			{
 				var $Container = $Config.mContainer;
 				var fov = $Config.mFov;
-				$Config.mCamera = new THREE.PerspectiveCamera( fov, 1, 1, 1000 );
+				//	far Z matches furthest point on a cubemap...
+				var $Far = Math.sqrt( $Config.mFaceResolution*$Config.mFaceResolution + $Config.mFaceResolution*$Config.mFaceResolution );
+				$Config.mCamera = new THREE.PerspectiveCamera( fov, 1, 1, $Far );
 			//	$Config.mCamera.target = new THREE.Vector3( 0, 0, 1 );
 			//	$Config.mCamera.position.set( 0.001, 0.001, 0.001 );
 		
