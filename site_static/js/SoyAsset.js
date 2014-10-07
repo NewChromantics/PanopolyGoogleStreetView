@@ -46,6 +46,13 @@ function SoyAssetMeta($Filename,$Width,$Height,$Format,$Codec,$BitRate,$Layout)
 
 SoyAssetMeta.prototype.IsBetter = function($that)
 {
+	console.log(this);
+	//	gr: temp, jsonp (google street depth is best)
+	var $this_isjsonp = (this.Format == 'jsonp');
+	var $that_isjsonp = ($that.Format == 'jsonp');
+	if ( $this_isjsonp != $that_isjsonp )
+		return $this_isjsonp;
+	
 	//	video always better than image
 	if ( this.IsVideo() != $that.IsVideo() )
 		return this.IsVideo();
@@ -328,21 +335,21 @@ SoyAsset_JsonP.prototype.Load = function()
 	//	catch callback finish...
 }
 
-SoyAsset_JsonP.prototype.OnLoad = function($ResponseText)
+SoyAsset_JsonP.prototype.OnLoad = function($Json)
 {
 	if ( this.mOnParseData )
 	{
-		this.mAsset = this.mOnParseData($ResponseText);
+		this.mAsset = this.mOnParseData($Json);
 		if ( IsUndefined(this.mAsset) || this.mAsset === false || this.mAsset === null )
 		{
 			this.mAsset = null;
-			this.OnError($ResponseText);
+			this.OnError($Json);
 			return;
 		}
 	}
 	else
 	{
-		this.mAsset = $ResponseText;
+		this.mAsset = $Json;
 	}
 	//this.mAssetType = $Event.target.responseType;
 	assert( this.IsLoaded(), "Loaded state wrong" );
