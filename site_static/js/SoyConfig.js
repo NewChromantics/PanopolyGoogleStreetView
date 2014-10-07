@@ -22,6 +22,7 @@ function SoyConfig($RenderMode,$GeoMode)
 	//	70 = 0.07
 	this.mFov = 90;
 	this.mSeperation = 0.06;
+	this.mSplitEnabled = true;
 
 	//	gr: fov ~100 has clipping issues in css mode
 	
@@ -31,6 +32,7 @@ function SoyConfig($RenderMode,$GeoMode)
 	{
 		this.mFaceResolution = 256;
 		this.mMaxResolution = 2048;
+		this.mSplitEnabled = false;
 	}
 	else
 	{
