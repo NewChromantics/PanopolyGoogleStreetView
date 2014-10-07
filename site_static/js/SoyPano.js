@@ -1,3 +1,5 @@
+var $GoogleStreetViewPrefix = 'gsv,';
+
 
 function SoyPano($PanoName,$Config,$OnNewImage,$OnMetaFailed,$DoLoad)
 {
