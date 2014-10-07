@@ -66,6 +66,7 @@
 <div class="Container" id="container"></div>
 <div class="Container" id="container_dual"></div>
 
+		<script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false" type="text/javascript"></script>
 		<script src="js/soy.js"></script>
 		<script src="threejs/three.min.js"></script>
 		<script src="threejs/renderers/CSS3DRenderer.js"></script>
@@ -455,16 +456,84 @@ function LoadDataPano($Config)
 	NewPano( $Config, $Meta );
 }
 
+
+function OnGoogleStreetViewFailed()
+{
+	alert('OnGoogleStreetViewFailed');
+}
+
+function OnLoadGoogleStreetViewPano($Config,$GooglePanoId)
+{
+	var $Meta = {};
+	$Meta.isVideo = false;
+	$Meta.assets = new Array();
+	
+	var $Url = 'xx';
+	var $Zoom = 0;
+	
+//	var w = Math.pow(2, $Zoom),
+///	h = Math.pow(2, $Zoom - 1);
+	var w = 1;
+	var h = 1;
+	console.log(w,h);
+	for( var y = 0; y < h; y++)
+	{
+		for( var x = 0; x < w; x++)
+		{
+			var $url = 'http://maps.google.com/cbk?output=tile&panoid=' + $GooglePanoId + '&zoom=' + $Zoom + '&x=' + x + '&y=' + y + '&' + Date.now();
+			var $AssetMeta = {};
+			$AssetMeta.Layout = 'equirect';
+			$AssetMeta.Filename = $url;
+			$AssetMeta.Format = 'jpg';
+			
+			//	gr: post processing to adjust for extra spacing, overlapping image, tile construction etc
+			//	http://blog.mridey.com/2010/05/how-to-create-and-display-custom.html
+			$AssetMeta.CropWidth = 417;
+			$AssetMeta.CropHeight = 208;
+			//$AssetMeta.TileX = x;
+			//$AssetMeta.TileY = y;
+
+			$Meta.assets.push($AssetMeta);
+		}
+	}
+	console.log("metas",$Meta);
+	NewPano( $Config, $Meta );
+}
+
 function LoadGoogleStreetViewPano($Config,$LatLonCsv)
 {
 	var $LatLon = $LatLonCsv.split(',');
-	alert('loading google street view @' + $LatLon[0] + " and " + $LatLon[1] );
+	//alert('loading google street view @' + $LatLon[0] + " and " + $LatLon[1] );
+
+
+	//	get pano id
+	var location = new google.maps.LatLng( $LatLon[0], $LatLon[1] );
+	var _panoClient = new google.maps.StreetViewService();
+	
+	console.log('Load for', location);
+	var self = this;
+	_panoClient.getPanoramaByLocation(location, 50, function (result, status) {
+								  if (status === google.maps.StreetViewStatus.OK) {
+									  
+								  //var h = google.maps.geometry.spherical.computeHeading(location, result.location.latLng);
+								  //rotation = (result.tiles.centerHeading - h) * Math.PI / 180.0;
+								  //copyright = result.copyright;
+								  
+									
+									  OnLoadGoogleStreetViewPano($Config,result.location.pano);
+								  
+								  } else {
+									  OnGoogleStreetViewFailed($Config);
+								  }
+								  });
+							
 	return true;
 }
 
 
 function LoadPano($Config)
 {
+//	alert('loading pano ' + $PanoName );
 	var $PanoName = GetPanoName();
 	if ( $PanoName == false )
 		return false;
@@ -474,7 +543,6 @@ function LoadPano($Config)
 		return LoadGoogleStreetViewPano($Config,$PanoName.substr($GoogleStreetViewPrefix.length));
 	}
 		
-	//alert('loading pano ' + $PanoName );
 	if ( $PanoName == 'data' )
 		return LoadDataPano($Config);
 
