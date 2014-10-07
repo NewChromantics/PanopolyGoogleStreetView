@@ -137,10 +137,14 @@ function assert(condition, message) {
     }
 }
 
+function IsUndefined($Value)
+{
+	return typeof $Value == 'undefined';
+}
 
 function CheckDefaultParam($Param,$Default)
 {
-	if ( typeof $Param == 'undefined' )
+	if ( IsUndefined($Param) )
 		return $Default;
 	return $Param;
 }
