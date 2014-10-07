@@ -23,6 +23,7 @@ function SoyConfig($RenderMode,$GeoMode)
 	this.mFov = 90;
 	this.mSeperation = 0.06;
 	this.mSplitEnabled = true;
+	this.mVideoEnabled = false;
 
 	//	gr: fov ~100 has clipping issues in css mode
 	
@@ -53,6 +54,9 @@ function SoyConfig($RenderMode,$GeoMode)
 SoyConfig.prototype.SupportsAssetMeta = function($AssetMeta)
 {
 	var $Config = this;
+	
+	if ( !$Config.mVideoEnabled && $AssetMeta.IsVideo() )
+		return false;
 	
 	if ( $AssetMeta.Width > $Config.mMaxResolution || $AssetMeta.Height > $Config.mMaxResolution )
 		return false;
