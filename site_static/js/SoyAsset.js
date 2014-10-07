@@ -185,18 +185,23 @@ SoyAsset.prototype.IsLoaded = function()
 
 SoyAsset_Ajax.prototype = new SoyAsset('Ajax');
 
-function SoyAsset_Ajax($FileName,$OnLoaded,$OnFailed,$DoLoad)
+function SoyAsset_Ajax($Meta,$OnLoaded,$OnFailed,$DoLoad)
 {
 	$DoLoad = CheckDefaultParam($DoLoad,true);
 	
-	var $Meta = new SoyAssetMeta();
-	$Meta.Filename = $FileName;
+	if ( typeof $Meta == 'string' )
+	{
+		var $Filename = $Meta;
+		$Meta = new SoyAssetMeta();
+		$Meta.Filename = $Filename;
+	}
 	
 	//	call super
 	SoyAsset.apply( this, [$Meta,$OnLoaded,$OnFailed] );
-
+	
 	this.mAjax = null;
-
+	this.mOnParseData = CheckDefaultParam( $Meta.mOnParse, null );
+	
 	if ( $DoLoad )
 		this.Load();
 }
@@ -228,21 +233,25 @@ SoyAsset_Ajax.prototype.Load = function()
 	ajax.open("GET", this.mUrl, true );
 	//ajax.setRequestHeader('Content-Type', 'multipart/form-data;');
 	ajax.withCredentials = false;
+
 	ajax.send( null );
 }
 
 SoyAsset_Ajax.prototype.OnLoad = function($Event)
 {
-	try
+	if ( this.mOnParseData )
 	{
-		this.mAsset = JSON.parse( $Event.target.responseText );
+		this.mAsset = this.mOnParseData($Event.target.responseText);
+		if ( this.mAsset === false || this.mAsset === null )
+		{
+			this.mAsset = null;
+			this.OnError($Event);
+			return;
+		}
 	}
-	catch ( e )
+	else
 	{
-		console.log("bad json" + $Event.target.responseText.substring(0,20) );
-		//	fail on bad json
-		this.OnError($Event);
-		return;
+		this.mAsset = $Event.target.responseText;
 	}
 	//this.mAssetType = $Event.target.responseType;
 	assert( this.IsLoaded(), "Loaded state wrong" );
@@ -251,10 +260,94 @@ SoyAsset_Ajax.prototype.OnLoad = function($Event)
 
 
 
+function ParseJson($Data)
+{
+	try
+	{
+		var $Asset = JSON.parse( $Event.target.responseText );
+		return $Asset;
+	}
+	catch ( e )
+	{
+		//	fail on bad json
+		console.log("bad json" + $Event.target.responseText.substring(0,20) );
+		return false;
+	}
+}
 
 
+SoyAsset_JsonP.prototype = new SoyAsset('JsonP');
+
+function SoyAsset_JsonP($Meta,$OnLoaded,$OnFailed,$DoLoad)
+{
+	$DoLoad = CheckDefaultParam($DoLoad,true);
+	
+	if ( typeof $Meta == 'string' )
+	{
+		var $Filename = $Meta;
+		$Meta = new SoyAssetMeta();
+		$Meta.Filename = $Filename;
+	}
+	
+	//	call super
+	SoyAsset.apply( this, [$Meta,$OnLoaded,$OnFailed] );
+	
+	this.mAjax = null;
+	this.mOnParseData = CheckDefaultParam( $Meta.mOnParse, null );
+	
+	if ( $DoLoad )
+		this.Load();
+}
 
 
+SoyAsset_JsonP.prototype.Stop = function()
+{
+	assert( !this.IsLoaded(), "Loaded state wrong" );
+}
+
+SoyAsset_JsonP.prototype.Load = function()
+{
+	//	http://stackoverflow.com/questions/22780430/javascript-xmlhttprequest-using-jsonp
+	
+	console.log("JsonP " + this.mUrl );
+	var url = this.mUrl;
+	var $this = this;
+	
+	var callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
+	window[callbackName] = function(data)
+	{
+		delete window[callbackName];
+		document.body.removeChild(script);
+		$this.OnLoad( data );
+	};
+	
+	var script = document.createElement('script');
+	script.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'callback=' + callbackName;
+	document.body.appendChild(script);
+	
+	//	catch callback finish...
+}
+
+SoyAsset_JsonP.prototype.OnLoad = function($ResponseText)
+{
+	if ( this.mOnParseData )
+	{
+		this.mAsset = this.mOnParseData($ResponseText);
+		if ( IsUndefined(this.mAsset) || this.mAsset === false || this.mAsset === null )
+		{
+			this.mAsset = null;
+			this.OnError($ResponseText);
+			return;
+		}
+	}
+	else
+	{
+		this.mAsset = $ResponseText;
+	}
+	//this.mAssetType = $Event.target.responseType;
+	assert( this.IsLoaded(), "Loaded state wrong" );
+	this.mOnLoaded( this );
+}
 
 
 

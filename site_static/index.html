@@ -462,6 +462,12 @@ function OnGoogleStreetViewFailed()
 	alert('OnGoogleStreetViewFailed');
 }
 
+function LoadGoogleStreetViewDepth($ResponseText)
+{
+	alert('parse google street depth');
+	console.log($ResponseText);
+}
+
 function OnLoadGoogleStreetViewPano($Config,$GooglePanoId)
 {
 	var $Meta = {};
@@ -475,7 +481,9 @@ function OnLoadGoogleStreetViewPano($Config,$GooglePanoId)
 ///	h = Math.pow(2, $Zoom - 1);
 	var w = 1;
 	var h = 1;
-	console.log(w,h);
+
+	console.log('google pano id ' + $GooglePanoId);
+
 	for( var y = 0; y < h; y++)
 	{
 		for( var x = 0; x < w; x++)
@@ -496,7 +504,19 @@ function OnLoadGoogleStreetViewPano($Config,$GooglePanoId)
 			$Meta.assets.push($AssetMeta);
 		}
 	}
-	console.log("metas",$Meta);
+
+	//	add remote depth data meta
+	if ( true )
+	{
+		var $AssetMeta = {};
+		$AssetMeta.Layout = 'equirect';
+		$AssetMeta.Filename = 'http://maps.google.com/cbk?output=json&cb_client=maps_sv&v=4&dm=1&pm=1&ph=1&hl=en&panoid=' + $GooglePanoId;
+		$AssetMeta.Format = 'jsonp';
+		$AssetMeta.mOnParse = LoadGoogleStreetViewDepth;
+		
+		$Meta.assets.push($AssetMeta);
+	}
+
 	NewPano( $Config, $Meta );
 }
 
@@ -510,11 +530,11 @@ function LoadGoogleStreetViewPano($Config,$LatLonCsv)
 	var location = new google.maps.LatLng( $LatLon[0], $LatLon[1] );
 	var _panoClient = new google.maps.StreetViewService();
 	
-	console.log('Load for', location);
-	var self = this;
+
+	//	https://developers.google.com/maps/documentation/javascript/streetview
 	_panoClient.getPanoramaByLocation(location, 50, function (result, status) {
 								  if (status === google.maps.StreetViewStatus.OK) {
-									  
+									  console.log("pano client ",result);
 								  //var h = google.maps.geometry.spherical.computeHeading(location, result.location.latLng);
 								  //rotation = (result.tiles.centerHeading - h) * Math.PI / 180.0;
 								  //copyright = result.copyright;

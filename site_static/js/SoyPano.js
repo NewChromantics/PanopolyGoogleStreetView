@@ -21,7 +21,7 @@ function SoyPano($PanoName,$Config,$OnNewImage,$OnMetaFailed,$DoLoad)
 	//	load assets
 	if ( $DoLoad )
 	{
-		this.mMetaAsset = new SoyAsset_Ajax( $PanoName+'.meta', OnLoaded, OnFailed );
+		this.mMetaAsset = new SoyAsset_Ajax( $PanoName+'.meta', OnLoaded, OnFailed, true, ParseJson );
 	
 		//	attempt to load some assets immediately for speed
 		var $PreloadAssets = [];
@@ -199,6 +199,17 @@ SoyPano.prototype.OnLoadedMeta = function()
 		 */
 	}
 	
+	//	load any asset with parse callbacks
+	//	gr: currently just for decoding google depth
+	for ( var $Key in this.mMeta.assets )
+	{
+		var $RemoteMeta = new SoyAssetMeta( this.mMeta.assets[$Key] );
+		if ( !$RemoteMeta.mOnParse )
+			continue;
+		$LoadAssets.push($RemoteMeta);
+	}
+
+	
 	var $this = this;
 	var OnLoaded = function($Asset) { $this.OnLoadedAsset($Asset); }
 	var OnFailed = function($Asset) { $this.OnFailedAsset($Asset); }
@@ -214,8 +225,13 @@ SoyPano.prototype.OnLoadedMeta = function()
 			this.mAssets.push( new SoyAsset_Mjpeg( $AssetMeta, OnLoaded, OnFailed ) );
 		else if ( $AssetMeta.IsVideo() )
 			this.mAssets.push( new SoyAsset_Video( $AssetMeta, OnLoaded, OnFailed ) );
-		else
+		else if ( $AssetMeta.Format == 'jpg' )
 			this.mAssets.push( new SoyAsset_Image( $AssetMeta, OnLoaded, OnFailed ) );
+		else if ( $AssetMeta.Format == 'jsonp' )
+			this.mAssets.push( new SoyAsset_JsonP( $AssetMeta, OnLoaded, OnFailed ) );
+		else
+			this.mAssets.push( new SoyAsset_Ajax( $AssetMeta, OnLoaded, OnFailed ) );
+		
 	}
 }
 
