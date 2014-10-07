@@ -101,7 +101,6 @@
 <script>
 	
 	ShowElement('debug_console',false);
-	ShowElement('ClearButton');
 	ShowElement('SplitButton');
 	
 	
@@ -113,6 +112,8 @@ if ( HasHashParam('debug') )
 	
 	BindConsole('debug_console');
 	ShowElement('debug_console');
+
+	ShowElement('ClearButton');
 	
 	function UpdateUptime()
 	{
@@ -368,6 +369,19 @@ function OnClickedRiftMode()
 				var Name = GetHashParam(0);
 				if ( !Name )
 					Name = "Apartment11";
+					
+				//	detect lat/lon coords
+				//	-X.Y,-Z.W
+				var $Pattern = '^#([-0-9]+).([0-9]+),([-0-9]+).([0-9]+)';
+				var $RegExp = new RegExp($Pattern);
+				var $Match = $RegExp.exec(window.location.hash);
+				if ( $Match !== null )
+				{
+					var $Lat = $Match[1] + '.' + $Match[2];
+					var $Lon = $Match[3] + '.' + $Match[4];
+					return $GoogleStreetViewPrefix + $Lat + ',' + $Lon;
+				}
+					
 				return Name;
 			}
 
@@ -412,16 +426,63 @@ function DestroyPano($Config)
 	}
 }
 
+function LoadDataPano($Config)
+{
+	var $ImageData = 'data:image/gif;base64,R0lGODlhyAAiALMAAFONvX2pzbPN4p6/2tTi7mibxYiw0d/q86nG3r7U5l2UwZO31unx98nb6nOiyf///yH5BAUUAA8ALAAAAADIACIAAAT/8MlJq7046827/2AojmRpnmiqriwGvG/Qjklg28es73wHxz0P4gcgBI9IHVGWzAx/xqZ0KlpSLU9Y9MrtVqzeBwFBJjPCaC44zW4HD4TzZI0h2OUjON7EsMd1fXcrfnsfgYUSeoYLPwoLZ3QTDAgORAoGWxQHNzYSBAY/BQ0XNZw5mgMBRACOpxSpnLE3qKqWC64hk5WNmBebnA8MjC8KFAygMAUCErA2CZoKq6wHkQ8C0dIxhQRED8OrC1hEmQ+12QADFebnABTr0ukh1+wB20QMu0ASCdn16wgTDmCTNlDfhG/sFODi9iMLvAoOi6hj92LZhHfZ3FEEYNEDwnMK/ykwhDEATAN2C/5d3PiDiYSIrALkg6EAz0hiFDNFJKeqgIEyM1nhwShNo0+glhBhgKlA5qqaE25KY1KAYkGAYlYVSEAgQdU1DFbFe3DgKwysWcHZ+QjAAIWdFQaMgkjk2b4ySLtNkCvuh90NYYmMLUsErVRiC8o8OLmkAYF5hZkRKYCHgVmDAiJJLeZpVUdrq/DA7XB5rAV+gkn/MJ0hc8sKm6OuclDoo8tgBQFgffd335p3cykEjSK1gIXLEl+Oq9OgTIKZtymg/hHuAoHmZJ6/5gDcwvDOyysEDS7B9VkJoSsEhuEyN6KSPyxKrf4qsnIoFQ4syL0qum8i9AW0H/9F/l3gngXwwSAfEQ5csIoFUmH1oAVrTEhXQ+Cdd6GGD4z230b+TQdDgB8S6INeG76AlVSsoYeibBg+cOAX2z1g4Vv2sYggER15uFliZFwWnUAAQmhLGUKe+MMFEa1oH40/FMKYht1RMKVB7+AiwTvEMehdeB2CicwLlAlXI1m5kSjBmACUOQF0HWRpAZcZqngBbxWwqZtkZz4QlEsJvkDiejDIcRh5h4kG5pPBrEHkDw06GKMEhAJwGxx+uBIoAIOmlxaH9TWCh4h2fgqDAWcc019AqwTHwDtu1UmMRQnkdpuHRU6gZ3uWOOaHILmuScc6LlFDhKuwwgiqsjQNgAD/UWgFZaKuq/w0AHIAuHIYReR5+A4C12HkEksSfRvuqiuxR4GebSFw7SraMqoRuXvK2t+Z+JDb22bsxDqBh+YRVCO5RgT81JnEGiNtNvvKKwl/IzJKql8ORadqQuSZis7CANCWYnIScOyAiJHayFIUIpM8r0GUstsrbA4HhC2nJi9LwDuihKkuhEQpgAAiEQpjyc99aWHMppz2gSLBlCL9iFQrW2pdz0TDPCkGCRgQjU9GVPpZQAkgIICWHfQhABkNkM1svQxg9wcJfWSn1AlxI5DA3COYjbbaLJBKzhQRuiF4Cn8nMiMXgQ+uOAkBFDDA2wxABkPJiMe8+OUaECVNLMZUJI755xtoHmwXnoNuugUQp4bGLzf0dvrriy2wsAMD4A377YJjSgDfD0QAADs=';
+
+	//	create new pano meta which does everything for us...
+	var $AssetMeta = {};
+	$AssetMeta.Layout = 'cubemap_61LFRBTD';
+	$AssetMeta.Filename = $ImageData;
+	$AssetMeta.Format = 'jpg';	//	hmmm
+	
+	var $AssetMeta2 = {};
+	$AssetMeta2.Layout = 'equirect';
+	$AssetMeta2.Filename = $ImageData;
+	$AssetMeta2.Format = 'jpg';	//	hmmm
+	
+	var $Meta = {};
+	$Meta.isVideo = false;
+	$Meta.assets = new Array( $AssetMeta, $AssetMeta2 );
+	
+	/*
+	for ( var $Key in $Configs )
+	{
+		var $Config = $Configs[$Key];
+		NewPano( $Config, $Meta );
+	}
+*/
+	NewPano( $Config, $Meta );
+}
+
+function LoadGoogleStreetViewPano($Config,$LatLonCsv)
+{
+	var $LatLon = $LatLonCsv.split(',');
+	alert('loading google street view @' + $LatLon[0] + " and " + $LatLon[1] );
+	return true;
+}
+
+
 function LoadPano($Config)
 {
 	var $PanoName = GetPanoName();
 	if ( $PanoName == false )
 		return false;
+		
+	if ( $PanoName.startsWith($GoogleStreetViewPrefix) )
+	{
+		return LoadGoogleStreetViewPano($Config,$PanoName.substr($GoogleStreetViewPrefix.length));
+	}
+		
+	//alert('loading pano ' + $PanoName );
+	if ( $PanoName == 'data' )
+		return LoadDataPano($Config);
 
 	var OnFailedMeta = function() { alert("Failed to load pano " + $PanoName); }
 
 	DestroyPano($Config);
 	$Config.mPano = new SoyPano( $PanoName, $Config, $Config.mOnNewFrame, OnFailedMeta );
+	return true;
 }
 
 function NewPano($Config,$MetaAsset)
@@ -433,6 +494,7 @@ function NewPano($Config,$MetaAsset)
 	$Config.mPano = new SoyPano( 'New', $Config, $Config.mOnNewFrame, OnFailedMeta, false );
 	$Config.mPano.mMeta = $MetaAsset;
 	console.log($MetaAsset);
+	//alert('NewPano');
 	$Config.mPano.OnLoadedMeta();
 }
 
@@ -443,11 +505,12 @@ function NewPano($Config,$MetaAsset)
 
 	function OnLoadLocalTexture($Event)
 	{
+		alert('OnLoadLocalTexture');
 		var $ImageData = $Event.target.result;
 		
 		//	create new pano meta which does everything for us...
 		var $AssetMeta = {};
-		$AssetMeta.Layout = 'cubemap_11L';
+		$AssetMeta.Layout = 'cubemap_61LFRBTD';
 		$AssetMeta.Filename = $ImageData;
 		$AssetMeta.Format = 'jpg';	//	hmmm
 		
@@ -593,8 +656,6 @@ function NewPano($Config,$MetaAsset)
 
 				$Config.mSplitter = new THREE.StereoEffect( $Config.mRendererLeft, $Config.mRendererRight );
 				$Config.mSplitter.separation = $Config.mFaceResolution * $Config.mSeperation;
-				$Config.mSplitEnabled = true;
-
 
 				onContainerResize($Config);
 				window.addEventListener( 'resize', function() { onContainerResize($Config); }, false );
@@ -683,6 +744,7 @@ function NewPano($Config,$MetaAsset)
 	
 		function UpdateTexture($Asset,$Config)
 		{
+			//alert('update texture');
 			if ( $Config.mRenderMode == RENDERMODE_CSS )
 			{
 				for ( var $Key in $Config.mRenderCubes )
