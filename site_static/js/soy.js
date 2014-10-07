@@ -206,3 +206,19 @@ function HasHashParam($Name)
 	forEach( $HashParams, function($Param) { $HasParam = $HasParam || ($Param==$Name); } );
 	return $HasParam;
 }
+
+
+
+function Lerp($From,$To,$t)
+{
+	var $Delta = $To - $From;
+	return $From + ( $Delta * $t );
+}
+
+function GetLerp($From,$To,$Value)
+{
+	var $Delta = $To - $From;
+	var $t = ($Value - $From) / $Delta;
+	return $t;
+}
+

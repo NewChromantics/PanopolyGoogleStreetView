@@ -524,18 +524,6 @@ function ShowMenu($Element,$Width,$Height)
 }
 
 
-function Lerp($From,$To,$t)
-{
-	var $Delta = $To - $From;
-	return $From + ( $Delta * $t );
-}
-
-function GetLerp($From,$To,$Value)
-{
-	var $Delta = $To - $From;
-	var $t = ($Value - $From) / $Delta;
-	return $t;
-}
 
 //	returns when finished
 function Slide($this,$Timestep,$FromAngle,$ToAngle,$FromLerp,$ToLerp)
