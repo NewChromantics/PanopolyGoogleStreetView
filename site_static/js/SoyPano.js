@@ -100,13 +100,17 @@ SoyPano.prototype.OnLoadedAsset = function($Asset)
 		//	update texture
 		if ( $Asset.GetType() == 'Image' )
 			this.OnNewJpegFrame($Asset);
-		
-		if ( $Asset.GetType() == 'Mjpeg' )
+		else if ( $Asset.GetType() == 'Mjpeg' )
 			this.OnNewJpegFrame($Asset);
-		
-		//	start update of video
-		if ( $Asset.GetType() == 'Video' )
+		else if ( $Asset.GetType() == 'Video' )
 			this.OnNewVideoFrame($Asset);
+		else
+		{
+			if ( $Asset.mAsset instanceof HTMLImageElement )
+				this.OnNewJpegFrame($Asset);
+			else
+				console.log($Asset.mAsset );
+		}
 	}
 }
 
@@ -201,6 +205,7 @@ SoyPano.prototype.OnLoadedMeta = function()
 	
 	//	load any asset with parse callbacks
 	//	gr: currently just for decoding google depth
+	/*
 	for ( var $Key in this.mMeta.assets )
 	{
 		var $RemoteMeta = new SoyAssetMeta( this.mMeta.assets[$Key] );
@@ -208,7 +213,7 @@ SoyPano.prototype.OnLoadedMeta = function()
 			continue;
 		$LoadAssets.push($RemoteMeta);
 	}
-
+*/
 	
 	var $this = this;
 	var OnLoaded = function($Asset) { $this.OnLoadedAsset($Asset); }
@@ -279,7 +284,7 @@ SoyPano.prototype.OnNewJpegFrame = function($Asset)
 	this.mCurrentAsset = $Asset;
 	
 	//	update texture
-	//console.log("New jpeg frame: " + $Asset.mUrl );
+	console.log("New jpeg frame: " + $Asset.mUrl );
 
 	this.mOnNewImage( $Asset );
 }

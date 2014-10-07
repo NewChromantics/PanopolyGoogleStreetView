@@ -68,6 +68,7 @@
 
 		<script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false" type="text/javascript"></script>
 		<script src="js/soy.js"></script>
+		<script src="js/zpipe.min.js"></script>
 		<script src="threejs/three.min.js"></script>
 		<script src="threejs/renderers/CSS3DRenderer.js"></script>
 		<script src="threejs/effects/StereoEffect.js"></script>
@@ -462,11 +463,238 @@ function OnGoogleStreetViewFailed()
 	alert('OnGoogleStreetViewFailed');
 }
 
-function LoadGoogleStreetViewDepth($ResponseText)
+function GoogleStreetViewDepthMap($DataView)
 {
-	alert('parse google street depth');
-	console.log($ResponseText);
+	
+	this.parseHeader = function(depthMap) {
+		return {
+			headerSize : depthMap.getUint8(0),
+			numberOfPlanes : depthMap.getUint16(1, true),
+			width: depthMap.getUint16(3, true),
+			height: depthMap.getUint16(5, true),
+			offset: depthMap.getUint16(7, true)
+		};
+	}
+	
+	this.parsePlanes = function(header, depthMap) {
+		var planes = [],
+		indices = [],
+		i,
+		n = [0, 0, 0],
+		d,
+		byteOffset;
+		
+		for(i=0; i<header.width*header.height; ++i) {
+			indices.push(depthMap.getUint8(header.offset + i));
+		}
+		
+		for(i=0; i<header.numberOfPlanes; ++i) {
+			byteOffset = header.offset + header.width*header.height + i*4*4;
+			n[0] = depthMap.getFloat32(byteOffset, true);
+			n[1] = depthMap.getFloat32(byteOffset + 4, true);
+			n[2] = depthMap.getFloat32(byteOffset + 8, true);
+			d    = depthMap.getFloat32(byteOffset + 12, true);
+			planes.push({
+						n: n.slice(0),
+						d: d
+						});
+		}
+		
+		return { planes: planes, indices: indices };
+	}
+	
+	this.computeDepthMap = function(header, indices, planes) {
+		var depthMap = null,
+		x, y,
+		planeIdx,
+		phi, theta,
+		v = [0, 0, 0],
+		w = header.width, h = header.height,
+		plane, t, p;
+		
+		depthMap = new Float32Array(w*h);
+		
+		var sin_theta = new Float32Array(h);
+		var cos_theta = new Float32Array(h);
+		var sin_phi   = new Float32Array(w);
+		var cos_phi   = new Float32Array(w);
+		
+		for(y=0; y<h; ++y) {
+			theta = (h - y - 0.5) / h * Math.PI;
+			sin_theta[y] = Math.sin(theta);
+			cos_theta[y] = Math.cos(theta);
+		}
+		for(x=0; x<w; ++x) {
+			phi = (w - x - 0.5) / w * 2 * Math.PI + Math.PI/2;
+			sin_phi[x] = Math.sin(phi);
+			cos_phi[x] = Math.cos(phi);
+		}
+		
+		var maxt = false;
+		var avgt = false;
+		var mint = false;
+		
+		for(y=0; y<h; ++y) {
+			for(x=0; x<w; ++x) {
+				planeIdx = indices[y*w + x];
+				
+				v[0] = sin_theta[y] * cos_phi[x];
+				v[1] = sin_theta[y] * sin_phi[x];
+				v[2] = cos_theta[y];
+				
+				if(planeIdx > 0) {
+					plane = planes[planeIdx];
+					
+					t = Math.abs( plane.d / (v[0]*plane.n[0] + v[1]*plane.n[1] + v[2]*plane.n[2]) );
+					depthMap[y*w + (w-x-1)] = t;
+					
+					if ( mint===false || t < mint )
+						mint = t;
+					if ( maxt===false || t > maxt )
+						maxt = t;
+					if ( avgt === false )
+						avgt = t;
+					else
+						avgt = (avgt + t)/2;
+				} else {
+					depthMap[y*w + (w-x-1)] = 9999999999999999999.;
+				}
+			}
+		}
+		
+		return {
+			maxt: maxt,
+			mint: mint,
+			avgt: avgt,
+			width: w,
+			height: h,
+			depthMap: depthMap
+		};
+	}
+	
+	this.parse = function(depthMap) {
+		var self = this,
+		depthMapData,
+		header,
+		data,
+		depthMap;
+		
+		depthMapData = new DataView(depthMap.buffer);
+		header = self.parseHeader(depthMapData);
+		data = self.parsePlanes(header, depthMapData);
+		depthMap = self.computeDepthMap(header, data.indices, data.planes);
+		
+		return depthMap;
+	}
+	
+	this.createEmptyDepthMap = function() {
+		var depthMap = {
+			width: 512,
+			height: 256,
+			depthMap: new Float32Array(512*256)
+		};
+		for(var i=0; i<512*256; ++i)
+		depthMap.depthMap[i] = 9999999999999999999.;
+		return depthMap;
+	}
+	
+	this.mDepthMap = this.parse( $DataView );
 }
+
+function LoadGoogleStreetViewDepth($Json)
+{
+	if ( IsUndefined($Json.model.depth_map ) )
+		return false;
+	
+	//	decode depth map
+	var rawDepthMap = $Json.model.depth_map;
+	
+	// Append '=' in order to make the length of the array a multiple of 4
+	while(rawDepthMap.length %4 != 0)
+		rawDepthMap += '=';
+	
+	// Replace '-' by '+' and '_' by '/'
+	rawDepthMap = rawDepthMap.replace(/-/g,'+');
+	rawDepthMap = rawDepthMap.replace(/_/g,'/');
+	
+	// Decode and decompress data
+	var compressedDepthMapData = atob(rawDepthMap);
+	var decompressedDepthMap = zpipe.inflate(compressedDepthMapData);
+	
+	// Convert output of decompressor to Uint8Array
+	depthMap = new Uint8Array(decompressedDepthMap.length);
+	for(i=0; i<decompressedDepthMap.length; ++i)
+		depthMap[i] = decompressedDepthMap.charCodeAt(i);
+
+	depthMapData = new DataView(depthMap.buffer);
+	var DepthMap = new GoogleStreetViewDepthMap( depthMapData );
+	if ( !DepthMap.mDepthMap )
+		return false;
+	
+	//	turn into image
+	var $DepthMapFloat = DepthMap.mDepthMap;
+	console.log(DepthMap);
+	var canvas = document.createElement("canvas");
+	var $w = $DepthMapFloat.width;
+	var $h = $DepthMapFloat.height;
+	var $maxf = $DepthMapFloat.maxt;
+	var $avgf = $DepthMapFloat.avgt;
+	canvas.width = $w;
+	canvas.height = $h;
+
+	console.log("Generating depth image " + $w + "x" + $h );
+	var ctx = canvas.getContext("2d");
+	var PixelImage = ctx.createImageData(1,1); // only do this once per page
+	var Pixel = PixelImage.data;                        // only do this once per page
+
+	for ( var y=0;	y<$h;	y++ )
+	for ( var x=0;	x<$w;	x++ )
+	{
+		var $i = (y*$w) + x;
+		var $f = $DepthMapFloat.depthMap[$i];
+
+		if ( $f > $maxf )
+		{
+			Pixel[0] = 0;
+			Pixel[1] = 0;
+			Pixel[2] = 0;
+		}
+		else
+		{
+			var $threshold = $avgf*4;
+			var $far = $maxf * 0.5;
+			if ( $f > $far )
+				$f = $far;
+			//$avgf = 10;
+			if ( $f > $threshold )
+			{
+				$f = GetLerp( $threshold, $far, $f );
+				Pixel[0] = Lerp( 0, 255, $f );
+				Pixel[1] = Lerp( 255, 0, $f );
+				Pixel[2] = Lerp( 0, 255, $f );
+			}
+			else
+			{
+				$f = GetLerp( 0, $threshold, $f );
+				Pixel[0] = Lerp( 255, 0, $f );
+				Pixel[1] = Lerp( 0, 255, $f );
+				Pixel[2] = Lerp( 0, 0, $f );
+			}
+		}
+
+		Pixel[3] = 255;
+		ctx.putImageData( PixelImage, x, y );
+	}
+	
+	var $DataUrl = canvas.toDataURL();
+	var Image = document.createElement("img"); // create img tag
+	Image.src = $DataUrl;
+
+	return Image;
+}
+		
+		
+
 
 function OnLoadGoogleStreetViewPano($Config,$GooglePanoId)
 {
@@ -506,7 +734,7 @@ function OnLoadGoogleStreetViewPano($Config,$GooglePanoId)
 	}
 
 	//	add remote depth data meta
-	if ( true )
+	if ( HasHashParam('depth') )
 	{
 		var $AssetMeta = {};
 		$AssetMeta.Layout = 'equirect';
