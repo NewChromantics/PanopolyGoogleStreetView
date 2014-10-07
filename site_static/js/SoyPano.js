@@ -189,12 +189,14 @@ SoyPano.prototype.OnLoadedMeta = function()
 	//	gr: todo: convert this to kb-related, so maybe we can load super-low quality video first if it's small
 	if ( !$CurrentMeta )
 	{
+		/*
 		var $FilterFunction = function($Meta)
 		{
 			return $BestRemoteMeta != $Meta && !$Meta.IsVideo();
 		};
 		var $FastRemoteMeta = this.GetBetterAsset( $FilterFunction );
 		$LoadAssets.push($FastRemoteMeta);
+		 */
 	}
 	
 	var $this = this;
