@@ -150,7 +150,9 @@ function SoyAsset($Meta,$OnLoaded,$OnFailed)
 		return;
 	}
 
-	var $Host = $Meta.Filename.startsWith('data:') ? '' : GetHost();
+	var $UrlIsData = $Meta.Filename.startsWith('data:');
+	var $UrlIsHttp = $Meta.Filename.startsWith('http:');
+	var $Host = ($UrlIsData||$UrlIsHttp) ? '' : GetHost();
 	
 	this.mAsset = null;			//	set once loaded
 	this.mUrl = $Host + $Meta.Filename;
@@ -237,7 +239,7 @@ SoyAsset_Ajax.prototype.OnLoad = function($Event)
 	}
 	catch ( e )
 	{
-		console.log("bad json" + $Event.target.responseText);
+		console.log("bad json" + $Event.target.responseText.substring(0,20) );
 		//	fail on bad json
 		this.OnError($Event);
 		return;
@@ -246,7 +248,6 @@ SoyAsset_Ajax.prototype.OnLoad = function($Event)
 	assert( this.IsLoaded(), "Loaded state wrong" );
 	this.mOnLoaded( this );
 }
-
 
 
 
@@ -287,7 +288,7 @@ SoyAsset_Image.prototype.Load = function()
 	var $this = this;
 	
 	//	fetch
-	console.log("Loading " + this.mUrl );
+	console.log("Loading " + this.mUrl + " ... " + window.location.hash );
 		
 	var $Image = document.createElement('img');
 	this.mImage = $Image;
@@ -296,11 +297,44 @@ SoyAsset_Image.prototype.Load = function()
 	$Image.addEventListener('error', function($Event){ $this.OnError($Event); }, false );
 				
 	$Image.crossOrigin = '';
+	//alert("start load of " + this.mUrl.substring(0,40) );
 	$Image.src = this.mUrl;
+}
+
+
+SoyAsset_Image.prototype.PostProcessImage = function()
+{
+	var $w = this.mImage.width;
+	var $h = this.mImage.height;
+	//	something wrong with w/h
+	if ( !isInt($w) || !isInt($h) )
+		return false;
+	
+	var $CropWidth = CheckDefaultParam( this.mMeta.CropWidth, $w );
+	var $CropHeight = CheckDefaultParam( this.mMeta.CropHeight, $h );
+	if ( $CropWidth != $w || $CropHeight != $h )
+	{
+		//	draw to canvas then replace image with new data image
+		var canvas = document.createElement("canvas");
+		canvas.width = $CropWidth;
+		canvas.height = $CropHeight;
+
+		var ctx = canvas.getContext("2d");
+		ctx.drawImage( this.mImage, 0, 0 );
+		
+		var $DataUrl = canvas.toDataURL();
+		this.mImage = document.createElement("img"); // create img tag
+		this.mImage.src = $DataUrl;
+	}
+	
+	return true;
 }
 
 SoyAsset_Image.prototype.OnLoad = function($Event)
 {
+	//	gr: do any post-processing
+	this.PostProcessImage();
+	
 	//	take dimensions - this sets dimensions for unknown sizes, and corrects existing meta data
 	var $w = this.mImage.width;
 	var $h = this.mImage.height;
@@ -311,6 +345,8 @@ SoyAsset_Image.prototype.OnLoad = function($Event)
 		this.mMeta.Height = $h;
 	}
 	
+	//alert('OnLoad' + $w + ' ' + $h );
+
 	//	move ownership
 	this.mAsset = this.mImage;
 	this.mImage = null;
@@ -321,6 +357,8 @@ SoyAsset_Image.prototype.OnLoad = function($Event)
 
 SoyAsset_Image.prototype.OnError = function($Event)
 {
+	console.log($Event);
+	alert('OnError');
 	assert( !this.IsLoaded(), "Loaded state wrong" );
 	//	not a failure if we cancelled
 	if ( !this.mDesired )
