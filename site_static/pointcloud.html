@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>panopo.ly</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<link rel="Stylesheet" href="panopoly.css" type="text/css">
+	<link rel="Stylesheet" href="Cubemap.css" type="text/css">
+</head>
+
+	<body>
+		<div id="info">
+			panopo.ly
+			<div id="Uptime" class="Button">0</div>
+
+			<div id="ImageSelector" class="FileInput">
+				Select Image
+				<form id="uploaderform" enctype="multipart/form-data" method="POST">
+					<input id="image_selector" name="image" type="file" />
+				</form>
+			</div>
+			
+			<div id="ImageUploader" class="FileInput">
+				Upload Image<br />
+				<input type="text" id="ImageUploader_CustomName" name="customname" class="cleardefault" value="custom url" />
+				<input type="text" id="ImageUploader_Layout" name="layout" class="cleardefault" value="Layout" />
+				<input type="button" value="Upload File"  onclick="UploadImage()"/>
+				<progress id="progressBar" value="0" max="100" style="width:300px;"></progress>
+				<h3 id="status"></h3>
+				<p id="loaded_n_total"></p>
+			</div>
+			
+			<div id="ClearButton" class="Button" onClick="forEach($Configs,function($Config){DestroyPano($Config);});">
+				Clear
+			</div>
+			<div id="ShrinkButton" class="Button" onClick="SupportToggleEnable('Shrink')">
+				Shrink
+			</div>
+			<div id="SplitButton" class="Button" onClick="ToggleSplit()">
+				Stereo View
+			</div>
+			
+			<div id="OculusBridgeButton" class="Button" onClick="SupportToggleEnable('OculusBridge')">
+				OculusBridge
+			</div>
+			
+			<div id="OculusRestButton" class="Button" onClick="SupportToggleEnable('OculusRest')">
+				OculusRest
+			</div>
+			
+			<div id="FullscreenButton" class="Button" onClick="SupportToggleEnable('Fullscreen')">
+				Fullscreen
+			</div>
+			
+			<div id="GyroButton" class="Button" onClick="SupportToggleEnable('Gyro')">
+				Gyro
+			</div>
+			
+			<div id="QuatDebug" class="Button">
+				quaternion
+			</div>
+			
+		</div>
+
+<!-- needs to be before any support that wants to bind to container -->
+<div class="Container" id="container"></div>
+<div class="Container" id="container_dual"></div>
+
+		<script src="js/soy.js"></script>
+		<script src="threejs/three.min.js"></script>
+		<script src="threejs/renderers/CSS3DRenderer.js"></script>
+		<script src="threejs/effects/StereoEffect.js"></script>
+		<script src="js/GoogleAnalytics.js"></script>
+		<script src="js/ClearDefaultText.js"></script>
+		<script src="js/SoyWebSocket-1.0.js"></script>
+		<script src="js/mjpeg.js"></script>
+		<script src="js/SoyRect.js"></script>
+		
+		<script src="js/panopoly.js"></script>
+		<script src="js/CubeMap.js"></script>
+		<script src="js/support.js"></script>
+		<script src="js/SoySupport.js"></script>
+		<script src="js/SoyOculusBridge.js"></script>
+		<script src="js/SoyOculusRest.js"></script>
+		<script src="js/SoyShrink.js"></script>
+		<script src="js/SoyFullscreen.js"></script>
+		<script src="js/SoyGyro.js"></script>
+		<script src="js/SoyFileSelect.js"></script>
+		<script src="js/SoyMouse.js"></script>
+		<script src="js/SoyCss3d.js"></script>
+		<script src="js/SoyWebgl.js"></script>
+		<script src="js/SoyConfig.js"></script>
+		<script src="js/SoyAsset.js"></script>
+		<script src="js/SoyPano.js"></script>
+	
+		<script src="js/PanoMenu.js"></script>
+	
+		<script src="js/SoyAsset_GsvDepth.js"></script>
+		<script src="js/zpipe.min.js"></script>
+		<script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false" type="text/javascript"></script>
+
+
+<img id="image">
+<div id="debug_console" style="overflow:scroll;height:200px;z-index:999;position:absolute;left:0;top:20px;opacity:0.5;background:white;"></div>
+<script>
+	BindConsole('debug_console');
+	
+	console.log('hello');
+	
+	
+	function OnLoadDepth($Asset)
+	{
+		alert( 'OnLoadDepth'  );
+		var $Div = document.createElement('div');
+		document.body.appendChild($Asset.mAsset);
+	}
+
+	function OnFailedLoadDepth($Asset)
+	{
+		alert( 'OnFailedLoadDepth' );
+	}
+
+	
+	function LoadGoogleStreetViewDepth($PanoId)
+	{
+		var $DepthAsset = new SoyAsset_GsvDepth($PanoId, OnLoadDepth, OnFailedLoadDepth );
+	}
+
+	function OnGoogleStreetViewFailed()
+	{
+		alert( 'OnGoogleStreetViewFailed' );
+	}
+	
+	function LoadGoogleStreetViewPano($Lat,$Lon)
+	{
+		//	get pano id
+		var location = new google.maps.LatLng( $Lat, $Lon );
+		var _panoClient = new google.maps.StreetViewService();
+		
+		
+		//	https://developers.google.com/maps/documentation/javascript/streetview
+		_panoClient.getPanoramaByLocation(location, 50, function (result, status) {
+										  if (status === google.maps.StreetViewStatus.OK) {
+										  console.log("pano client ",result);
+										  //var h = google.maps.geometry.spherical.computeHeading(location, result.location.latLng);
+										  //rotation = (result.tiles.centerHeading - h) * Math.PI / 180.0;
+										  //copyright = result.copyright;
+										  
+										  
+										  LoadGoogleStreetViewDepth(result.location.pano);
+										  
+										  } else {
+										  OnGoogleStreetViewFailed();
+										  }
+										  });
+										  
+										  return true;
+	}
+
+	var $LatLon = MatchLatLonString( window.location.hash, '#' );
+	if ( $LatLon === false )
+		$LatLon = [ 53.4838101,-2.2346764 ];
+	LoadGoogleStreetViewPano( $LatLon[0], $LatLon[1] );
+
+	</script>
+
+	</body>
+</html>

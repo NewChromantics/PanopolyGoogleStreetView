@@ -213,3 +213,21 @@ function DivideVectors($a,$b)
 	return new THREE.Vector2( $a.x / $b.x, $a.y / $b.y );
 }
 
+
+//	returns array of coords or false
+function MatchLatLonString($Haystack,$Prefix)
+{
+	//	detect lat/lon coords
+	//	-X.Y,-Z.W
+	var $Pattern = '^' + $Prefix + '([-0-9]+).([0-9]+),([-0-9]+).([0-9]+)';
+	var $RegExp = new RegExp($Pattern);
+	var $Match = $RegExp.exec(window.location.hash);
+	if ( $Match == null )
+		return false;
+
+	var $Lat = $Match[1] + '.' + $Match[2];
+	var $Lon = $Match[3] + '.' + $Match[4];
+	return [ $Lat, $Lon ];
+}
+
+
