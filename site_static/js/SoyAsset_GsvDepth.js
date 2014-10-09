@@ -1,4 +1,5 @@
 
+
 function GoogleStreetViewDepthMap($DataView)
 {
 	
@@ -137,33 +138,98 @@ function GoogleStreetViewDepthMap($DataView)
 	this.mDepthMap = this.parse( $DataView );
 }
 
-
 SoyAsset_GsvDepth.prototype = new SoyAsset('GsvDepth');
 
 function SoyAsset_GsvDepth($Meta,$OnLoaded,$OnFailed,$DoLoad)
 {
 	$DoLoad = CheckDefaultParam($DoLoad,true);
 	
+	this.mGooglePanoId = null;
+	this.mLatLon = null;	//	array of 2 coords
+	
+	if ( isArray($Meta) )
+	{
+		if ( $Meta.length == 2 )
+			this.mLatLon = $Meta;
+		$Meta = new SoyAssetMeta();
+	}
+	
 	if ( typeof $Meta == 'string' )
 	{
-		var $GooglePanoId = $Meta;
+		var $LatLon = MatchLatLonString( $Meta );
+		if ( $LatLon !== false )
+		{
+			this.mLatLon = $LatLon;
+		}
+		else
+		{
+			this.mGooglePanoId = $Meta;
+		}
 		$Meta = new SoyAssetMeta();
-		$Meta.Filename = $GooglePanoId;
 	}
-	var $GooglePanoId = $Meta.Filename;
 
 	//	call super
 	SoyAsset.apply( this, [$Meta,$OnLoaded,$OnFailed] );
 	
-	//	load jsonp asset first
-	this.mJsonAssetMeta = {};
-	this.mJsonAssetMeta.Filename = 'http://maps.google.com/cbk?output=json&cb_client=maps_sv&v=4&dm=1&pm=1&ph=1&hl=en&panoid=' + $GooglePanoId;
-	var $this = this;
-	this.mJsonAsset = new SoyAsset_JsonP( this.mJsonAssetMeta, function($Asset){$this.OnLoadedJson($Asset);}, function($Asset){$this.OnFailedJson($Asset);}, false );
-
 	if ( $DoLoad )
 		this.Load();
 }
+
+SoyAsset_GsvDepth.prototype.LoadGsvPanoMeta = function()
+{
+	var $this = this;
+	var $OnLoaded = function($Asset)
+	{
+		alert('LoadGsvPanoMeta OnLoaded');
+		$this.mGooglePanoId = $Asset.mAsset;
+		$this.Load();
+	};
+	var $OnFailed = function($Asset)
+	{
+		alert('LoadGsvPanoMeta OnFailed');
+		$this.OnError('failed to load gsv pano meta ' + $Asset );
+	};
+	this.mGsvPanoMetaAsset = new SoyAsset_GsvPanoMeta( this.mLatLon, $OnLoaded, $OnFailed );
+	return true;
+}
+
+SoyAsset_GsvDepth.prototype.LoadGsvAsset = function()
+{
+	var $this = this;
+	var $OnLoaded = function($Asset)
+	{
+		alert('LoadGsvAsset OnLoaded');
+		$this.OnLoadedJson($Asset);
+	}
+	var $OnFailed = function($Asset)
+	{
+		alert('LoadGsvAsset OnFailed');
+		$this.OnError('failed to load gsv asset ' + $Asset );
+	};
+	
+	this.mGsvAssetMeta = {};
+	this.mGsvAssetMeta.Filename = 'http://maps.google.com/cbk?output=json&cb_client=maps_sv&v=4&dm=1&pm=1&ph=1&hl=en&panoid=' + this.mGooglePanoId;
+	this.mJsonAsset = new SoyAsset_JsonP( this.mGsvAssetMeta, $OnLoaded, $OnFailed );
+	return true;
+}
+
+SoyAsset_GsvDepth.prototype.Load = function()
+{
+	//	if we don't know the pano id, we need to fetch it
+	if ( this.mGooglePanoId == null && this.mLatLon != null )
+	{
+		return this.LoadGsvPanoMeta();
+	}
+	
+	if ( this.mGooglePanoId != null )
+	{
+		return this.LoadGsvAsset();
+	}
+
+	return false;
+}
+
+
 
 SoyAsset_GsvDepth.prototype.OnLoadedJson = function($JsonAsset)
 {
@@ -201,8 +267,7 @@ SoyAsset_GsvDepth.prototype.OnLoadedJson = function($JsonAsset)
 	//	create depth map image
 	this.mAsset = this.CreateDepthImage( this.mDepthMap );
 	
-	assert( this.IsLoaded(), "Loaded state wrong" );
-	this.mOnLoaded( this );
+	this.OnLoaded();
 }
 
 SoyAsset_GsvDepth.prototype.OnFailedJson = function($JsonAsset)
@@ -216,12 +281,6 @@ SoyAsset_GsvDepth.prototype.Stop = function()
 	this.mDesired = false;
 	this.mAsset = null;
 	assert( !this.IsLoaded(), "Loaded state wrong" );
-}
-
-SoyAsset_GsvDepth.prototype.Load = function()
-{
-	//	start fetching json data
-	this.mJsonAsset.Load();
 }
 
 SoyAsset_GsvDepth.prototype.DecodeDepthMapData64 = function($DepthMapDataZip64)
