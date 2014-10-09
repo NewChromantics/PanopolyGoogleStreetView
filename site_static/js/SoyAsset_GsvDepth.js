@@ -79,11 +79,16 @@ function GoogleStreetViewDepthMap($DataView)
 				v[1] = sin_theta[y] * sin_phi[x];
 				v[2] = cos_theta[y];
 				
+				//var $depthx = w-x-1;
+				var $depthx = x;
+				var $depthy = y;
+				var $index = $depthy*w + $depthx;
+				
 				if(planeIdx > 0) {
 					plane = planes[planeIdx];
 					
 					t = Math.abs( plane.d / (v[0]*plane.n[0] + v[1]*plane.n[1] + v[2]*plane.n[2]) );
-					depthMap[y*w + (w-x-1)] = t;
+					depthMap[$index] = t;
 					
 					if ( mint===false || t < mint )
 						mint = t;
@@ -94,7 +99,7 @@ function GoogleStreetViewDepthMap($DataView)
 					else
 						avgt = (avgt + t)/2;
 				} else {
-					depthMap[y*w + (w-x-1)] = 9999999999999999999.;
+					depthMap[$index] = 9999999999999999999.;
 				}
 			}
 		}
@@ -233,6 +238,7 @@ SoyAsset_GsvDepth.prototype.Load = function()
 
 SoyAsset_GsvDepth.prototype.OnLoadedJson = function($JsonAsset)
 {
+	console.log('depth json; ',$JsonAsset.mAsset);
 	var $DepthMapDataZip64 = $JsonAsset.mAsset.model.depth_map;
 	if ( IsUndefined($DepthMapDataZip64) )
 	{
