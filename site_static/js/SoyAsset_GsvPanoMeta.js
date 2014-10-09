@@ -1,30 +1,3 @@
-function LoadGoogleStreetViewPano($Lat,$Lon)
-{
-	//	get pano id
-	var location = new google.maps.LatLng( $Lat, $Lon );
-	var _panoClient = new google.maps.StreetViewService();
-	
-	
-	//	https://developers.google.com/maps/documentation/javascript/streetview
-	_panoClient.getPanoramaByLocation(location, 50, function (result, status) {
-									  if (status === google.maps.StreetViewStatus.OK) {
-									  console.log("pano client ",result);
-									  //var h = google.maps.geometry.spherical.computeHeading(location, result.location.latLng);
-									  //rotation = (result.tiles.centerHeading - h) * Math.PI / 180.0;
-									  //copyright = result.copyright;
-									  
-									  
-									  LoadGoogleStreetViewDepth(result.location.pano);
-									  
-									  } else {
-									  OnGoogleStreetViewFailed();
-									  }
-									  });
-	
-	return true;
-}
-
-
 
 SoyAsset_GsvPanoMeta.prototype = new SoyAsset('GsvPanoMeta');
 
