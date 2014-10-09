@@ -222,3 +222,8 @@ function GetLerp($From,$To,$Value)
 	return $t;
 }
 
+
+function isArray($Object)
+{
+	return ( Object.prototype.toString.call( $Object ) === '[object Array]' );
+}
