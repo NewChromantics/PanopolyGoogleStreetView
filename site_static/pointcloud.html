@@ -95,13 +95,16 @@
 	
 		<script src="js/PanoMenu.js"></script>
 	
-		<script src="js/SoyAsset_GsvDepth.js"></script>
+	<script src="js/SoyAsset_GsvPanoMeta.js"></script>
+	<script src="js/SoyAsset_GsvDepth.js"></script>
+	<script src="js/SoyAsset_GsvImage.js"></script>
 		<script src="js/zpipe.min.js"></script>
 		<script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false" type="text/javascript"></script>
 
 
 <img id="image">
 <div id="debug_console" style="overflow:scroll;height:200px;z-index:999;position:absolute;left:0;top:20px;opacity:0.5;background:white;"></div>
+<div id="container"></div>
 <script>
 	BindConsole('debug_console');
 	
@@ -110,57 +113,32 @@
 	
 	function OnLoadDepth($Asset)
 	{
-		alert( 'OnLoadDepth'  );
 		var $Div = document.createElement('div');
-		document.body.appendChild($Asset.mAsset);
+		var $Parent = GetElement('container');
+		$Parent.appendChild($Asset.mAsset);
 	}
 
 	function OnFailedLoadDepth($Asset)
 	{
-		alert( 'OnFailedLoadDepth' );
 	}
 
-	
-	function LoadGoogleStreetViewDepth($PanoId)
+	function OnLoadImage($Asset)
 	{
-		var $DepthAsset = new SoyAsset_GsvDepth($PanoId, OnLoadDepth, OnFailedLoadDepth );
+		var $Div = document.createElement('div');
+		var $Parent = GetElement('container');
+		$Parent.appendChild($Asset.mAsset);
 	}
 
-	function OnGoogleStreetViewFailed()
+	function OnFailedLoadImage($Asset)
 	{
-		alert( 'OnGoogleStreetViewFailed' );
 	}
-	
-	function LoadGoogleStreetViewPano($Lat,$Lon)
-	{
-		//	get pano id
-		var location = new google.maps.LatLng( $Lat, $Lon );
-		var _panoClient = new google.maps.StreetViewService();
-		
-		
-		//	https://developers.google.com/maps/documentation/javascript/streetview
-		_panoClient.getPanoramaByLocation(location, 50, function (result, status) {
-										  if (status === google.maps.StreetViewStatus.OK) {
-										  console.log("pano client ",result);
-										  //var h = google.maps.geometry.spherical.computeHeading(location, result.location.latLng);
-										  //rotation = (result.tiles.centerHeading - h) * Math.PI / 180.0;
-										  //copyright = result.copyright;
-										  
-										  
-										  LoadGoogleStreetViewDepth(result.location.pano);
-										  
-										  } else {
-										  OnGoogleStreetViewFailed();
-										  }
-										  });
-										  
-										  return true;
-	}
+
 
 	var $LatLon = MatchLatLonString( window.location.hash, '#' );
 	if ( $LatLon === false )
 		$LatLon = [ 53.4838101,-2.2346764 ];
-	LoadGoogleStreetViewPano( $LatLon[0], $LatLon[1] );
+	var $DepthAsset = new SoyAsset_GsvDepth( $LatLon, OnLoadDepth, OnFailedLoadDepth );
+	var $ImageAsset = new SoyAsset_GsvImage( $LatLon, OnLoadImage, OnFailedLoadImage );
 
 	</script>
 
