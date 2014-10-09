@@ -217,6 +217,8 @@ function DivideVectors($a,$b)
 //	returns array of coords or false
 function MatchLatLonString($Haystack,$Prefix)
 {
+	$Prefix = CheckDefaultParam($Prefix,'');
+	
 	//	detect lat/lon coords
 	//	-X.Y,-Z.W
 	var $Pattern = '^' + $Prefix + '([-0-9]+).([0-9]+),([-0-9]+).([0-9]+)';
