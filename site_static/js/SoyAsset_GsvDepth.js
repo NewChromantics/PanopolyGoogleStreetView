@@ -180,13 +180,13 @@ SoyAsset_GsvDepth.prototype.LoadGsvPanoMeta = function()
 	var $this = this;
 	var $OnLoaded = function($Asset)
 	{
-		alert('LoadGsvPanoMeta OnLoaded');
+		//alert('LoadGsvPanoMeta OnLoaded');
 		$this.mGooglePanoId = $Asset.mAsset;
 		$this.Load();
 	};
 	var $OnFailed = function($Asset)
 	{
-		alert('LoadGsvPanoMeta OnFailed');
+		//alert('LoadGsvPanoMeta OnFailed');
 		$this.OnError('failed to load gsv pano meta ' + $Asset );
 	};
 	this.mGsvPanoMetaAsset = new SoyAsset_GsvPanoMeta( this.mLatLon, $OnLoaded, $OnFailed );
@@ -198,12 +198,12 @@ SoyAsset_GsvDepth.prototype.LoadGsvAsset = function()
 	var $this = this;
 	var $OnLoaded = function($Asset)
 	{
-		alert('LoadGsvAsset OnLoaded');
+		//alert('LoadGsvAsset OnLoaded');
 		$this.OnLoadedJson($Asset);
 	}
 	var $OnFailed = function($Asset)
 	{
-		alert('LoadGsvAsset OnFailed');
+		//alert('LoadGsvAsset OnFailed');
 		$this.OnError('failed to load gsv asset ' + $Asset );
 	};
 	
