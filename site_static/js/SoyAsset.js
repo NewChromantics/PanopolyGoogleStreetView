@@ -157,9 +157,11 @@ function SoyAsset($Meta,$OnLoaded,$OnFailed)
 		return;
 	}
 
+	$Meta.Filename = CheckDefaultParam($Meta.Filename,'');
 	var $UrlIsData = $Meta.Filename.startsWith('data:');
 	var $UrlIsHttp = $Meta.Filename.startsWith('http:');
-	var $Host = ($UrlIsData||$UrlIsHttp) ? '' : GetHost();
+	var $UrlIsEmpty = ($Meta.Filename.length==0);
+	var $Host = ($UrlIsData||$UrlIsHttp||$UrlIsEmpty) ? '' : GetHost();
 	
 	this.mAsset = null;			//	set once loaded
 	this.mUrl = $Host + $Meta.Filename;
@@ -179,7 +181,14 @@ SoyAsset.prototype.OnError = function()
 	//	not a failure if we cancelled
 	if ( !this.mDesired )
 		return;
+	assert( !this.IsLoaded(), "Loaded state wrong" );
 	this.mOnFailed( this );
+}
+
+SoyAsset.prototype.OnLoaded = function()
+{
+	assert( this.IsLoaded(), "Loaded state wrong" );
+	this.mOnLoaded( this );
 }
 
 SoyAsset.prototype.IsLoaded = function()
