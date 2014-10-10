@@ -45,6 +45,7 @@ SoyAsset_GsvImage.prototype.LoadGsvPanoMeta = function()
 	var $OnLoaded = function($Asset)
 	{
 		//alert('LoadGsvPanoMeta OnLoaded');
+		console.log('pano meta; ' + $Asset.mAsset);
 		$this.mGooglePanoId = $Asset.mAsset;
 		$this.Load();
 	};
@@ -74,7 +75,8 @@ SoyAsset_GsvImage.prototype.LoadImage = function()
 	var $Tilex = 0;
 	var $Tiley = 0;
 	var $Zoom = 0;
-	var $CacheInvalidate = Date.now();
+	//var $CacheInvalidate = Date.now();
+	var $CacheInvalidate = '';
 	var $url = 'http://maps.google.com/cbk?output=tile&panoid=' + this.mGooglePanoId + '&zoom=' + $Zoom + '&x=' + $Tilex + '&y=' + $Tiley + '&' + $CacheInvalidate;
 	var $AssetMeta = {};
 	$AssetMeta.Layout = 'equirect';
