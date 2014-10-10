@@ -328,6 +328,25 @@ SoyAsset_GsvDepth.prototype.ParseDepthMapData = function($DepthMapArray)
 	return DepthMap;
 }
 
+function frac(f)
+{
+	return f - Math.floor(f);
+}
+
+//	http://aras-p.info/blog/2009/07/30/encoding-floats-to-rgba-the-final/
+function EncodeFloatRGB(f)
+{
+	var enc = new THREE.Vector4( f * 1.0, f*255.0, f*65025.0, 0);
+	enc.x = frac(enc.x);
+	enc.y = frac(enc.y);
+	enc.z = frac(enc.z);
+	
+	enc.x -= enc.y * (1.0/255.0);
+	enc.y -= enc.z * (1.0/255.0);
+	enc.z -= enc.w * 0;//(1.0/255.0);
+	//enc -= enc.yzww * new THREE.Vector4(1.0/255.0,1.0/255.0,1.0/255.0,0.0);
+	return enc;
+}
 
 SoyAsset_GsvDepth.prototype.CreateDepthImage = function($DepthMap)
 {
@@ -353,6 +372,24 @@ SoyAsset_GsvDepth.prototype.CreateDepthImage = function($DepthMap)
 			var $i = (y*$w) + x;
 			var $f = $DepthMapFloat.depthMap[$i];
 			
+			//	inf
+			if ( $f > $maxf )
+			{
+				Pixel[0] = 0;
+				Pixel[1] = 0;
+				Pixel[2] = 0;
+				Pixel[3] = 0;
+			}
+			else
+			{
+				var $f4 = EncodeFloatRGB($f / $maxf);
+				Pixel[0] = $f4.x * 255;
+				Pixel[1] = $f4.y * 255;
+				Pixel[2] = $f4.z * 255;
+				Pixel[3] = 255;
+			}
+			
+			/*	fancy colours
 			if ( $f > $maxf )
 			{
 				Pixel[0] = 0;
@@ -382,7 +419,9 @@ SoyAsset_GsvDepth.prototype.CreateDepthImage = function($DepthMap)
 				}
 			}
 			
+			
 			Pixel[3] = 255;
+			 */
 			ctx.putImageData( PixelImage, x, y );
 		}
 	
