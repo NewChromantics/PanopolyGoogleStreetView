@@ -161,7 +161,8 @@ function SoyAsset($Meta,$OnLoaded,$OnFailed)
 	var $UrlIsData = $Meta.Filename.startsWith('data:');
 	var $UrlIsHttp = $Meta.Filename.startsWith('http:');
 	var $UrlIsEmpty = ($Meta.Filename.length==0);
-	var $Host = ($UrlIsData||$UrlIsHttp||$UrlIsEmpty) ? '' : GetHost();
+	var $UrlIsLocal = ($Meta.Filename.startsWith('.'));
+	var $Host = ($UrlIsData||$UrlIsHttp||$UrlIsEmpty||$UrlIsLocal) ? '' : GetHost();
 	
 	this.mAsset = null;			//	set once loaded
 	this.mUrl = $Host + $Meta.Filename;
