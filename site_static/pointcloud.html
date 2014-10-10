@@ -62,9 +62,6 @@
 			
 		</div>
 
-<!-- needs to be before any support that wants to bind to container -->
-<div class="Container" id="container"></div>
-<div class="Container" id="container_dual"></div>
 
 		<script src="js/soy.js"></script>
 		<script src="threejs/three.min.js"></script>
@@ -104,18 +101,183 @@
 
 <img id="image">
 <div id="debug_console" style="overflow:scroll;height:200px;z-index:999;position:absolute;left:0;top:20px;opacity:0.5;background:white;"></div>
-<div id="container"></div>
+<div id="imagecontainer"></div>
+<div id="container" style="width:900px;height:500px;background:lime;"></div>
+
+
 <script>
 	BindConsole('debug_console');
 	
 	console.log('hello');
 	
+	var $DepthLoaded = false;
+	var $ImageLoaded = false;
 	
+	var $FragmentShader = null;	//	null=loading, false=failed, else content
+	var $FragmentShaderAsset = new SoyAsset_Ajax('pointcloud.frag.glsl', function($Asset){ $FragmentShader = $Asset.mAsset; }, function($Asset){ $FragmentShader = false; } );
+	var $VertexShader = null;	//	null=loading, false=failed, else content
+	var $VertexShaderAsset = new SoyAsset_Ajax('pointcloud.vert.glsl', function($Asset){ $VertexShader = $Asset.mAsset; }, function($Asset){ $VertexShader = false; } );
+
+	
+	function CreatePointCloudMesh($w,$h,$VertexShader,$FragmentShader)
+	{
+		//	create 2D vertexes for each texel
+		
+		var geometry = new THREE.BufferGeometry();
+		
+		geometry.attributes = {
+			
+			position: {
+				itemSize: 3,
+				array: new Float32Array( $w * $h * 3 ),
+				numItems: $w * $h * 3,
+			},
+			
+		};
+		
+		var $i = 0;
+		for ( var $y=0;	$y<$h;	$y++ )
+		for ( var $x=0;	$x<$w;	$x++,$i+=geometry.attributes.position.itemSize )
+		{
+			geometry.attributes.position.array[$i+0] = $x/$w;
+			geometry.attributes.position.array[$i+1] = $y/$h;
+			geometry.attributes.position.array[$i+2] = 0;
+		}
+		
+		geometry.boundingSphere = new THREE.Sphere( new THREE.Vector3(0,0,0), 1000 );
+
+		var uniforms =
+		{
+			DiffuseTexture: { type: "t", value: THREE.ImageUtils.loadTexture( $ImageAsset.mAsset.src ) },
+			DepthTexture: { type: "t", value: THREE.ImageUtils.loadTexture( $DepthAsset.mAsset.src ) },
+		};
+		
+
+		var material = new THREE.ShaderMaterial( {
+												uniforms: 		uniforms,
+												vertexShader:   $VertexShader,
+												fragmentShader: $FragmentShader,
+												});
+												
+		var mesh = new THREE.PointCloud( geometry, material );
+		return mesh;
+	}
+
+
+
+	var renderer, scene, camera, cloud, uniforms, attributes;
+	
+	
+	function init($Container) {
+		if ( $FragmentShader === false )
+			return 'failed to load fragment shader';
+		if ( $VertexShader === false )
+			return 'failed to load vertex shader';
+		
+		if ( $FragmentShader === null )
+		{
+			setTimeout( OnLoadImageAndDepth, 200 );
+			return 'still loading fragment shader';
+		}
+		if ( $VertexShader === null )
+		{
+			setTimeout( OnLoadImageAndDepth, 200 );
+			return 'still loading vertex shader';
+		}
+		
+		console.log("doing init");
+		
+		// renderer
+		renderer = new THREE.WebGLRenderer();
+		renderer.setSize( $Container.clientWidth, $Container.clientHeight );
+		$Container.appendChild( renderer.domElement );
+		
+		// scene
+		scene = new THREE.Scene();
+		
+		//camera
+		camera = new THREE.PerspectiveCamera( 45, $Container.clientWidth / $Container.clientHeight, 1, 4000 );
+		/*
+		camera.position.z = 350.01;
+		camera.position.y = 750.01;
+		camera.lookAt(new THREE.Vector3(0,0,0));
+		*/
+		cloud = CreatePointCloudMesh(800,600, $VertexShader, $FragmentShader );
+		if ( cloud === false || typeof cloud == 'string' )
+			return cloud;
+			
+		scene.add( cloud );
+		return true;
+	}
+
+function animate() {
+	
+    requestAnimationFrame( animate );
+	
+    render();
+	
+}
+
+function render() {
+	
+	/*
+    for( var i = 0; i < attributes.alpha.value.length; i ++ ) {
+		
+        // dynamically change alphas
+        attributes.alpha.value[ i ] *= 0.995;
+        
+        if ( attributes.alpha.value[ i ] < 0.2 ) {
+            attributes.alpha.value[ i ] = 1.0;
+        }
+        
+    }
+	
+    attributes.alpha.needsUpdate = true; // important!
+	*/
+   // cloud.rotation.x += 0.005;
+    cloud.rotation.y += 0.005;
+	
+    renderer.render( scene, camera );
+	
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	function OnLoadImageAndDepth()
+	{
+		var $Result = init( GetElement('container') );
+		if ( $Result !== true )
+		{
+			alert($Result);
+			return false;
+		}
+
+		animate();
+		return true;
+	}
+
 	function OnLoadDepth($Asset)
 	{
 		var $Div = document.createElement('div');
-		var $Parent = GetElement('container');
+		var $Parent = GetElement('imagecontainer');
 		$Parent.appendChild($Asset.mAsset);
+		$DepthLoaded = true;
+		if ( $DepthLoaded && $ImageLoaded )
+			OnLoadImageAndDepth();
 	}
 
 	function OnFailedLoadDepth($Asset)
@@ -125,8 +287,11 @@
 	function OnLoadImage($Asset)
 	{
 		var $Div = document.createElement('div');
-		var $Parent = GetElement('container');
+		var $Parent = GetElement('imagecontainer');
 		$Parent.appendChild($Asset.mAsset);
+		$ImageLoaded = true;
+		if ( $DepthLoaded && $ImageLoaded )
+			OnLoadImageAndDepth();
 	}
 
 	function OnFailedLoadImage($Asset)
