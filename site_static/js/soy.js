@@ -223,6 +223,7 @@ function GetLerp($From,$To,$Value)
 }
 
 
+
 function GetType($Object)
 {
 	var $Type = typeof $Object;
@@ -248,3 +249,26 @@ function isArray($Object)
 {
 	return isType($Object,'Array');
 }
+
+
+function frac(f)
+{
+	return f - Math.floor(f);
+}
+
+//	modified aras' algorithm for RGB so I can use alpha for something else
+//	http://aras-p.info/blog/2009/07/30/encoding-floats-to-rgba-the-final/
+function EncodeFloatRGB(f)
+{
+	var enc = new THREE.Vector4( f * 1.0, f*255.0, f*65025.0, 0);
+	enc.x = frac(enc.x);
+	enc.y = frac(enc.y);
+	enc.z = frac(enc.z);
+	
+	enc.x -= enc.y * (1.0/255.0);
+	enc.y -= enc.z * (1.0/255.0);
+	enc.z -= enc.w * 0;//(1.0/255.0);
+	//enc -= enc.yzww * new THREE.Vector4(1.0/255.0,1.0/255.0,1.0/255.0,0.0);
+	return enc;
+}
+
