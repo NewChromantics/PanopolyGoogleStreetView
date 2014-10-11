@@ -18,6 +18,12 @@
 	position: absolute;
 	padding: 0px;
 	margin: 0px;
+	
+	/*
+	 gr: no noticable speed increase
+	-webkit-backface-visibility: hidden;
+	backface-visibility: hidden;
+	*/
 }
 
 .FaceContent {
