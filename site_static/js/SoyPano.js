@@ -21,7 +21,11 @@ function SoyPano($PanoName,$Config,$OnNewImage,$OnMetaFailed,$DoLoad)
 	//	load assets
 	if ( $DoLoad )
 	{
-		this.mMetaAsset = new SoyAsset_Ajax( $PanoName+'.meta', OnLoaded, OnFailed, true, ParseJson );
+		var $MetaMeta = new SoyAssetMeta();
+		$MetaMeta.mOnParse = ParseJson;
+		$MetaMeta.Filename = $PanoName+'.meta';
+
+		this.mMetaAsset = new SoyAsset_Ajax( $MetaMeta, OnLoaded, OnFailed );
 	
 		//	attempt to load some assets immediately for speed
 		var $PreloadAssets = [];
@@ -144,7 +148,7 @@ SoyPano.prototype.GetBetterAsset = function($FilterFunction)
 	
 	//	load some better stuff compared to mAssets
 	var $BestRemoteMeta = null;
-	console.log("GetBetterAsset", this.mMeta.assets);
+	console.log("GetBetterAsset", this.mMeta.assets, this );
 	for ( var $Key in this.mMeta.assets )
 	{
 		var $RemoteMeta = new SoyAssetMeta( this.mMeta.assets[$Key] );
@@ -227,16 +231,33 @@ SoyPano.prototype.OnLoadedMeta = function()
 		console.log( this, "Load additonal asset: ", $AssetMeta );
 
 		if ( $AssetMeta.IsVideo() && $AssetMeta.Format == 'mjpeg' )
+		{
 			this.mAssets.push( new SoyAsset_Mjpeg( $AssetMeta, OnLoaded, OnFailed ) );
+		}
 		else if ( $AssetMeta.IsVideo() )
+		{
 			this.mAssets.push( new SoyAsset_Video( $AssetMeta, OnLoaded, OnFailed ) );
+		}
 		else if ( $AssetMeta.Format == 'jpg' )
+		{
 			this.mAssets.push( new SoyAsset_Image( $AssetMeta, OnLoaded, OnFailed ) );
+		}
 		else if ( $AssetMeta.Format == 'jsonp' )
+		{
 			this.mAssets.push( new SoyAsset_JsonP( $AssetMeta, OnLoaded, OnFailed ) );
+		}
+		else if ( $AssetMeta.Format == 'GsvImage' )
+		{
+			this.mAssets.push( new SoyAsset_GsvImage( $AssetMeta, OnLoaded, OnFailed ) );
+		}
+		else if ( $AssetMeta.Format == 'GsvDepth' )
+		{
+			this.mAssets.push( new SoyAsset_GsvDepth( $AssetMeta, OnLoaded, OnFailed ) );
+		}
 		else
+		{
 			this.mAssets.push( new SoyAsset_Ajax( $AssetMeta, OnLoaded, OnFailed ) );
-		
+		}
 	}
 }
 

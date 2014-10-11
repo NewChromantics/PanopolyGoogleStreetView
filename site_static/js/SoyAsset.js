@@ -277,17 +277,17 @@ SoyAsset_Ajax.prototype.OnLoad = function($Event)
 
 
 
-function ParseJson($Data)
+function ParseJson($ResponseText)
 {
 	try
 	{
-		var $Asset = JSON.parse( $Event.target.responseText );
+		var $Asset = JSON.parse( $ResponseText );
 		return $Asset;
 	}
 	catch ( e )
 	{
 		//	fail on bad json
-		console.log("bad json" + $Event.target.responseText.substring(0,20) );
+		console.log("bad json" + $ResponseText.substring(0,20) );
 		return false;
 	}
 }
