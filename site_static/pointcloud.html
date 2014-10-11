@@ -77,8 +77,6 @@
 		<script src="js/CubeMap.js"></script>
 		<script src="js/support.js"></script>
 		<script src="js/SoySupport.js"></script>
-		<script src="js/SoyOculusBridge.js"></script>
-		<script src="js/SoyOculusRest.js"></script>
 		<script src="js/SoyShrink.js"></script>
 		<script src="js/SoyFullscreen.js"></script>
 		<script src="js/SoyGyro.js"></script>
@@ -95,6 +93,7 @@
 	<script src="js/SoyAsset_GsvPanoMeta.js"></script>
 	<script src="js/SoyAsset_GsvDepth.js"></script>
 	<script src="js/SoyAsset_GsvImage.js"></script>
+	<script src="js/SoyAsset_GsvPointCloud.js"></script>
 		<script src="js/zpipe.min.js"></script>
 		<script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false" type="text/javascript"></script>
 
@@ -105,87 +104,134 @@
 <div id="container" style="width:900px;height:500px;background:lime;"></div>
 
 
+<script id="pointcloudvertexshader" type="x-shader/x-vertex">
+	
+	
+	varying vec4 vColor;
+	uniform sampler2D DiffuseTexture;
+	uniform sampler2D DepthTexture;
+	
+	//	from http://aras-p.info/blog/2009/07/30/encoding-floats-to-rgba-the-final/
+	/*
+	 vec4 EncodeFloatRGBA( float v )
+	 {
+	 vec4 enc = vec4(1.0, 255.0, 65025.0, 160581375.0) * v;
+	 enc.x = frac(enc.x);
+	 enc -= enc.yzww * vec4(1.0/255.0,1.0/255.0,1.0/255.0,0.0);
+	 return enc;
+	 }
+	 */
+float DecodeFloatRGBA( vec4 rgba )
+{
+	return dot( rgba, vec4(1.0, 1.0/255.0, 1.0/65025.0, 1.0/160581375.0) );
+}
+
+float DecodeFloatRGB( vec4 rgba )
+{
+	return dot( rgba, vec4(1.0, 1.0/255.0, 1.0/65025.0, 0.0) );
+}
+
+//	from my php code
+vec3 VectorFromCoordsRad(vec2 latlon)
+{
+	//	http://en.wikipedia.org/wiki/N-vector#Converting_latitude.2Flongitude_to_n-vector
+	float latitude = latlon.x;
+	float longitude = latlon.y;
+	float las = sin(latitude);
+	float lac = cos(latitude);
+	float los = sin(longitude);
+	float loc = cos(longitude);
+	
+	return vec3( los * lac, las, loc * lac );
+}
+#define M_PI 3.1415926535897932384626433832795
+
+vec2 GetLatLong(float x,float y,float Width,float Height)
+{
+	float xmul = 2.0;
+	float xsub = 1.0;
+	float ymul = 1.0;
+	float ysub = 0.5;
+	
+	float xfract = x / Width;
+	xfract *= xmul;
+	
+	//	float yfract = (Height - y) / Height;
+	float yfract = (y) / Height;
+	yfract *= ymul;
+	
+	float lon = ( xfract - xsub) * M_PI;
+	float lat = ( yfract - ysub) * M_PI;
+	return vec2( lat, lon );
+}
+
+float lerp(float From,float To,float Time)
+{
+	return From + (To-From)*Time;
+}
+
+void main()
+{
+	vec2 Diffuseuv = vec2( position.x,position.y );
+	vec2 Depthuv = vec2( position.x,position.y );
+	
+	vec4 Depth4 = texture2D( DepthTexture, Depthuv );
+	bool DepthInf = Depth4.w < 0.5;
+	Depth4.w = 0.0;
+	float Depthf = DepthInf ? 1.0 : DecodeFloatRGB( Depth4 );
+	///Depthf = 1.0;
+	//	lat lon to view
+	vec3 View3 = VectorFromCoordsRad( GetLatLong(position.x, position.y,1.0,1.0) );
+	View3 = normalize(View3);
+	
+	//	gr: eye seperation is 30... so near needs to be at least that!
+	float Camera_Near = 2.0;
+	float Camera_Far = 250.0;	//	at 260 some points start disapearing. not sure why Far is so low...
+	
+	float Near = 2.0;
+	float ScaleFar = 200.0;
+	float Scale = lerp( Near, ScaleFar, Depthf );
+	
+	float EyeScale = 1.0;
+	View3 *= max(Camera_Near,min(Scale/EyeScale,Camera_Far));
+	
+	vec4 mvPosition = modelViewMatrix * vec4( View3, 1.0 );
+	
+	gl_PointSize = 4.0;
+	
+	gl_Position = projectionMatrix * mvPosition;
+	
+	vColor = texture2D( DiffuseTexture, Diffuseuv );
+	
+	if ( DepthInf )
+	{
+		gl_PointSize = 0.0;
+		vColor.r = 1.0;
+		vColor.g = 1.0;
+		vColor.b = 1.0;
+	}
+	else
+	{
+		//vColor.r = 1.0-Depthf;
+		//	vColor.g = 1.0-Depthf;
+		//vColor.b = 1.0-Depthf;
+	}
+}
+
+
+
+</script>
+
 <script>
 	BindConsole('debug_console');
 	
 	console.log('hello');
 	
-	var $DepthLoaded = false;
-	var $ImageLoaded = false;
-	
-	var $FragmentShader = null;	//	null=loading, false=failed, else content
-	var $FragmentShaderAsset = new SoyAsset_Ajax('pointcloud.frag.glsl', function($Asset){ $FragmentShader = $Asset.mAsset; }, function($Asset){ $FragmentShader = false; } );
-	var $VertexShader = null;	//	null=loading, false=failed, else content
-	var $VertexShaderAsset = new SoyAsset_Ajax('pointcloud.vert.glsl', function($Asset){ $VertexShader = $Asset.mAsset; }, function($Asset){ $VertexShader = false; } );
-
-	
-	function CreatePointCloudMesh($w,$h,$VertexShader,$FragmentShader)
-	{
-		//	create 2D vertexes for each texel
-		
-		var geometry = new THREE.BufferGeometry();
-		
-		geometry.attributes = {
-			
-			position: {
-				itemSize: 3,
-				array: new Float32Array( $w * $h * 3 ),
-				numItems: $w * $h * 3,
-			},
-			
-		};
-		
-		var $i = 0;
-		for ( var $y=0;	$y<$h;	$y++ )
-		for ( var $x=0;	$x<$w;	$x++,$i+=geometry.attributes.position.itemSize )
-		{
-			geometry.attributes.position.array[$i+0] = $x/$w;
-			geometry.attributes.position.array[$i+1] = $y/$h;
-			geometry.attributes.position.array[$i+2] = 0;
-		}
-		
-		geometry.boundingSphere = new THREE.Sphere( new THREE.Vector3(0,0,0), 1000 );
-
-		var uniforms =
-		{
-			DiffuseTexture: { type: "t", value: THREE.ImageUtils.loadTexture( $ImageAsset.mAsset.src ) },
-			DepthTexture: { type: "t", value: THREE.ImageUtils.loadTexture( $DepthAsset.mAsset.src ) },
-		};
-		
-
-		var material = new THREE.ShaderMaterial( {
-												uniforms: 		uniforms,
-												vertexShader:   $VertexShader,
-												fragmentShader: $FragmentShader,
-												});
-												
-		var mesh = new THREE.PointCloud( geometry, material );
-		return mesh;
-	}
-
-
 
 	var renderer, scene, camera, cloud, uniforms, attributes;
 	
 	
 	function init($Container) {
-		if ( $FragmentShader === false )
-			return 'failed to load fragment shader';
-		if ( $VertexShader === false )
-			return 'failed to load vertex shader';
-		
-		if ( $FragmentShader === null )
-		{
-			setTimeout( OnLoadImageAndDepth, 200 );
-			return 'still loading fragment shader';
-		}
-		if ( $VertexShader === null )
-		{
-			setTimeout( OnLoadImageAndDepth, 200 );
-			return 'still loading vertex shader';
-		}
-		
-		console.log("doing init");
 		
 		// renderer
 		renderer = new THREE.WebGLRenderer();
@@ -197,15 +243,13 @@
 		
 		//camera
 		camera = new THREE.PerspectiveCamera( 45, $Container.clientWidth / $Container.clientHeight, 1, 4000 );
-		/*
-		camera.position.z = 350.01;
-		camera.position.y = 750.01;
+		
+		var $CameraScale = 10.0;
+		camera.position.z = $CameraScale * 3.0;
+		camera.position.y = $CameraScale * 4.0;
 		camera.lookAt(new THREE.Vector3(0,0,0));
-		*/
-		cloud = CreatePointCloudMesh(800,600, $VertexShader, $FragmentShader );
-		if ( cloud === false || typeof cloud == 'string' )
-			return cloud;
-			
+		
+		cloud = $PointCloudAsset.mAsset;
 		scene.add( cloud );
 		return true;
 	}
@@ -251,13 +295,7 @@ function render() {
 
 
 
-
-
-
-
-
-
-	function OnLoadImageAndDepth()
+	function OnLoadPointCloud()
 	{
 		var $Result = init( GetElement('container') );
 		if ( $Result !== true )
@@ -270,40 +308,16 @@ function render() {
 		return true;
 	}
 
-	function OnLoadDepth($Asset)
+	function OnFailedLoad($Asset)
 	{
-		var $Div = document.createElement('div');
-		var $Parent = GetElement('imagecontainer');
-		$Parent.appendChild($Asset.mAsset);
-		$DepthLoaded = true;
-		if ( $DepthLoaded && $ImageLoaded )
-			OnLoadImageAndDepth();
-	}
-
-	function OnFailedLoadDepth($Asset)
-	{
-	}
-
-	function OnLoadImage($Asset)
-	{
-		var $Div = document.createElement('div');
-		var $Parent = GetElement('imagecontainer');
-		$Parent.appendChild($Asset.mAsset);
-		$ImageLoaded = true;
-		if ( $DepthLoaded && $ImageLoaded )
-			OnLoadImageAndDepth();
-	}
-
-	function OnFailedLoadImage($Asset)
-	{
+		alert('failed to load point cloud');
 	}
 
 
 	var $LatLon = MatchLatLonString( window.location.hash, '#' );
 	if ( $LatLon === false )
 		$LatLon = [ 53.4838101,-2.2346764 ];
-	var $DepthAsset = new SoyAsset_GsvDepth( $LatLon, OnLoadDepth, OnFailedLoadDepth );
-	var $ImageAsset = new SoyAsset_GsvImage( $LatLon, OnLoadImage, OnFailedLoadImage );
+	var $PointCloudAsset = new SoyAsset_GsvPointCloud( $LatLon, OnLoadPointCloud, OnFailedLoad );
 
 	</script>
 
