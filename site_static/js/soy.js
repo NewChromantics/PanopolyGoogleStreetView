@@ -223,7 +223,28 @@ function GetLerp($From,$To,$Value)
 }
 
 
+function GetType($Object)
+{
+	var $Type = typeof $Object;
+	if ( $Type != 'object' )
+		return $Type;
+
+	var $ObjectPrefix = '[object ';
+	$Type = Object.prototype.toString.call( $Object );
+	if ( !$Type.startsWith($ObjectPrefix) )
+		return $Type;
+
+	$Type = $Type.substring( $ObjectPrefix.length );
+	$Type = $Type.substring( 0, $Type.length-1 );
+	return $Type;
+}
+
+function isType($Object,$Type)
+{
+	return GetType($Object) == $Type;
+}
+
 function isArray($Object)
 {
-	return ( Object.prototype.toString.call( $Object ) === '[object Array]' );
+	return isType($Object,'Array');
 }
