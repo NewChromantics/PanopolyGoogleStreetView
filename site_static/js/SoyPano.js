@@ -77,7 +77,7 @@ SoyPano.prototype.OnLoadedAsset = function($Asset)
 	}
 	else
 	{
-		//console.log("Loaded asset: " + $Asset.mUrl );
+		console.log("Loaded asset: " + $Asset.mUrl );
 		
 		//	abort lesser assets
 		for ( var $Key in this.mAssets )
@@ -113,7 +113,11 @@ SoyPano.prototype.OnLoadedAsset = function($Asset)
 			if ( $Asset.mAsset instanceof HTMLImageElement )
 				this.OnNewJpegFrame($Asset);
 			else
+			{
 				console.log($Asset.mAsset );
+				if ( this.mOnNewOtherAsset )
+					this.mOnNewOtherAsset($Asset);
+			}
 		}
 	}
 }
@@ -253,6 +257,10 @@ SoyPano.prototype.OnLoadedMeta = function()
 		else if ( $AssetMeta.Format == 'GsvDepth' )
 		{
 			this.mAssets.push( new SoyAsset_GsvDepth( $AssetMeta, OnLoaded, OnFailed ) );
+		}
+		else if ( $AssetMeta.Format == 'GsvPointCloud' )
+		{
+			this.mAssets.push( new SoyAsset_GsvPointCloud( $AssetMeta, OnLoaded, OnFailed ) );
 		}
 		else
 		{
