@@ -223,7 +223,7 @@ function MatchLatLonString($Haystack,$Prefix)
 	//	-X.Y,-Z.W
 	var $Pattern = '^' + $Prefix + '([-0-9]+).([0-9]+),([-0-9]+).([0-9]+)';
 	var $RegExp = new RegExp($Pattern);
-	var $Match = $RegExp.exec(window.location.hash);
+	var $Match = $RegExp.exec($Haystack);
 	if ( $Match == null )
 		return false;
 
