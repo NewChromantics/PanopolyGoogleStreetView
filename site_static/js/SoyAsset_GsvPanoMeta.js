@@ -1,10 +1,35 @@
 
+function GoogleLocationToMeta($Meta)
+{
+	var $Type = GetType($Meta);
+	
+	//	already meta
+	//	gr: get real type please!
+	if ( $Type == 'Object' )
+		return $Meta;
+	
+	//	turn array of lat,lon into a string
+	if ( $Type == 'Array' && $Meta.length == 2 )
+		$Meta = $Meta[0] + ',' + $Meta[1];
+	
+	if ( $Type == 'string' )
+	{
+		var $Location = $Meta;
+		$Meta = new SoyAssetMeta();
+		$Meta.Filename = $Location;
+	}
+	
+	return $Meta;
+}
+
+
 SoyAsset_GsvPanoMeta.prototype = new SoyAsset('GsvPanoMeta');
 
 function SoyAsset_GsvPanoMeta($Meta,$OnLoaded,$OnFailed,$DoLoad)
 {
 	$DoLoad = CheckDefaultParam($DoLoad,true);
 	
+	$Meta = GoogleLocationToMeta($Meta);
 	if ( isArray($Meta) )
 	{
 		var $Lat = $Meta[0];
@@ -15,6 +40,7 @@ function SoyAsset_GsvPanoMeta($Meta,$OnLoaded,$OnFailed,$DoLoad)
 	if ( typeof $Meta == 'string' )
 	{
 		var $LatLon = $Meta;
+		$Meta = new SoyAssetMeta();
 		$Meta.Filename = $LatLon;
 	}
 	

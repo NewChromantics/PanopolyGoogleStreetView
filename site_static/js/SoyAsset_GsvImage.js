@@ -1,7 +1,5 @@
 
 
-
-
 SoyAsset_GsvImage.prototype = new SoyAsset('GsvImage');
 
 function SoyAsset_GsvImage($Meta,$OnLoaded,$OnFailed,$DoLoad)
@@ -10,26 +8,15 @@ function SoyAsset_GsvImage($Meta,$OnLoaded,$OnFailed,$DoLoad)
 	
 	this.mGooglePanoId = null;
 	this.mLatLon = null;	//	array of 2 coords
-	
-	if ( isArray($Meta) )
+
+	$Meta = GoogleLocationToMeta($Meta);
+	if ( $Meta.Filename )
 	{
-		if ( $Meta.length == 2 )
-			this.mLatLon = $Meta;
-		$Meta = new SoyAssetMeta();
-	}
-	
-	if ( typeof $Meta == 'string' )
-	{
-		var $LatLon = MatchLatLonString( $Meta );
+		var $LatLon = MatchLatLonString( $Meta.Filename );
 		if ( $LatLon !== false )
-		{
 			this.mLatLon = $LatLon;
-		}
 		else
-		{
-			this.mGooglePanoId = $Meta;
-		}
-		$Meta = new SoyAssetMeta();
+			this.mGooglePanoId = $Meta.Filename;
 	}
 
 	//	call super
@@ -108,9 +95,15 @@ SoyAsset_GsvImage.prototype.Load = function()
 		return this.LoadImage();
 	}
 
+	console.log(this);
+	this.OnError("missing panoid and latlon");
 	return false;
 }
 
+
+SoyAsset_GsvImage.prototype.Stop = function()
+{
+}
 
 
 SoyAsset_GsvImage.prototype.OnLoadedImage = function($Asset)
