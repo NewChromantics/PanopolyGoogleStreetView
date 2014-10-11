@@ -157,6 +157,7 @@ function SoyAsset($Meta,$OnLoaded,$OnFailed)
 		return;
 	}
 
+	assert(GetType($Meta)=='Object');
 	$Meta.Filename = CheckDefaultParam($Meta.Filename,'');
 	var $UrlIsData = $Meta.Filename.startsWith('data:');
 	var $UrlIsHttp = $Meta.Filename.startsWith('http:');
