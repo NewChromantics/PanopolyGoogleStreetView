@@ -10,8 +10,11 @@ function GoogleLocationToMeta($Meta)
 	
 	//	turn array of lat,lon into a string
 	if ( $Type == 'Array' && $Meta.length == 2 )
+	{
 		$Meta = $Meta[0] + ',' + $Meta[1];
-	
+		$Type = GetType($Meta);
+	}
+
 	if ( $Type == 'string' )
 	{
 		var $Location = $Meta;
