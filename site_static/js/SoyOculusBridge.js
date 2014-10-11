@@ -83,7 +83,9 @@ SoyOculusBridge.prototype.OnRiftMessage = function($Message)
 		this.mQuaternion = new THREE.Quaternion( $x, $y, $z, $w );
 	}
 	if ( $Json.m != 'update' )
-		console.log($Json);
+	{
+		console.log('oculus bridge json: ' , $Json);
+	}
 	
 	//	detect first support
 	if ( $WasSupported != this.IsSupported() )
