@@ -189,6 +189,20 @@ function AddDefaultSupportAutoSwitch()
 
 
 
+function GetCameraPosition()
+{
+	var $Control = GetSupport($CurrentCameraControl);
+	if ( $Control && $Control.IsEnabled() && !IsUndefined($Control.mPosition) )
+	{
+		return $Control.mPosition;
+	}
+	
+	if ( typeof camera != 'undefined' )
+		return camera.position;
+	
+	return new THREE.Vector3(0,0,0);
+}
+
 function GetCameraQuaternion()
 {
 	var $Control = GetSupport($CurrentCameraControl);
