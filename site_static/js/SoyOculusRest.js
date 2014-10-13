@@ -9,6 +9,7 @@ function SoyOculusRest()
 	SoySupport.apply( this, arguments );
 
 	this.mQuaternion = new THREE.Quaternion();
+	this.mPosition = new THREE.Vector3();
 	this.mLastFetchSuccess = false;
 	this.mRefreshMs = 1000/60;
 	this.mReconnectMs = 10*1000;
@@ -74,12 +75,22 @@ SoyOculusRest.prototype.OnReply = function($Event)
 		this.mLastFetchSuccess = true;
 		this.OnSupported();
 	}
-	
+
 	//	update rift input quaternion
-	this.mQuaternion.set( $Json.quat.x, $Json.quat.y, $Json.quat.z, $Json.quat.w );
-	//this.mEular = $Json.euler;
-	if ( this.mOnQuaternionChanged )
-		this.mOnQuaternionChanged( this.mQuaternion );
+	if ( !IsUndefined($Json.quat) )
+	{
+		this.mQuaternion.set( $Json.quat.x, $Json.quat.y, $Json.quat.z, $Json.quat.w );
+		if ( this.mOnQuaternionChanged )
+			this.mOnQuaternionChanged( this.mQuaternion );
+	}
+	
+	//	update head pos :)
+	if ( !IsUndefined($Json.position) )
+	{
+		this.mPosition.set( $Json.position.x, $Json.position.y, $Json.position.z );
+		if ( this.mOnPositionChanged )
+			this.mOnPositionChanged( this.mPosition );
+	}
 	
 	//	refresh
 	var $this = this;
