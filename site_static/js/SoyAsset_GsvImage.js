@@ -1,4 +1,28 @@
 
+function GsvTile($PanoId,$Zoom,$Tilex,$Tiley,$Parent)
+{
+	var $CacheInvalidate = '';
+	this.mUrl =	'http://maps.google.com/cbk?output=tile&panoid=' + $PanoId + '&zoom=' + $Zoom + '&x=' + $Tilex + '&y=' + $Tiley + '&' + $CacheInvalidate;
+	this.mTile = new THREE.Vector2($Tilex,$Tiley);
+	this.mGsvImage = $Parent;
+	
+	var $Meta = new SoyAssetMeta( this.mUrl, null );
+
+	var $this = this;
+	this.mAsset = new SoyAsset_Image( $Meta, function($Asset){ $this.OnLoaded($Asset); }, function($Asset){ $this.OnFailed($Asset); } );
+}
+
+GsvTile.prototype.OnLoaded = function($Asset)
+{
+	this.mGsvImage.OnTileLoaded( this.mTile, this.mAsset.mAsset );
+}
+
+GsvTile.prototype.OnFailed = function($Asset)
+{
+	this.mGsvImage.OnTileFailed( this.mTile );
+}
+
+
 
 SoyAsset_GsvImage.prototype = new SoyAsset('GsvImage');
 
@@ -59,27 +83,98 @@ SoyAsset_GsvImage.prototype.LoadImage = function()
 		$this.OnError('failed to load gsv image ' + $Asset );
 	};
 	
-	var $Tilex = 0;
-	var $Tiley = 0;
+	//	make canvas to draw on
 	var $Zoom = 0;
-	//var $CacheInvalidate = Date.now();
-	var $CacheInvalidate = '';
-	var $url = 'http://maps.google.com/cbk?output=tile&panoid=' + this.mGooglePanoId + '&zoom=' + $Zoom + '&x=' + $Tilex + '&y=' + $Tiley + '&' + $CacheInvalidate;
-	var $AssetMeta = {};
-	$AssetMeta.Layout = 'equirect';
-	$AssetMeta.Filename = $url;
-	$AssetMeta.Format = 'jpg';
-	
-	//	gr: post processing to adjust for extra spacing, overlapping image, tile construction etc
-	//	http://blog.mridey.com/2010/05/how-to-create-and-display-custom.html
-	$AssetMeta.CropWidth = 417;
-	$AssetMeta.CropHeight = 208;
-	//$AssetMeta.TileX = x;
-	//$AssetMeta.TileY = y;
 
-	this.mImageAssetMeta = $AssetMeta;
-	this.mImageAsset = new SoyAsset_Image( this.mImageAssetMeta, $OnLoaded, $OnFailed );
-	return true;
+	this.mCanvas = document.createElement("canvas");
+
+	var $TileW = Math.pow( 2, $Zoom );
+	var $TileH = Math.pow( 2, $Zoom-1 );
+	
+	//	gr: there's overlap and dead space in all the google images.... correct for this
+	//	note: for three js we probably want the square sizes, but not for cubemap mode.
+	//		might need to retun some scalar for shaders.
+	//var $ratiox = 417/512;
+	//var $ratioy = 208/512;
+	var $ratiox = 512/512;
+	var $ratioy = 256/512;
+	this.mCanvas.width = $TileW * 512*$ratiox;
+	this.mCanvas.height = $TileW * 512*$ratioy;
+	
+	this.mTileScale = new THREE.Vector2( 512, 512 );
+
+	
+	//	construct tiles
+	this.mTiles = [];
+	for ( var $tx=0;	$tx<$TileW;	$tx++ )
+	{
+		for ( var $ty=0;	$ty<$TileH;	$ty++ )
+		{
+			this.mTiles[$tx + ',' + $ty] = false;
+		}
+	}
+	
+	//	populate
+	var $this = this;
+	
+	for ( var $TileXY in this.mTiles )
+	{
+		var $xy = $TileXY.split(',');
+		this.mTiles[$TileXY] = new GsvTile( this.mGooglePanoId, $Zoom, $xy[0], $xy[1], this );
+	}
+}
+
+SoyAsset_GsvImage.prototype.OnTileLoaded = function($TilePos,$Image)
+{
+	var $ctx = this.mCanvas.getContext("2d");
+	
+	var $x = $TilePos.x * this.mTileScale.x;
+	var $y = $TilePos.y * this.mTileScale.y;
+	
+	$ctx.drawImage( $Image, $x, $y );
+
+	this.mTiles[$x + ',' + $y] = true;
+	
+	//	have we finished?
+	var $AllFinished = true;
+	forEach( this.mTiles, function($Finished){ $AllFinished = ($AllFinished && $Finished); } );
+
+	if ( !$AllFinished )
+		return;
+	
+	var $DataUrl = this.mCanvas.toDataURL();
+	this.mAsset = document.createElement("img"); // create img tag
+	this.mAsset.src = $DataUrl;
+	this.OnLoaded();
+}
+
+SoyAsset_GsvImage.prototype.OnTileFailed = function($Tile)
+{
+	//	put fake tile down
+	var $Canvas = document.createElement("canvas");
+	var $w = this.mTileScale.x;
+	var $h = this.mTileScale.y;
+	$Canvas.width = $w;
+	$Canvas.height = $h;
+	var $Ctx = $Canvas.getContext("2d");
+	var $PixelImage = $Ctx.createImageData(1,1);
+	var $Pixel = $PixelImage.data;
+	for ( var $y=0;	y<$h;	$y++ )
+	{
+		for ( var $x=0;	x<$w;	$x++ )
+		{
+			$Pixel[0] = 255;
+			$Pixel[1] = 0;
+			$Pixel[2] = 255;
+			$Pixel[3] = 255;
+			
+			$Ctx.putImageData( $PixelImage, $x, $y );
+		}
+	}
+	var $DataUrl = $Canvas.toDataURL();
+	var $Image = document.createElement("img"); // create img tag
+	$Image.src = $DataUrl;
+	this.OnTileLoaded($Tile,$Image);
 }
 
 SoyAsset_GsvImage.prototype.Load = function()
