@@ -76,8 +76,13 @@ float lerp(float From,float To,float Time)
 
 void main()
 {
-	vec2 Diffuseuv = vec2( position.x,position.y );
-	vec2 Depthuv = vec2( position.x,position.y );
+	//	debug view different angle
+	float x = position.x + 0.5;
+	if ( x > 1.0 )
+		x -= 1.0;
+	
+	vec2 Diffuseuv = vec2( 1.0-x,position.y );
+	vec2 Depthuv = vec2( 1.0-x,position.y );
 	
 	vec4 Depth4 = texture2D( DepthTexture, Depthuv );
 	bool DepthInf = Depth4.w < 0.5;
@@ -93,8 +98,8 @@ void main()
 	float Camera_Near = 2.0;
 	float Camera_Far = 250.0;	//	at 260 some points start disapearing. not sure why Far is so low...
 
-	float Near = 2.0;
-	float ScaleFar = 90.0;
+	float Near = 20.0;
+	float ScaleFar = 120.0;
 	float Scale = lerp( Near, ScaleFar, Depthf );
 	
 	float EyeScale = 10.0;
