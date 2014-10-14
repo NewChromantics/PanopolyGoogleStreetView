@@ -79,8 +79,8 @@ SoyAsset_GsvPointCloud.prototype.OnAllSubAssetsLoaded = function()
 
 	//	create pointcloud
 	//	gr: take resolution from somewhere... depth? image?
-	var $w = 900;
-	var $h = 900;
+	var $w = 1200;
+	var $h = 800;
 
 	var geometry = new THREE.BufferGeometry();
 		
