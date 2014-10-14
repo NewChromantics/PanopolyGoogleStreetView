@@ -5,6 +5,7 @@ function GsvTile($PanoId,$Zoom,$Tilex,$Tiley,$Parent)
 	this.mUrl =	'http://maps.google.com/cbk?output=tile&panoid=' + $PanoId + '&zoom=' + $Zoom + '&x=' + $Tilex + '&y=' + $Tiley + '&' + $CacheInvalidate;
 	this.mTile = new THREE.Vector2($Tilex,$Tiley);
 	this.mGsvImage = $Parent;
+	this.mIsLoaded = false;
 	
 	var $Meta = new SoyAssetMeta( this.mUrl, null );
 
@@ -14,6 +15,7 @@ function GsvTile($PanoId,$Zoom,$Tilex,$Tiley,$Parent)
 
 GsvTile.prototype.OnLoaded = function($Asset)
 {
+	this.mIsLoaded = true;
 	this.mGsvImage.OnTileLoaded( this.mTile, this.mAsset.mAsset );
 }
 
@@ -22,6 +24,10 @@ GsvTile.prototype.OnFailed = function($Asset)
 	this.mGsvImage.OnTileFailed( this.mTile );
 }
 
+GsvTile.prototype.IsLoaded = function()
+{
+	return this.mIsLoaded;
+}
 
 
 SoyAsset_GsvImage.prototype = new SoyAsset('GsvImage');
@@ -84,7 +90,7 @@ SoyAsset_GsvImage.prototype.LoadImage = function()
 	};
 	
 	//	make canvas to draw on
-	var $Zoom = 0;
+	var $Zoom = 2;
 
 	this.mCanvas = document.createElement("canvas");
 
@@ -94,12 +100,10 @@ SoyAsset_GsvImage.prototype.LoadImage = function()
 	//	gr: there's overlap and dead space in all the google images.... correct for this
 	//	note: for three js we probably want the square sizes, but not for cubemap mode.
 	//		might need to retun some scalar for shaders.
-	//var $ratiox = 417/512;
-	//var $ratioy = 208/512;
-	var $ratiox = 512/512;
-	var $ratioy = 256/512;
-	this.mCanvas.width = $TileW * 512*$ratiox;
-	this.mCanvas.height = $TileW * 512*$ratioy;
+	var $ratiox = 417/512;
+	var $ratioy = 208/512;
+	this.mCanvas.width = $TileW * 512 * $ratiox;
+	this.mCanvas.height = $TileW * 512 * $ratioy;
 	
 	this.mTileScale = new THREE.Vector2( 512, 512 );
 
@@ -110,7 +114,7 @@ SoyAsset_GsvImage.prototype.LoadImage = function()
 	{
 		for ( var $ty=0;	$ty<$TileH;	$ty++ )
 		{
-			this.mTiles[$tx + ',' + $ty] = false;
+			this.mTiles[$tx + ',' + $ty] = null;
 		}
 	}
 	
@@ -133,15 +137,20 @@ SoyAsset_GsvImage.prototype.OnTileLoaded = function($TilePos,$Image)
 	
 	$ctx.drawImage( $Image, $x, $y );
 
-	this.mTiles[$x + ',' + $y] = true;
-	
 	//	have we finished?
 	var $AllFinished = true;
-	forEach( this.mTiles, function($Finished){ $AllFinished = ($AllFinished && $Finished); } );
+	forEach( this.mTiles, function($GsvTile)
+			{
+				$Finished = ($GsvTile!=null) && $GsvTile.IsLoaded && $GsvTile.IsLoaded();	//	gr: null check not enough, JS evaluates all
+				$AllFinished = ($AllFinished && $Finished);
+			} );
 
 	if ( !$AllFinished )
+	{
+		//console.log("Still waiting on tiles... ", this.mTiles);
 		return;
-	
+	}
+
 	var $DataUrl = this.mCanvas.toDataURL();
 	this.mAsset = document.createElement("img"); // create img tag
 	this.mAsset.src = $DataUrl;
