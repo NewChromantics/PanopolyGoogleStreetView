@@ -24,6 +24,8 @@ function SoyConfig($RenderMode,$GeoMode)
 	this.mSeperation = 0.06;
 	this.mSplitEnabled = true;
 	this.mVideoEnabled = false;
+	
+	this.mPositionScalar = 1.5;
 
 	//	gr: fov ~100 has clipping issues in css mode
 	

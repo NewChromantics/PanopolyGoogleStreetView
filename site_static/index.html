@@ -82,27 +82,27 @@ void main()
 	vec4 Depth4 = texture2D( DepthTexture, Depthuv );
 	bool DepthInf = Depth4.w < 0.5;
 	Depth4.w = 0.0;
-	float Depthf = DecodeFloatRGB( Depth4 );
-	
+	float Depthf = DepthInf ? 1.0 : DecodeFloatRGB( Depth4 );
+
+	///Depthf = 1.0;
 	//	lat lon to view
 	vec3 View3 = VectorFromCoordsRad( GetLatLong(position.x, position.y,1.0,1.0) );
 	View3 = normalize(View3);
 	
 	//	gr: eye seperation is 30... so near needs to be at least that!
-	float Near = 30.0*3.0;
-	float Far = 250.0;	//	at 260 some points start disapearing. not sure why Far is so low...
+	float Camera_Near = 2.0;
+	float Camera_Far = 250.0;	//	at 260 some points start disapearing. not sure why Far is so low...
 
-//	float Far = 250.0;	//	at 260 some points start disapearing. not sure why Far is so low...
-//	float Scale = 600.0 * (Depthf);
-//	Scale += Near;
-	float ScaleFar = 200.0;
+	float Near = 2.0;
+	float ScaleFar = 90.0;
 	float Scale = lerp( Near, ScaleFar, Depthf );
-	View3 *= min(Scale,Far);
 	
+	float EyeScale = 10.0;
+	View3 *= max(Camera_Near,min(Scale/EyeScale,Camera_Far));
 	
 	vec4 mvPosition = modelViewMatrix * vec4( View3, 1.0 );
 	
-	gl_PointSize = 3.0;
+	gl_PointSize = 4.0;
 	
 	gl_Position = projectionMatrix * mvPosition;
 	
@@ -110,7 +110,7 @@ void main()
 	
 	if ( DepthInf )
 	{
-		//gl_PointSize = 20.0;
+		//gl_PointSize = 0.0;
 		vColor.r = 1.0;
 		vColor.g = 1.0;
 		vColor.b = 1.0;
@@ -176,6 +176,10 @@ void main()
 				quaternion
 			</div>
 			
+			<div id="PosDebug" class="Button">
+				position
+			</div>
+			
 		</div>
 
 <!-- needs to be before any support that wants to bind to container -->
@@ -231,6 +235,7 @@ if ( HasHashParam('debug') )
 {
 	//alert('debug mode');
 	ShowElement('QuatDebug');
+	ShowElement('PosDebug');
 	
 	BindConsole('debug_console');
 	ShowElement('debug_console');
@@ -819,7 +824,7 @@ function NewPano($Config,$MetaAsset)
 				var fov = $Config.mFov;
 				//	far Z matches furthest point on a cubemap...
 				var $Far = Math.sqrt( $Config.mFaceResolution*$Config.mFaceResolution + $Config.mFaceResolution*$Config.mFaceResolution );
-				
+			
 				$Config.mCamera = new THREE.PerspectiveCamera( fov, 1, 1, $Far );
 			//	$Config.mCamera.target = new THREE.Vector3( 0, 0, 1 );
 			//	$Config.mCamera.position.set( 0.001, 0.001, 0.001 );
@@ -902,14 +907,16 @@ function NewPano($Config,$MetaAsset)
 					$Config.mFeatureCubes = new Array( $CubeLeft, $CubeRight );
 				}
 
+				var $EyeScale = HasHashParam('pointcloud') ? 200.0 : 1.0;
 
 				$Config.mSplitter = new THREE.StereoEffect( $Config.mRendererLeft, $Config.mRendererRight );
-				$Config.mSplitter.separation = $Config.mFaceResolution * $Config.mSeperation;
-				alert('seperation: ' + $Config.mSplitter.separation + ' cam far: ' + $Config.mCamera.far);
+				$Config.mSplitter.separation = (1.0/$EyeScale) * $Config.mFaceResolution * $Config.mSeperation;
+				//alert('seperation: ' + $Config.mSplitter.separation + ' cam far: ' + $Config.mCamera.far);
 				onContainerResize($Config);
 				window.addEventListener( 'resize', function() { onContainerResize($Config); }, false );
 				Animate($Config);
-				
+
+
 				return true;
 			}
 
@@ -959,10 +966,17 @@ function NewPano($Config,$MetaAsset)
 				//	update camera
 				var Quaternion = GetCameraQuaternion();
 				$Config.mCamera.quaternion.copy( Quaternion );
+				var $Position = GetCameraPosition();
+				$Config.mCamera.position.copy( $Position );
+				$Config.mCamera.position.multiplyScalar( $Config.mPositionScalar );
 				
 				var QuatDebugElement = GetElement("QuatDebug");
 				if ( QuatDebugElement )
 					QuatDebugElement.innerText = $CurrentCameraControl + ": " + Quaternion.x + " " + Quaternion.y + " " + Quaternion.z + " " + Quaternion.w;
+				
+				var $PosDebugElement = GetElement("PosDebug");
+				if ( $PosDebugElement )
+					$PosDebugElement.innerText = $CurrentCameraControl + ": " + $Position.x + " " + $Position.y + " " + $Position.z;
 				
 				onContainerResize( $Config );
 				
