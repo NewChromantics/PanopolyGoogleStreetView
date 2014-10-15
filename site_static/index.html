@@ -14,6 +14,10 @@
 	varying vec4 vColor;
 	uniform sampler2D DiffuseTexture;
 	uniform sampler2D DepthTexture;
+	uniform float gDepthNear;
+	uniform float gDepthFar;
+	uniform float gPointSize;
+	uniform float gWorldYaw;
 	
 	//	from http://aras-p.info/blog/2009/07/30/encoding-floats-to-rgba-the-final/
 	/*
@@ -77,7 +81,9 @@ float lerp(float From,float To,float Time)
 void main()
 {
 	//	debug view different angle
-	float x = position.x + 0.5;
+	float x = position.x + gWorldYaw;
+	if ( x < 0.0 )
+		x += 1.0;
 	if ( x > 1.0 )
 		x -= 1.0;
 	
@@ -93,23 +99,16 @@ void main()
 	//	lat lon to view
 	vec3 View3 = VectorFromCoordsRad( GetLatLong(position.x, position.y,1.0,1.0) );
 	View3 = normalize(View3);
-	
-	//	gr: eye seperation is 30... so near needs to be at least that!
-	float Camera_Near = 2.0;
-	float Camera_Far = 250.0;	//	at 260 some points start disapearing. not sure why Far is so low...
 
-	float Near = 20.0;
-	float ScaleFar = 120.0;
-	float Scale = lerp( Near, ScaleFar, Depthf );
+	//	gr: have a near value so the floor bends and isnt flat...
+	float WorldDepth = lerp( gDepthNear, gDepthFar, Depthf );
+	vec3 World3 = View3 * WorldDepth;
+
+	vec4 World4 = modelViewMatrix * vec4( World3, 1.0 );
 	
-	float EyeScale = 10.0;
-	View3 *= max(Camera_Near,min(Scale/EyeScale,Camera_Far));
+	gl_PointSize = gPointSize;
 	
-	vec4 mvPosition = modelViewMatrix * vec4( View3, 1.0 );
-	
-	gl_PointSize = 6.0;
-	
-	gl_Position = projectionMatrix * mvPosition;
+	gl_Position = projectionMatrix * World4;
 	
 	vColor = texture2D( DiffuseTexture, Diffuseuv );
 	
@@ -161,6 +160,10 @@ void main()
 				Stereo View
 			</div>
 			
+			<div id="DebugCameraButton" class="Button" onClick="ToggleDebugCamera()">
+				Debug camera
+			</div>
+			
 			<div id="OculusBridgeButton" class="Button" onClick="SupportToggleEnable('OculusBridge')">
 				OculusBridge
 			</div>
@@ -191,12 +194,65 @@ void main()
 <div class="Container" id="container"></div>
 <div class="Container" id="container_dual"></div>
 
+
 		<script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false" type="text/javascript"></script>
 		<script src="js/soy.js"></script>
 		<script src="js/zpipe.min.js"></script>
 		<script src="threejs/three.min.js"></script>
+
 		<script src="threejs/renderers/CSS3DRenderer.js"></script>
 		<script src="threejs/effects/StereoEffect.js"></script>
+		<script src="threejs/controls/OrbitControls.js"></script>
+
+
+<!--
+ <script src="threejs/Three.js"></script>
+ <script src="threejs/math/Quaternion.js"></script>
+ <script src="threejs/math/Math.js"></script>
+ <script src="threejs/math/Vector2.js"></script>
+ <script src="threejs/math/Vector3.js"></script>
+ <script src="threejs/math/Vector4.js"></script>
+ <script src="threejs/math/Matrix3.js"></script>
+ <script src="threejs/math/Matrix4.js"></script>
+ <script src="threejs/math/Euler.js"></script>
+ <script src="threejs/math/Color.js"></script>
+ <script src="threejs/math/Plane.js"></script>
+ <script src="threejs/math/Line3.js"></script>
+ <script src="threejs/math/Box3.js"></script>
+ <script src="threejs/math/Sphere.js"></script>
+ <script src="threejs/math/Frustum.js"></script>
+ <script src="threejs/math/Ray.js"></script>
+ <script src="threejs/core/EventDispatcher.js"></script>
+ <script src="threejs/core/Projector.js"></script>
+ <script src="threejs/core/Object3D.js"></script>
+ <script src="threejs/core/Geometry.js"></script>
+ <script src="threejs/core/Face3.js"></script>
+ <script src="threejs/objects/Mesh.js"></script>
+ <script src="threejs/objects/Bone.js"></script>
+ <script src="threejs/objects/SkinnedMesh.js"></script>
+ <script src="threejs/lights/Light.js"></script>
+ <script src="threejs/cameras/Camera.js"></script>
+ <script src="threejs/cameras/PerspectiveCamera.js"></script>
+ <script src="threejs/scenes/Scene.js"></script>
+ <script src="threejs/textures/Texture.js"></script>
+ <script src="threejs/materials/Material.js"></script>
+ <script src="threejs/materials/ShaderMaterial.js"></script>
+ <script src="threejs/materials/MeshBasicMaterial.js"></script>
+ <script src="threejs/renderers/shaders/ShaderChunk.js"></script>
+ <script src="threejs/renderers/shaders/UniformsLib.js"></script>
+ <script src="threejs/renderers/shaders/UniformsUtils.js"></script>
+ <script src="threejs/renderers/shaders/ShaderLib.js"></script>
+ <script src="threejs/loaders/Cache.js"></script>
+ <script src="threejs/loaders/LoadingManager.js"></script>
+ <script src="threejs/loaders/ImageLoader.js"></script>
+ <script src="threejs/extras/ImageUtils.js"></script>
+ <script src="threejs/extras/geometries/SphereGeometry.js"></script>
+ <script src="threejs/extras/shaders/ShaderFlares.js"></script>
+ <script src="threejs/extras/renderers/plugins/ShadowMapPlugin.js"></script>
+ <script src="threejs/extras/renderers/plugins/LensFlarePlugin.js"></script>
+ <script src="threejs/extras/renderers/plugins/SpritePlugin.js"></script>
+ <script src="threejs/extras/renderers/plugins/ShadowMapPlugin.js"></script>
+ -->
 		<script src="js/GoogleAnalytics.js"></script>
 		<script src="js/ClearDefaultText.js"></script>
 		<script src="js/SoyWebsocket-1.0.js"></script>
@@ -233,6 +289,8 @@ void main()
 	
 	ShowElement('debug_console',false);
 	ShowElement('SplitButton');
+
+	ShowElement('DebugCameraButton');
 	
 	
 //	turn on debug stuff
@@ -333,7 +391,7 @@ var $Configs = [];
 
 function IsSplitMode()
 {
-	return $Configs[0].mSplitEnabled;
+	return $Configs[0].IsSplitEnabled();
 }
 function SetSplitMode($Enable)
 {
@@ -350,6 +408,23 @@ function ToggleSplit()
 }
 
 
+function IsDebugCameraMode()
+{
+	return $Configs[0].mEnableDebugCamera;
+}
+function SetDebugCameraMode($Enable)
+{
+	forEach( $Configs, function($Config)
+			{
+			$Config.mEnableDebugCamera = $Enable;
+			onContainerResize($Config);
+			}
+			);
+}
+function ToggleDebugCamera()
+{
+	SetDebugCameraMode( !IsDebugCameraMode() );
+}
 
 		function OnFileUploadSupported($Enable)
 		{
@@ -833,7 +908,21 @@ function NewPano($Config,$MetaAsset)
 				$Config.mCamera = new THREE.PerspectiveCamera( fov, 1, 1, $Far );
 			//	$Config.mCamera.target = new THREE.Vector3( 0, 0, 1 );
 			//	$Config.mCamera.position.set( 0.001, 0.001, 0.001 );
-		
+			
+			
+				$Config.mEnableDebugCamera = HasHashParam('debugcam');
+				$Config.mDebugCamera = new THREE.PerspectiveCamera( 45, 1, 1, 10000 );
+				var $CameraScale = 5.0;
+				$Config.mDebugCamera.position.z = $CameraScale * 3.0;
+				$Config.mDebugCamera.position.y = $CameraScale * 4.0;
+				$Config.mDebugCamera.lookAt(new THREE.Vector3(0,0,0));
+				
+				//$Config.mDebugCameraControls = new THREE.OrbitControls( $Config.mDebugCamera, $Container );
+				$Config.mDebugCameraControls = new THREE.OrbitControls( $Config.mDebugCamera, document.body );
+				$Config.mDebugCameraControls.scale = 0.001;
+				$Config.mDebugCameraControls.target = new THREE.Vector3(0,0,0);
+//				$Config.mDebugCameraControls.addEventListener( 'change', animate );
+
 				$Config.mScene = new THREE.Scene();
 				
 
@@ -934,7 +1023,10 @@ function NewPano($Config,$MetaAsset)
 				$Config.mCamera.aspect = w / h;
 				$Config.mCamera.updateProjectionMatrix();
 
-				if ( $Config.mSplitEnabled )
+				$Config.mDebugCamera.aspect = w / h;
+				$Config.mDebugCamera.updateProjectionMatrix();
+
+				if ( $Config.IsSplitEnabled() )
 				{
 					$Config.mSplitter.setSize( w, h );
 				}
@@ -957,10 +1049,44 @@ function NewPano($Config,$MetaAsset)
 				
 			}
 
+
+var gDepthNear = false;
+var gDepthFar = false;
+var gPointSize = false;
+var gPositionScalar = false;
+var gWorldYaw = false;
+var gPointCloud = null;
+
 			function Animate($Config) {
 
 				requestAnimationFrame( function(){Animate($Config);} );
 				
+				$Config.mDebugCameraControls.update();
+				
+				//	update shader constants
+				var $PointCloud = gPointCloud;
+				if ( $PointCloud )
+				{
+					var $Uniforms = $PointCloud.mAsset.material.uniforms;
+					
+					if ( gDepthNear === false )	gDepthNear = $Uniforms.gDepthNear.value;
+					if ( gDepthFar === false )	gDepthFar = $Uniforms.gDepthFar.value;
+					if ( gPointSize === false )	gPointSize = $Uniforms.gPointSize.value;
+					if ( gWorldYaw === false )	gWorldYaw = $Uniforms.gWorldYaw.value;
+					
+					$Uniforms.gDepthNear.value = gDepthNear;
+					$Uniforms.gDepthFar.value = gDepthFar;
+					$Uniforms.gPointSize.value = gPointSize;
+					$Uniforms.gWorldYaw.value = gWorldYaw;
+					$Uniforms.gDepthNear.needsUpdate = true;
+					$Uniforms.gDepthFar.needsUpdate = true;
+					$Uniforms.gPointSize.needsUpdate = true;
+					$Uniforms.gWorldYaw.needsUpdate = true;
+				}
+				
+				if ( gPositionScalar === false )	gPositionScalar = $Config.mPositionScalar;
+				$Config.mPositionScalar = gPositionScalar;
+
 				Render($Config);
 			}
 
@@ -985,16 +1111,19 @@ function NewPano($Config,$MetaAsset)
 				
 				onContainerResize( $Config );
 				
-				if ( $Config.mSplitEnabled )
+			
+				if ( $Config.IsSplitEnabled() )
 				{
 				//	$Config.mSplitter.setSize( w, h );
 					$Config.mSplitter.render( $Config.mScene, $Config.mCamera );
 				}
 				else
 				{
+					var $Camera = $Config.mEnableDebugCamera ? $Config.mDebugCamera : $Config.mCamera;
+					
 					if ( $Config.mRendererLeft )
 					{
-						$Config.mRendererLeft.render( $Config.mScene, $Config.mCamera );
+						$Config.mRendererLeft.render( $Config.mScene, $Camera );
 						$Config.mRendererLeft.mLastCamera = $Config.mCamera;
 					}
 					
@@ -1013,6 +1142,7 @@ function NewPano($Config,$MetaAsset)
 	{
 		if ( $Asset.mMeta.Format != 'GsvPointCloud' )
 			return false;
+		gPointCloud = $Asset;
 		$Config.mScene.add( $Asset.mAsset );
 	}
 

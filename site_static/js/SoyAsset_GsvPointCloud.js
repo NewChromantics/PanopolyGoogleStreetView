@@ -111,9 +111,13 @@ SoyAsset_GsvPointCloud.prototype.OnAllSubAssetsLoaded = function()
 	{
 		DiffuseTexture: { type: "t", value: THREE.ImageUtils.loadTexture( this.mImageAsset.mAsset.src ) },
 		DepthTexture: { type: "t", value: THREE.ImageUtils.loadTexture( this.mDepthAsset.mAsset.src ) },
+		gDepthNear: { type: "f", value: 1.0 },
+		gDepthFar: { type: "f", value: 60.0 },
+		gPointSize: { type: "f", value: 6.0 },
+		gWorldYaw: { type: "f", value: 0.0 },
 	};
 	
-
+	
 	var material = new THREE.ShaderMaterial( {
 											uniforms: 		uniforms,
 											vertexShader:   this.mVertexShaderAsset.mAsset,
