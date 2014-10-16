@@ -287,6 +287,24 @@ void main()
 
 <script>
 	
+WebGLChainRenderer.prototype = new THREE.WebGLRenderer();
+function WebGLChainRenderer()
+{
+	THREE.WebGLRenderer.apply( this, arguments );
+	
+	this.super = {};
+	this.super.Render = this.render;
+}
+
+WebGLChainRenderer.prototype.render = function($Scene,$Camera)
+{
+	this.super.render( arguments );
+}
+
+</script>
+
+<script>
+	
 	ShowElement('debug_console',false);
 	ShowElement('SplitButton');
 
@@ -934,7 +952,7 @@ function NewPano($Config,$MetaAsset)
 				}
 				else if ( $Config.mRenderMode == RENDERMODE_WEBGL )
 				{
-					$Config.mRendererLeft = new THREE.WebGLRenderer();
+					$Config.mRendererLeft = new WebGLChainRenderer();
 				}
 				else if ( $Config.mRenderMode == RENDERMODE_CANVAS )
 				{
