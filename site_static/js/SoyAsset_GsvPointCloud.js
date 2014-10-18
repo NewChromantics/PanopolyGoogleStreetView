@@ -80,7 +80,7 @@ SoyAsset_GsvPointCloud.prototype.OnAllSubAssetsLoaded = function()
 	//	create pointcloud
 	//	gr: take resolution from somewhere... depth? image?
 	var $w = 1200;
-	var $h = 800;
+	var $h = 700;
 
 	var geometry = new THREE.BufferGeometry();
 		
@@ -113,8 +113,8 @@ SoyAsset_GsvPointCloud.prototype.OnAllSubAssetsLoaded = function()
 		DepthTexture: { type: "t", value: THREE.ImageUtils.loadTexture( this.mDepthAsset.mAsset.src ) },
 		gDepthNear: { type: "f", value: 1.0 },
 		gDepthFar: { type: "f", value: 60.0 },
-		gPointSize: { type: "f", value: 6.0 },
-		gWorldYaw: { type: "f", value: 0.0 },
+		gPointSize: { type: "f", value: 3.0 },
+		gWorldYaw: { type: "f", value: 0.5 },
 	};
 	
 	
