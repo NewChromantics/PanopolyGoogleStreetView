@@ -8,6 +8,138 @@
 	<link rel="Stylesheet" href="Cubemap.css" type="text/css">
 </head>
 
+<script id="postfillvertshader" type="x-shader/x-vertex">
+	varying vec2 vUv;
+	void main()
+	{
+		vUv = position.xy;
+		vUv += vec2(1.0,1.0);
+		vUv /= vec2(2.0,2.0);
+	//	vUv.y = 1.0 - vUv.y;	//	uv is upside, but so is texture (as original scene was upside down)
+		
+		float Scale = 1.00;
+		gl_Position = vec4( position.x*Scale, position.y*Scale, 0.0, 1.0 );
+	}
+</script>
+
+
+<script id="postfillfragshader" type="x-shader/x-frag">
+	const float InfDepthValue = 0.90;
+	const float InfDepthValueMin = 0.89;
+	const int PixelOffsetMax = 80;
+	varying vec2 vUv;
+	uniform sampler2D DiffuseTexture;
+	uniform int PixelOffsetCount;
+	uniform vec2 PixelOffsets[PixelOffsetMax];// = { vec2(0.0,0.0) };
+	uniform vec2 PixelScalar;
+	
+	//	w is 0 if we sampled nothing
+	vec4 GetSample(vec2 Uv,vec2 Offset)
+	{
+		vec4 Colour = texture2D( DiffuseTexture, Uv + Offset );
+		
+		//Colour.w = (Colour.w >= InfDepthValue) ? 0.0 : 1.0;
+	//	Colour.w = (Colour.w > InfDepthValue) ? 0.0 : 1.0;
+		return Colour;
+	}
+
+	bool IsSampleDepthValid(vec4 Sample)
+	{
+//		return (Sample.w >= InfDepthValueMin) ? false : true;
+		return (Sample.w > InfDepthValue) ? false : true;
+	}
+
+	//	yellow if have A sample, blue if not
+	vec4 GetSampleTest()
+	{
+		vec4 Sample = vec4( 0.0, 0.0, 0.0, 0.0 );
+		int SampleCount = 0;
+		for ( int i=0;	i<PixelOffsetMax;	i++ )
+		{
+			if ( i >= PixelOffsetCount )
+				continue;
+				
+			vec4 NewSample = GetSample( vUv, PixelOffsets[i] * PixelScalar );
+			if ( !IsSampleDepthValid(NewSample) )
+				continue;
+			Sample += NewSample;
+			SampleCount++;
+		}
+		
+		if ( SampleCount == 0 )
+		{
+			return vec4( 0.0, 0.0, 1.0, 1.0 );
+		}
+
+		return vec4( 1.0, 1.0, 0.0, 1.0 );
+	}
+	
+	void main()
+	{
+		//	debug test to make sure we cover all pixels
+		//gl_FragColor = GetSampleTest();	return;
+		
+		//	if we have a good pixel, just use it
+		vec4 BaseSample = GetSample( vUv, vec2(0.0,0.0) );
+		/*
+		if ( IsSampleDepthValid( BaseSample ) )
+		{
+			gl_FragColor = BaseSample;
+			gl_FragColor.w = 1.0;
+			return;
+		}
+		*/
+		
+		vec4 Sample = vec4( 0.0, 0.0, 0.0, 9990.0 );
+		int SampleCount = 0;
+		int GoodTests = 0;
+		for ( int i=0;	i<PixelOffsetMax;	i++ )
+		{
+			if ( i >= PixelOffsetCount )
+				continue;
+			//	arbitry cut off to improve framerate
+			if ( GoodTests + SampleCount > 5 )
+				break;
+				
+			vec4 NewSample = GetSample( vUv, PixelOffsets[i] * PixelScalar );
+			if ( !IsSampleDepthValid(NewSample) )
+				continue;
+			
+			if ( NewSample.w < Sample.w * 0.95 )
+			{
+				Sample = NewSample;
+				SampleCount = 1;
+				GoodTests++;
+				continue;
+			}
+			
+			//	if new sample is further than current one, don't use it
+			if ( NewSample.w > Sample.w * 1.00 )
+				continue;
+			
+			Sample.xyz += NewSample.xyz;
+			Sample.w = min( Sample.w, NewSample.w );
+			SampleCount ++;
+			GoodTests++;
+			//break;
+		}
+		
+		if ( SampleCount == 0 )
+		{
+			gl_FragColor = vec4( 1.0, 1.0, 0.0, 1.0 );
+			BaseSample.w = 1.0;
+			gl_FragColor = BaseSample;
+			return;
+		}
+	
+		//	normalise (to get average colour)
+		Sample.xyz /= float(SampleCount);
+		Sample.w = 1.0;
+		Sample = min(Sample,1.0);
+		gl_FragColor = Sample;
+	}
+</script>
+
 <script id="pointcloudvertexshader" type="x-shader/x-vertex">
 	
 	
@@ -18,6 +150,7 @@
 	uniform float gDepthFar;
 	uniform float gPointSize;
 	uniform float gWorldYaw;
+	const float InfDepthValue = 0.90;
 	
 	//	from http://aras-p.info/blog/2009/07/30/encoding-floats-to-rgba-the-final/
 	/*
@@ -89,11 +222,11 @@ void main()
 	
 	vec2 Diffuseuv = vec2( 1.0-x,position.y );
 	vec2 Depthuv = vec2( 1.0-x,position.y );
-	
+
 	vec4 Depth4 = texture2D( DepthTexture, Depthuv );
 	bool DepthInf = Depth4.w < 0.5;
 	Depth4.w = 0.0;
-	float Depthf = DepthInf ? 1.0 : DecodeFloatRGB( Depth4 );
+	float Depthf = DepthInf ? InfDepthValue : DecodeFloatRGB( Depth4 ) / InfDepthValue;
 
 	///Depthf = 1.0;
 	//	lat lon to view
@@ -114,10 +247,12 @@ void main()
 	
 	if ( DepthInf )
 	{
+		float InfColourScale = 1.0;
 		//gl_PointSize = 0.0;
-		vColor.r *= 0.2;
-		vColor.g *= 0.2;
-		vColor.b *= 0.2;
+		vColor.r *= InfColourScale;
+		vColor.g *= InfColourScale;
+		vColor.b *= InfColourScale;
+		
 	}
 	else
 	{
@@ -125,6 +260,11 @@ void main()
 		//	vColor.g = 1.0-Depthf;
 		//vColor.b = 1.0-Depthf;
 	}
+	
+	//	fake stencil - default clear "colour" has alpha of 1.0
+	//	if we write anything, alpha is zero
+	//vColor.a = 0.0;
+	vColor.a = Depthf;
 }
 </script>
 
@@ -293,12 +433,108 @@ function WebGLChainRenderer()
 	THREE.WebGLRenderer.apply( this, arguments );
 	
 	this.super = {};
-	this.super.Render = this.render;
+	this.super.render = this.render;
+	
+	var $w = 1024;
+	var $h = 1024;
+	var $options = { minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, };
+	this.mRenderTarget = new THREE.WebGLRenderTarget( $w, $h, $options );
+
+	this.mPostMesh = CreatePostMesh( this.mRenderTarget );
+	this.mPostCamera = new THREE.OrthographicCamera( 0, 1, 1, 0, 0, 1 );
+	this.mPostScene = new THREE.Scene();
+	this.mPostScene.add( this.mPostMesh );
+	console.log( this.mPostMesh );
+	
+	this.render = this.chainrender;
 }
 
-WebGLChainRenderer.prototype.render = function($Scene,$Camera)
+var gPixelOffsetCount = false;
+
+WebGLChainRenderer.prototype.chainrender = function($Scene,$Camera)
 {
-	this.super.render( arguments );
+	this.super.render.call( this, $Scene, $Camera, this.mRenderTarget, true );
+
+	if ( gPixelOffsetCount === false )
+	{
+		gPixelOffsetCount = this.mPostMesh.material.uniforms.PixelOffsetCount.value;
+	}
+	this.mPostMesh.material.uniforms.PixelOffsetCount.value = gPixelOffsetCount;
+	this.mPostMesh.material.uniforms.PixelOffsetCount.needsUpdate = true;
+	
+	//	render post-process shaders
+	this.super.render.call( this, this.mPostScene, this.mPostCamera );
+}
+
+function AppendCoords($Coords,$Rad,$Step)
+{
+	$Step = CheckDefaultParam( $Step, 1 );
+	
+	for ( var $x=-$Rad;	$x<=$Rad;	$x+=$Step )
+	{
+		var $y = -$Rad;	//	first row
+		$Coords.push( new THREE.Vector2( $x, $y ) );
+		var $y = $Rad;	//	last row
+		$Coords.push( new THREE.Vector2( $x, $y ) );
+	}
+
+	for ( var $y=-$Rad+1;	$y<=$Rad-1;	$y+=$Step )
+	{
+		var $x = -$Rad;	//	first col
+		$Coords.push( new THREE.Vector2( $x, $y ) );
+		var $x = $Rad;	//	last col
+		$Coords.push( new THREE.Vector2( $x, $y ) );
+	}
+}
+
+function CreatePostMesh($RenderTargetTexture)
+{
+	//	create triangles
+	//	gr: 2x2 generates -1 to 1
+	var geometry = new THREE.PlaneGeometry( 2, 2 );
+
+	var $VertShader = GetElement('postfillvertshader').innerText;
+	var $FragShader = GetElement('postfillfragshader').innerText;
+	
+	var $PixelStep = new THREE.Vector2( 1.0 / $RenderTargetTexture.width, 1.0 / $RenderTargetTexture.height );
+	var $PixelOffsets = [ new THREE.Vector2(0,0) ];
+	
+	AppendCoords( $PixelOffsets, 1, 1 );
+	AppendCoords( $PixelOffsets, 3, 1 );
+	AppendCoords( $PixelOffsets, 6, 3 );
+	AppendCoords( $PixelOffsets, 10, 3 );
+	/*
+	AppendCoords( $PixelOffsets, 2, 1 );
+	AppendCoords( $PixelOffsets, 6, 3 );
+	AppendCoords( $PixelOffsets, 9, 3 );
+	AppendCoords( $PixelOffsets, 15, 5 );
+	*/
+	console.log($PixelOffsets);
+	//alert($PixelOffsets.length);
+	
+	var uniforms =
+	{
+		DiffuseTexture: { type: "t", value: $RenderTargetTexture },
+		PixelOffsetCount: { type: "i", value: $PixelOffsets.length },
+		PixelOffsets: { type: "v2v", value: $PixelOffsets },
+		PixelScalar: { type: "v2", value: $PixelStep },
+	};
+	
+	var material = new THREE.ShaderMaterial( {
+											uniforms: 		uniforms,
+											vertexShader:	$VertShader,
+											fragmentShader: $FragShader,
+											});
+/*
+	var material = new THREE.MeshBasicMaterial({
+												color: 'red'
+												});
+*/	material.depthTest = false;
+	material.side = THREE.DoubleSide;
+	
+	
+	var mesh = new THREE.Mesh( geometry, material );
+	return mesh;
 }
 
 </script>
