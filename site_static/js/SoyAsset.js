@@ -9,6 +9,7 @@ function GetHost()
 	return 'http://image.panopo.ly/';
 }
 
+var $LocalUrlPrefix = './';
 
 
 
@@ -162,7 +163,7 @@ function SoyAsset($Meta,$OnLoaded,$OnFailed)
 	var $UrlIsData = $Meta.Filename.startsWith('data:');
 	var $UrlIsHttp = $Meta.Filename.startsWith('http:');
 	var $UrlIsEmpty = ($Meta.Filename.length==0);
-	var $UrlIsLocal = ($Meta.Filename.startsWith('.'));
+	var $UrlIsLocal = ($Meta.Filename.startsWith($LocalUrlPrefix));
 	var $Host = ($UrlIsData||$UrlIsHttp||$UrlIsEmpty||$UrlIsLocal) ? '' : GetHost();
 	
 	this.mAsset = null;			//	set once loaded
@@ -522,21 +523,17 @@ SoyAsset_Video.prototype.Load = function()
 	
 	//	fetch
 	console.log("Loading " + this.mUrl );
-	
-	var $Video = document.createElement('video');
-	this.mVideo = $Video;
 
 	var $Type = this.mMeta.Format;
 	var $Codec = this.mMeta.Codec;
-	var $VideoTypeString = 'video/' + $Type + ';codecs="' + $Codec + '"';
-	var $CanPlay = $Video.canPlayType($VideoTypeString);
-	if ( $CanPlay == "" )
+	if ( !CanPlayVideo( $Type, $Codec ) )
 	{
-		console.log("Browser cannot play " + $VideoTypeString );
 		this.OnError();
 		return;
 	}
 	
+	var $Video = document.createElement('video');
+	this.mVideo = $Video;
 	//	video.width = 640;
 	//	video.height = 360;
 	//	video.type = ' video/ogg; codecs="theora, vorbis" ';
@@ -569,6 +566,7 @@ SoyAsset_Video.prototype.Load = function()
 
 SoyAsset_Video.prototype.OnLoad = function($Event)
 {
+	alert('video on load');
 	//	gr: swap ownership?
 	this.mAsset = this.mVideo;
 	assert( this.IsLoaded(), "Loaded state wrong" );
@@ -577,6 +575,8 @@ SoyAsset_Video.prototype.OnLoad = function($Event)
 
 SoyAsset_Video.prototype.OnError = function($Event)
 {
+	alert('video on error');
+	console.log($Event);
 	if ( this.IsLoaded() )
 		this.Stop();
 

@@ -23,7 +23,7 @@ function SoyConfig($RenderMode,$GeoMode)
 	this.mFov = 90;
 	this.mSeperation = 0.06;
 	this.mSplitEnabled = true;
-	this.mVideoEnabled = false;
+	this.mVideoEnabled = true;
 	this.mEnableDebugCamera = false;
 	
 	this.mPositionScalar = 4.0;
@@ -95,12 +95,9 @@ SoyConfig.prototype.SupportsAssetMeta = function($AssetMeta)
 			if ( IsMobile() )
 				return false;
 			
-			var $Video = document.createElement('video');
-			var $VideoTypeString = 'video/' + $Type + ';codecs="' + $Codec + '"';
-			var $CanPlay = $Video.canPlayType($VideoTypeString);
-			if ( $CanPlay == "" )
+			if ( !CanPlayVideo( $Type, $Codec ) )
 				return false;
-		}
+					}
 	}
 
 

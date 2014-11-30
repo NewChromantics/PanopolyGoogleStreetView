@@ -272,3 +272,27 @@ function EncodeFloatRGB(f)
 	return enc;
 }
 
+
+function CanPlayVideo($Type,$Codec)
+{
+	var $Video = document.createElement('video');
+	var $VideoTypeString = 'video/' + $Type;
+	
+	//	gr: in chrome, h264 won't play as a codec type...
+	if ( $Codec == 'h264' )
+		$Codec = '';
+	
+	if ( $Codec != '' )
+		$VideoTypeString += ';codecs="' + $Codec + '"';
+
+	var $CanPlay = $Video.canPlayType($VideoTypeString);
+	if ( $CanPlay == "" )
+	{
+		console.log("Browser cannot play " + $VideoTypeString );
+		return false;
+	}
+	
+	return true;
+}
+
+
